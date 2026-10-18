@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:block",
+  "pools": [
+    {
+      "condition": {
+        "type": "minecraft:survives_explosion"
+      },
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "arcforgetransmission:ev_lattice_tower"
+        }
+      ],
+      "rolls": 1
+    }
+  ],
+  "random_sequence": "arcforgetransmission:blocks/ev_lattice_tower"
+}

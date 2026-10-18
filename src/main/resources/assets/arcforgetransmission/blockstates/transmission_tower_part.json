@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "steel=false": {
+      "model": "arcforgetransmission:block/transmission_tower/wood"
+    },
+    "steel=true": {
+      "model": "arcforgetransmission:block/transmission_tower/steel"
+    }
+  }
+}

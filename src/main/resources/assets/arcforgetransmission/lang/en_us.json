@@ -1,0 +1,12 @@
+{
+  "itemGroup.arcforgetransmission.transmission": "Arcforge: Transmission",
+  "block.arcforgetransmission.lv_distribution_pole": "LV Distribution Pole",
+  "block.arcforgetransmission.mv_sub_transmission_pole": "MV Sub-Transmission Pole",
+  "block.arcforgetransmission.hv_h_frame_tower": "HV H-Frame Tower",
+  "block.arcforgetransmission.ev_lattice_tower": "EV Lattice Tower",
+  "block.arcforgetransmission.transmission_tower_part": "Transmission Tower",
+  "tooltip.arcforgetransmission.tower.tier": "%s line · %s V",
+  "tooltip.arcforgetransmission.tower.height": "%s blocks tall",
+  "message.arcforgetransmission.tower.no_room": "The tower needs its whole space clear",
+  "message.arcforgetransmission.tower.no_room_at": "Blocked at %s"
+}

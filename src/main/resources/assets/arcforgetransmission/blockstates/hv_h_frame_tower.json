@@ -1,0 +1,16 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "arcforgetransmission:block/transmission_tower/wood"
+    },
+    "facing=east": {
+      "model": "arcforgetransmission:block/transmission_tower/wood"
+    },
+    "facing=south": {
+      "model": "arcforgetransmission:block/transmission_tower/wood"
+    },
+    "facing=west": {
+      "model": "arcforgetransmission:block/transmission_tower/wood"
+    }
+  }
+}
