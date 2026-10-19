@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "I": "arcforgetransmission:lv_pin_insulator",
+    "P": "#c:plates/steel",
+    "A": "#c:ingots/steel",
+    "R": "minecraft:redstone"
+  },
+  "pattern": [
+    "III",
+    "PAP",
+    "PRP"
+  ],
+  "result": {
+    "id": "arcforgetransmission:lv_recloser"
+  }
+}

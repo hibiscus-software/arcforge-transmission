@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "key": {
+    "S": "#c:rods/steel",
+    "P": "#c:plates/steel",
+    "G": "#c:glass_blocks",
+    "R": "minecraft:redstone"
+  },
+  "pattern": [
+    "S S",
+    "PGP",
+    " R "
+  ],
+  "result": {
+    "id": "arcforgetransmission:clamp_meter"
+  }
+}

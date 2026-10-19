@@ -39,8 +39,19 @@ import net.zagdrath.arcforgetransmission.grid.world.WireView;
 public final class WireRenderer {
     public static final Identifier GLOW = Identifier.fromNamespaceAndPath(ArcforgeTransmission.MODID, "block/wire/ehv_wire_glow");
 
-    // A wire ready to draw: its ends relative to the block drawing it, its tier, whether it's insulated, and its light.
-    public record Prepared(float[] from, float[] to, VoltageTier tier, boolean insulated, int light) {}
+    // A wire ready to draw: its ends relative to the block drawing it, its tier, what it is (WireView.kind), its light.
+    public record Prepared(float[] from, float[] to, VoltageTier tier, String kind, int light) {
+        boolean insulated() {
+            return kind.equals("insulated");
+        }
+
+        // Steel strand (a shield wire or a guy): thin galvanized, whatever the tier.
+        boolean steel() {
+            return kind.equals("shield") || kind.equals(WireView.GUY);
+        }
+    }
+
+    public static final Identifier STEEL = Identifier.fromNamespaceAndPath(ArcforgeTransmission.MODID, "block/wire/steel");
 
     private WireRenderer() {}
 
@@ -56,7 +67,7 @@ public final class WireRenderer {
             float[] to = { (float) (wire.to().x - origin.getX()), (float) (wire.to().y - origin.getY()), (float) (wire.to().z - origin.getZ()) };
             double[] mid = Catenary.point(new double[] { wire.from().x, wire.from().y, wire.from().z }, new double[] { wire.to().x, wire.to().y, wire.to().z }, 0.5);
             int light = level != null ? LightCoordsUtil.getLightCoords(level, BlockPos.containing(mid[0], mid[1], mid[2])) : LightCoordsUtil.FULL_BRIGHT;
-            out.add(new Prepared(from, to, wire.tier(), wire.insulated(), light));
+            out.add(new Prepared(from, to, wire.tier(), wire.kind(), light));
         }
         return out;
     }
@@ -70,14 +81,14 @@ public final class WireRenderer {
         Identifier location = glow.atlasLocation();
         collector.submitCustomGeometry(poseStack, RenderTypes.entityCutout(location), (pose, buffer) -> {
             for (Prepared wire : wires) {
-                draw(pose, buffer, wire, atlas.getSprite(sprite(wire.tier(), wire.insulated())), wire.light());
+                draw(pose, buffer, wire, atlas.getSprite(wire.steel() ? STEEL : sprite(wire.tier(), wire.insulated())), wire.light());
             }
         });
-        boolean anyEv = wires.stream().anyMatch(w -> w.tier() == VoltageTier.EHV);
+        boolean anyEv = wires.stream().anyMatch(w -> w.tier() == VoltageTier.EHV && !w.steel());
         if (anyEv) {
             collector.submitCustomGeometry(poseStack, RenderTypes.eyes(location), (pose, buffer) -> {
                 for (Prepared wire : wires) {
-                    if (wire.tier() == VoltageTier.EHV) {
+                    if (wire.tier() == VoltageTier.EHV && !wire.steel()) {
                         draw(pose, buffer, wire, glow, LightCoordsUtil.FULL_BRIGHT);
                     }
                 }
@@ -90,7 +101,7 @@ public final class WireRenderer {
         double length = Catenary.length(a, b);
         int segments = Math.max(4, (int) Math.ceil(length * 2.0));
         // The rubber sheath adds half a pixel round an insulated conductor.
-        double half = (wire.tier().wireWidthPx() + (wire.insulated() ? 0.5 : 0.0)) / 32.0;
+        double half = (wire.steel() ? 1.0 : wire.tier().wireWidthPx() + (wire.insulated() ? 0.5 : 0.0)) / 32.0;
         double[][] points = new double[segments + 1][];
         for (int i = 0; i <= segments; i++) {
             points[i] = Catenary.point(a, b, (double) i / segments);

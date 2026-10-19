@@ -33,6 +33,9 @@ import net.zagdrath.arcforgetransmission.ArcforgeTransmission;
 import net.zagdrath.arcforgetransmission.grid.GridEdge;
 import net.zagdrath.arcforgetransmission.grid.VoltageTier;
 import net.zagdrath.arcforgetransmission.grid.item.LinkTarget;
+import net.zagdrath.arcforgetransmission.grid.item.ClampMeterItem;
+import net.zagdrath.arcforgetransmission.grid.item.FuseLinkItem;
+import net.zagdrath.arcforgetransmission.grid.item.GuyWireItem;
 import net.zagdrath.arcforgetransmission.grid.item.WireCoilItem;
 import net.zagdrath.arcforgetransmission.grid.item.WireCuttersItem;
 
@@ -51,8 +54,11 @@ public final class GridContent {
     public static final Map<VoltageTier, DeferredBlock<CreativeEnergyBlock>> CREATIVE_SOURCES = new EnumMap<>(VoltageTier.class);
     public static final Map<VoltageTier, DeferredBlock<CreativeEnergyBlock>> CREATIVE_SINKS = new EnumMap<>(VoltageTier.class);
     public static final Map<VoltageTier, DeferredItem<WireCoilItem>> COILS = new EnumMap<>(VoltageTier.class);
-    // Rubber-insulated wire (Arcforge's rubber): LV and MV only, safe to touch.
+    // Rubber-insulated wire (Arcforge's rubber) and underground cable: LV and MV only, safe to touch.
     public static final Map<VoltageTier, DeferredItem<WireCoilItem>> INSULATED_COILS = new EnumMap<>(VoltageTier.class);
+    public static final Map<VoltageTier, DeferredItem<WireCoilItem>> UNDERGROUND_CABLES = new EnumMap<>(VoltageTier.class);
+    // Grounded steel strung between tower peaks: catches lightning.
+    public static final DeferredItem<WireCoilItem> SHIELD_WIRE_COIL;
     private static final List<DeferredItem<? extends Item>> TAB_ITEMS = new ArrayList<>();
 
     static {
@@ -66,20 +72,33 @@ public final class GridContent {
             TAB_ITEMS.add(ITEMS.registerSimpleBlockItem(pinInsulator));
         }
         for (VoltageTier tier : VoltageTier.values()) {
-            COILS.put(tier, ITEMS.registerItem(tier.id() + "_wire_coil", p -> new WireCoilItem(tier, false, p), p -> p.stacksTo(64)));
+            COILS.put(tier, ITEMS.registerItem(tier.id() + "_wire_coil", p -> new WireCoilItem(tier, GridEdge.Kind.BARE, p), p -> p.stacksTo(64)));
             TAB_ITEMS.add(COILS.get(tier));
             if (tier.insulatable()) {
-                INSULATED_COILS.put(tier, ITEMS.registerItem(tier.id() + "_insulated_wire_coil", p -> new WireCoilItem(tier, true, p),
+                INSULATED_COILS.put(tier, ITEMS.registerItem(tier.id() + "_insulated_wire_coil", p -> new WireCoilItem(tier, GridEdge.Kind.INSULATED, p),
                         p -> p.stacksTo(64)));
                 TAB_ITEMS.add(INSULATED_COILS.get(tier));
+                UNDERGROUND_CABLES.put(tier, ITEMS.registerItem(tier.id() + "_underground_cable", p -> new WireCoilItem(tier, GridEdge.Kind.BURIED, p),
+                        p -> p.stacksTo(64)));
+                TAB_ITEMS.add(UNDERGROUND_CABLES.get(tier));
             }
         }
+        SHIELD_WIRE_COIL = ITEMS.registerItem("shield_wire_coil", p -> new WireCoilItem(null, GridEdge.Kind.SHIELD, p), p -> p.stacksTo(64));
+        TAB_ITEMS.add(SHIELD_WIRE_COIL);
     }
 
     public static final DeferredBlock<PoleTransformerBlock> POLE_TRANSFORMER = BLOCKS.registerBlock("pole_transformer", PoleTransformerBlock::new,
             p -> p.mapColor(MapColor.METAL).strength(3.0F, 6.0F).sound(SoundType.METAL).noOcclusion().pushReaction(PushReaction.POPPED));
     public static final DeferredItem<BlockItem> POLE_TRANSFORMER_ITEM = ITEMS.registerSimpleBlockItem(POLE_TRANSFORMER);
     public static final DeferredItem<Item> BURNT_WIRE = ITEMS.registerSimpleItem("burnt_wire");
+    // Lightning protection for the transformers near it.
+    public static final DeferredBlock<SurgeArresterBlock> SURGE_ARRESTER = BLOCKS.registerBlock("surge_arrester", SurgeArresterBlock::new,
+            p -> p.mapColor(MapColor.TERRACOTTA_BROWN).strength(1.5F, 6.0F).sound(SoundType.STONE).noOcclusion().pushReaction(PushReaction.POPPED));
+    public static final DeferredItem<BlockItem> SURGE_ARRESTER_ITEM = ITEMS.registerSimpleBlockItem(SURGE_ARRESTER);
+    // The tools and fittings of protection and line work.
+    public static final DeferredItem<FuseLinkItem> FUSE_LINK = ITEMS.registerItem("fuse_link", FuseLinkItem::new, p -> p.stacksTo(64));
+    public static final DeferredItem<ClampMeterItem> CLAMP_METER = ITEMS.registerItem("clamp_meter", ClampMeterItem::new, p -> p.stacksTo(1));
+    public static final DeferredItem<GuyWireItem> GUY_WIRE = ITEMS.registerItem("guy_wire", GuyWireItem::new, p -> p.stacksTo(64));
     // Passes wires through a wall: Pin Insulators on its faces, joined through it by label.
     public static final DeferredBlock<WallBushingBlock> WALL_BUSHING = BLOCKS.registerBlock("wall_bushing", WallBushingBlock::new,
             p -> p.mapColor(MapColor.METAL).strength(4.0F, 6.0F).sound(SoundType.METAL).requiresCorrectToolForDrops());
@@ -89,6 +108,10 @@ public final class GridContent {
     static {
         TAB_ITEMS.add(WIRE_CUTTERS);
         TAB_ITEMS.add(WALL_BUSHING_ITEM);
+        TAB_ITEMS.add(SURGE_ARRESTER_ITEM);
+        TAB_ITEMS.add(FUSE_LINK);
+        TAB_ITEMS.add(CLAMP_METER);
+        TAB_ITEMS.add(GUY_WIRE);
         TAB_ITEMS.add(POLE_TRANSFORMER_ITEM);
         TAB_ITEMS.add(BURNT_WIRE);
         // Creative only: unbreakable outside creative, no recipe.
@@ -135,6 +158,8 @@ public final class GridContent {
         return switch (edge.kind()) {
             case BARE -> new ItemStack(coil(edge.tier()));
             case INSULATED -> new ItemStack(INSULATED_COILS.containsKey(edge.tier()) ? INSULATED_COILS.get(edge.tier()).get() : coil(edge.tier()));
+            case BURIED -> new ItemStack(UNDERGROUND_CABLES.containsKey(edge.tier()) ? UNDERGROUND_CABLES.get(edge.tier()).get() : coil(edge.tier()));
+            case SHIELD -> new ItemStack(SHIELD_WIRE_COIL.get());
             case JUMPER -> ItemStack.EMPTY;
         };
     }

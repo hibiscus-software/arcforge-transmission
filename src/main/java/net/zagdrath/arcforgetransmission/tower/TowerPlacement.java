@@ -7,70 +7,99 @@
 package net.zagdrath.arcforgetransmission.tower;
 
 import java.util.ArrayList;
-import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.shapes.BooleanOp;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.zagdrath.arcforgetransmission.tower.model.TowerMesh;
 
-// Where a transmission tower's blocks go and what each one's shape is, from its model (TowerMesh): the model's shape
-// boxes cut into the block cells they reach: one uniform box per pole, crossarm, peak and lattice bay, and one per
-// insulator (TowerOutline draws the whole frame as one outline, or the insulator looked at).
+// Where a placed structure's blocks go and what each one's shape is, from its model (TowerMesh): the model's shape boxes
+// (one uniform box per pole, crossarm, peak, lattice bay or tank, and one per insulator), turned to the structure's
+// orientation and cut into the block cells they reach. TowerOutline draws the whole frame as one outline, or the
+// insulator looked at.
 //
-// A tower stands on its centre column's base block (where it was placed) facing the way the player faced, the line's
-// direction. The model is drawn facing north; facing east it's turned a quarter clockwise seen from above, and so on.
-// The main block (which draws it and holds the rest together) sits in the model's main cell, a pole's or leg's foot.
+// A structure stands on its centre column's base block (where it was placed), oriented in eighths of a turn clockwise
+// from north (seen from above): FACING gives the quarter turns, DIAGONAL adds an eighth, so lines can turn corners at
+// 45 degrees as signs do. The model is drawn facing north; the line runs along its z. The main block (which draws it and
+// holds the rest together) sits in the model's main cell, turned with it.
+//
+// Everything worked out here is cached per tier and orientation: cells, per-cell boxes, shapes, insulator and frame
+// boxes (in the model's frame about its centre column; moved to the world when asked).
 public final class TowerPlacement {
     private TowerPlacement() {}
 
-    // The model's boxes by the cell they reach into (cells from the centre column's base, unturned; boxes in px).
-    private static final Map<TowerTier, Map<Long, List<float[]>>> BY_CELL = new EnumMap<>(TowerTier.class);
-    private static final Map<ShapeKey, VoxelShape> SHAPES = new ConcurrentHashMap<>();
+    // A model box cut into pieces no longer than this (px) along its longer side before turning by an eighth, so a
+    // diagonal crossarm's cells and shape follow it closely rather than one fat box round it.
+    private static final float PIECE = 4.0F;
 
-    private record ShapeKey(TowerTier tier, int turns, BlockPos offset) {}
+    private record Key(TowerTier tier, int eighths) {}
+
+    private record ShapeKey(TowerTier tier, int eighths, BlockPos offset) {}
+
+    // The model's turned shape boxes (px, from the centre column's base block) by the cell they reach into.
+    private static final Map<Key, Map<Long, List<float[]>>> BY_CELL = new ConcurrentHashMap<>();
+    private static final Map<Key, List<int[]>> CELLS = new ConcurrentHashMap<>();
+    private static final Map<ShapeKey, VoxelShape> SHAPES = new ConcurrentHashMap<>();
+    private static final Map<Key, List<float[]>> INSULATORS = new ConcurrentHashMap<>(), FRAMES = new ConcurrentHashMap<>();
 
     // Quarter turns clockwise (seen from above) from north to facing.
     public static int turns(Direction facing) {
         return (facing.get2DDataValue() + 2) & 3;
     }
 
-    // A cell offset (x, z) from the centre column turned `turns` quarter turns clockwise: (x, z) -> (-z, x) each.
-    private static BlockPos turn(int x, int y, int z, int turns) {
-        for (int t = 0; t < turns; t++) {
-            int nx = -z;
-            z = x;
-            x = nx;
-        }
-        return new BlockPos(x, y, z);
+    // The facing a number of quarter turns from north.
+    public static Direction facingOf(int turns) {
+        return Direction.from2DDataValue((turns + 2) & 3);
+    }
+
+    // A structure's orientation, eighths of a turn clockwise from north.
+    public static int eighths(BlockState state) {
+        Direction facing = state.hasProperty(TowerBlock.FACING) ? state.getValue(TowerBlock.FACING) : Direction.NORTH;
+        boolean diagonal = state.hasProperty(TowerBlock.DIAGONAL) && state.getValue(TowerBlock.DIAGONAL);
+        return turns(facing) * 2 + (diagonal ? 1 : 0);
+    }
+
+    // A state oriented `eighths` eighths of a turn from north.
+    public static BlockState oriented(BlockState state, int eighths) {
+        int e = Math.floorMod(eighths, 8);
+        return state.setValue(TowerBlock.FACING, facingOf(e / 2)).setValue(TowerBlock.DIAGONAL, e % 2 == 1);
+    }
+
+    // A px point turned about the centre column's middle (8, 8).
+    private static double[] turn(double x, double z, int eighths) {
+        double[] t = TowerMesh.turnedPoint8((float) x, 0, (float) z, eighths);
+        return new double[] { t[0] * 16.0, t[2] * 16.0 };
     }
 
     // The main block's offset from the centre column's base.
-    public static BlockPos mainOffset(TowerTier tier, Direction facing) {
+    public static BlockPos mainOffset(TowerTier tier, int eighths) {
         TowerMesh.Design design = tier.design();
-        return turn(design.mainX, 0, design.mainZ, turns(facing));
+        double[] c = turn(design.mainX * 16 + 8, design.mainZ * 16 + 8, eighths);
+        return new BlockPos((int) Math.floor(c[0] / 16.0), 0, (int) Math.floor(c[1] / 16.0));
     }
 
-    // The centre column's base for a tower whose main block is at main.
-    public static BlockPos centre(TowerTier tier, Direction facing, BlockPos main) {
-        return main.subtract(mainOffset(tier, facing));
+    // The centre column's base for a structure whose main block is at main.
+    public static BlockPos centre(TowerTier tier, int eighths, BlockPos main) {
+        return main.subtract(mainOffset(tier, eighths));
     }
 
-    // Every block of a tower standing on centre, the main block's first.
-    public static List<BlockPos> positions(TowerTier tier, Direction facing, BlockPos centre) {
+    // Every block of a structure standing on centre, the main block's first.
+    public static List<BlockPos> positions(TowerTier tier, int eighths, BlockPos centre) {
         List<BlockPos> positions = new ArrayList<>();
-        BlockPos main = centre.offset(mainOffset(tier, facing));
+        BlockPos main = centre.offset(mainOffset(tier, eighths));
         positions.add(main);
-        int turns = turns(facing);
-        for (int[] cell : TowerMesh.get(tier.design()).cells()) {
-            BlockPos pos = centre.offset(turn(cell[0], cell[1], cell[2], turns));
+        for (int[] cell : cells(tier, eighths)) {
+            BlockPos pos = centre.offset(cell[0], cell[1], cell[2]);
             if (!pos.equals(main)) {
                 positions.add(pos);
             }
@@ -78,69 +107,88 @@ public final class TowerPlacement {
         return positions;
     }
 
-    private static Map<Long, List<float[]>> byCell(TowerTier tier) {
-        synchronized (BY_CELL) {
-            return BY_CELL.computeIfAbsent(tier, t -> {
-                Map<Long, List<float[]>> map = new HashMap<>();
-                float e = 0.05F;
-                for (float[] b : TowerMesh.get(t.design()).shapes()) {
+    // A model box (px) turned: an axis-aligned box round it (for an eighth turn, round each short piece of it).
+    private static List<float[]> turned(float[] b, int eighths) {
+        List<float[]> pieces = new ArrayList<>();
+        if (eighths % 2 == 0) {
+            pieces.add(b);
+        } else {
+            boolean alongX = b[3] - b[0] >= b[5] - b[2];
+            float length = alongX ? b[3] - b[0] : b[5] - b[2];
+            int n = Math.max(1, (int) Math.ceil(length / PIECE - 1.0E-3));
+            for (int i = 0; i < n; i++) {
+                float a0 = (alongX ? b[0] : b[2]) + length * i / n, a1 = (alongX ? b[0] : b[2]) + length * (i + 1) / n;
+                pieces.add(alongX ? new float[] { a0, b[1], b[2], a1, b[4], b[5] } : new float[] { b[0], b[1], a0, b[3], b[4], a1 });
+            }
+        }
+        List<float[]> out = new ArrayList<>(pieces.size());
+        for (float[] p : pieces) {
+            float x0 = Float.MAX_VALUE, z0 = Float.MAX_VALUE, x1 = -Float.MAX_VALUE, z1 = -Float.MAX_VALUE;
+            for (float[] corner : new float[][] { { p[0], p[2] }, { p[3], p[2] }, { p[0], p[5] }, { p[3], p[5] } }) {
+                double[] t = turn(corner[0], corner[1], eighths);
+                x0 = Math.min(x0, (float) t[0]);
+                z0 = Math.min(z0, (float) t[1]);
+                x1 = Math.max(x1, (float) t[0]);
+                z1 = Math.max(z1, (float) t[1]);
+            }
+            out.add(new float[] { x0, p[1], z0, x1, p[4], z1 });
+        }
+        return out;
+    }
+
+    private static Map<Long, List<float[]>> byCell(TowerTier tier, int eighths) {
+        return BY_CELL.computeIfAbsent(new Key(tier, eighths), key -> {
+            Map<Long, List<float[]>> map = new HashMap<>();
+            float e = 0.05F;
+            for (float[] shape : TowerMesh.get(tier.design()).shapes()) {
+                for (float[] b : turned(shape, eighths)) {
                     for (int x = (int) Math.floor((b[0] + e) / 16.0F); x <= (int) Math.floor((b[3] - e) / 16.0F); x++) {
                         for (int y = Math.max(0, (int) Math.floor((b[1] + e) / 16.0F)); y <= (int) Math.floor((b[4] - e) / 16.0F); y++) {
                             for (int z = (int) Math.floor((b[2] + e) / 16.0F); z <= (int) Math.floor((b[5] - e) / 16.0F); z++) {
-                                map.computeIfAbsent(key(x, y, z), k -> new ArrayList<>()).add(b);
+                                map.computeIfAbsent(cellKey(x, y, z), k -> new ArrayList<>()).add(b);
                             }
                         }
                     }
                 }
-                return map;
-            });
-        }
+            }
+            return map;
+        });
     }
 
-    private static long key(int x, int y, int z) {
+    // The cells the turned model reaches into (from the centre column's base block).
+    public static List<int[]> cells(TowerTier tier, int eighths) {
+        return CELLS.computeIfAbsent(new Key(tier, eighths), key -> {
+            Set<Long> keys = new LinkedHashSet<>(byCell(tier, eighths).keySet());
+            List<int[]> out = new ArrayList<>(keys.size());
+            for (long k : keys) {
+                out.add(new int[] { (int) ((k >> 42) & 0x1FFFFF) - 1024, (int) ((k >> 21) & 0x1FFFFF) - 1024, (int) (k & 0x1FFFFF) - 1024 });
+            }
+            return List.copyOf(out);
+        });
+    }
+
+    private static long cellKey(int x, int y, int z) {
         return ((long) (x + 1024) << 42) | ((long) (y + 1024) << 21) | (z + 1024);
     }
 
-    // The shape of the block `offset` from the centre column's base of a tower facing `facing`: the model's boxes in it,
-    // cut to the block. Empty where the tower has nothing.
-    public static VoxelShape shape(TowerTier tier, Direction facing, BlockPos offset) {
-        int turns = turns(facing);
-        ShapeKey cacheKey = new ShapeKey(tier, turns, offset.immutable());
-        VoxelShape cached = SHAPES.get(cacheKey);
-        if (cached != null) {
-            return cached;
-        }
-        // The cell in the model's (north-facing) frame: undo the turns, (x, z) -> (z, -x) each.
-        int mx = offset.getX(), mz = offset.getZ();
-        for (int t = 0; t < turns; t++) {
-            int nx = mz;
-            mz = -mx;
-            mx = nx;
-        }
-        List<float[]> boxes = byCell(tier).getOrDefault(key(mx, offset.getY(), mz), List.of());
-        VoxelShape shape = Shapes.empty();
-        for (float[] box : boxes) {
-            float x0 = box[0], z0 = box[2], x1 = box[3], z1 = box[5];
-            for (int t = 0; t < turns; t++) {
-                // 90° clockwise about the centre column's middle: (x, z) -> (16 - z, x).
-                float nx0 = 16 - z1, nx1 = 16 - z0, nz0 = x0, nz1 = x1;
-                x0 = nx0;
-                x1 = nx1;
-                z0 = nz0;
-                z1 = nz1;
+    // The shape of the block `offset` from the centre column's base: the turned model's boxes in it, cut to the block.
+    // Empty where the structure has nothing.
+    public static VoxelShape shape(TowerTier tier, int eighths, BlockPos offset) {
+        return SHAPES.computeIfAbsent(new ShapeKey(tier, eighths, offset.immutable()), key -> {
+            List<float[]> boxes = byCell(tier, eighths).getOrDefault(cellKey(offset.getX(), offset.getY(), offset.getZ()), List.of());
+            VoxelShape shape = Shapes.empty();
+            for (float[] box : boxes) {
+                // Snapped outward to whole pixels: every shape stays on the 16-step block grid, so merging dozens of boxes
+                // stays cheap (fractional edges would each split the grid), and no thin member vanishes.
+                double bx0 = snapDown(box[0] - offset.getX() * 16.0), bx1 = snapUp(box[3] - offset.getX() * 16.0);
+                double by0 = snapDown(box[1] - offset.getY() * 16.0), by1 = snapUp(box[4] - offset.getY() * 16.0);
+                double bz0 = snapDown(box[2] - offset.getZ() * 16.0), bz1 = snapUp(box[5] - offset.getZ() * 16.0);
+                if (bx1 > bx0 && by1 > by0 && bz1 > bz0) {
+                    shape = Shapes.joinUnoptimized(shape, Shapes.box(bx0, by0, bz0, bx1, by1, bz1), BooleanOp.OR);
+                }
             }
-            // Snapped outward to whole pixels: every shape stays on the 16-step block grid, so merging dozens of boxes
-            // stays cheap (fractional edges would each split the grid), and no thin member vanishes.
-            double bx0 = snapDown(x0 - offset.getX() * 16.0), bx1 = snapUp(x1 - offset.getX() * 16.0);
-            double by0 = snapDown(box[1] - offset.getY() * 16.0), by1 = snapUp(box[4] - offset.getY() * 16.0);
-            double bz0 = snapDown(z0 - offset.getZ() * 16.0), bz1 = snapUp(z1 - offset.getZ() * 16.0);
-            if (bx1 > bx0 && by1 > by0 && bz1 > bz0) {
-                shape = Shapes.joinUnoptimized(shape, Shapes.box(bx0, by0, bz0, bx1, by1, bz1), BooleanOp.OR);
-            }
-        }
-        shape = shape.optimize();
-        SHAPES.put(cacheKey, shape);
-        return shape;
+            return shape.optimize();
+        });
     }
 
     // A px coordinate within the block, to a whole pixel below / above (the tolerance keeps exact edges where they are),
@@ -153,52 +201,79 @@ public final class TowerPlacement {
         return Math.max(0, Math.min(16, Math.ceil(px - 1.0E-3))) / 16.0;
     }
 
-    // A model box (px) turned with the tower and placed in the world, from its main block.
-    public static AABB worldBox(float[] b, TowerTier tier, Direction facing, BlockPos main) {
-        BlockPos centre = centre(tier, facing, main);
-        int turns = turns(facing);
-        double[] p = TowerMesh.turnedPoint(b[0], b[1], b[2], turns), q = TowerMesh.turnedPoint(b[3], b[4], b[5], turns);
-        return new AABB(centre.getX() + p[0], centre.getY() + p[1], centre.getZ() + p[2], centre.getX() + q[0], centre.getY() + q[1], centre.getZ() + q[2]);
+    // A model box (px) turned and placed in the world (an axis-aligned box round it), from the main block.
+    public static AABB worldBox(float[] b, TowerTier tier, int eighths, BlockPos main) {
+        BlockPos centre = centre(tier, eighths, main);
+        float[] t = whole(b, eighths);
+        return new AABB(centre.getX() + t[0] / 16.0, centre.getY() + t[1] / 16.0, centre.getZ() + t[2] / 16.0, centre.getX() + t[3] / 16.0,
+                centre.getY() + t[4] / 16.0, centre.getZ() + t[5] / 16.0);
     }
 
-    // The tower's insulators' boxes in the world, from its main block.
-    public static List<AABB> insulatorBoxes(TowerTier tier, Direction facing, BlockPos main) {
-        List<AABB> out = new ArrayList<>();
-        for (float[] b : TowerMesh.get(tier.design()).insulators()) {
-            out.add(worldBox(b, tier, facing, main));
+    // A whole model box turned (one box round it, not in pieces), px.
+    private static float[] whole(float[] b, int eighths) {
+        float x0 = Float.MAX_VALUE, z0 = Float.MAX_VALUE, x1 = -Float.MAX_VALUE, z1 = -Float.MAX_VALUE;
+        for (float[] corner : new float[][] { { b[0], b[2] }, { b[3], b[2] }, { b[0], b[5] }, { b[3], b[5] } }) {
+            double[] t = turn(corner[0], corner[1], eighths);
+            x0 = Math.min(x0, (float) t[0]);
+            z0 = Math.min(z0, (float) t[1]);
+            x1 = Math.max(x1, (float) t[0]);
+            z1 = Math.max(z1, (float) t[1]);
         }
-        return out;
+        return new float[] { x0, b[1], z0, x1, b[4], z1 };
     }
 
-    // The tower's frame (each pole, crossarm, peak and lattice bay) in the world, from the main block.
-    public static List<AABB> frameBoxes(TowerTier tier, Direction facing, BlockPos main) {
-        List<AABB> out = new ArrayList<>();
-        TowerMesh.Built built = TowerMesh.get(tier.design());
-        for (float[] b : built.shapes()) {
-            if (!built.insulators().contains(b)) {
-                out.add(worldBox(b, tier, facing, main));
+    // The structure's insulators' boxes in the world, from its main block (cached turned; moved here).
+    public static List<AABB> insulatorBoxes(TowerTier tier, int eighths, BlockPos main) {
+        return place(INSULATORS.computeIfAbsent(new Key(tier, eighths), key -> turnedAll(TowerMesh.get(tier.design()).insulators(), eighths)), tier,
+                eighths, main);
+    }
+
+    // Its frame (each pole, crossarm, peak, lattice bay or tank), in pieces where it's turned by an eighth, in the world.
+    public static List<AABB> frameBoxes(TowerTier tier, int eighths, BlockPos main) {
+        return place(FRAMES.computeIfAbsent(new Key(tier, eighths), key -> {
+            TowerMesh.Built built = TowerMesh.get(tier.design());
+            List<float[]> frame = new ArrayList<>();
+            for (float[] b : built.shapes()) {
+                if (!built.insulators().contains(b)) {
+                    frame.addAll(turned(b, eighths));
+                }
             }
+            return List.copyOf(frame);
+        }), tier, eighths, main);
+    }
+
+    private static List<float[]> turnedAll(List<float[]> boxes, int eighths) {
+        List<float[]> out = new ArrayList<>(boxes.size());
+        for (float[] b : boxes) {
+            out.add(whole(b, eighths));
+        }
+        return List.copyOf(out);
+    }
+
+    private static List<AABB> place(List<float[]> boxes, TowerTier tier, int eighths, BlockPos main) {
+        BlockPos centre = centre(tier, eighths, main);
+        List<AABB> out = new ArrayList<>(boxes.size());
+        for (float[] t : boxes) {
+            out.add(new AABB(centre.getX() + t[0] / 16.0, centre.getY() + t[1] / 16.0, centre.getZ() + t[2] / 16.0, centre.getX() + t[3] / 16.0,
+                    centre.getY() + t[4] / 16.0, centre.getZ() + t[5] / 16.0));
         }
         return out;
     }
 
-    // The box the whole tower is drawn in (for culling), from its main block.
-    public static AABB renderBox(TowerTier tier, Direction facing, BlockPos main) {
-        BlockPos centre = centre(tier, facing, main);
-        int turns = turns(facing);
+    // The box the whole structure is drawn in (for culling), from its main block.
+    public static AABB renderBox(TowerTier tier, int eighths, BlockPos main) {
+        BlockPos centre = centre(tier, eighths, main);
         double x0 = Double.MAX_VALUE, y0 = Double.MAX_VALUE, z0 = Double.MAX_VALUE, x1 = -Double.MAX_VALUE, y1 = -Double.MAX_VALUE, z1 = -Double.MAX_VALUE;
         for (float[] b : TowerMesh.get(tier.design()).boxes()) {
-            for (float[] corner : new float[][] { { b[0], b[1], b[2] }, { b[3], b[4], b[5] }, { b[0], b[1], b[5] }, { b[3], b[4], b[2] } }) {
-                double[] p = TowerMesh.turnedPoint(corner[0], corner[1], corner[2], turns);
-                x0 = Math.min(x0, p[0]);
-                y0 = Math.min(y0, p[1]);
-                z0 = Math.min(z0, p[2]);
-                x1 = Math.max(x1, p[0]);
-                y1 = Math.max(y1, p[1]);
-                z1 = Math.max(z1, p[2]);
-            }
+            float[] t = whole(b, eighths);
+            x0 = Math.min(x0, t[0]);
+            y0 = Math.min(y0, t[1]);
+            z0 = Math.min(z0, t[2]);
+            x1 = Math.max(x1, t[3]);
+            y1 = Math.max(y1, t[4]);
+            z1 = Math.max(z1, t[5]);
         }
-        return new AABB(centre.getX() + x0, centre.getY() + y0, centre.getZ() + z0, centre.getX() + x1, centre.getY() + y1, centre.getZ() + z1)
-                .inflate(0.5);
+        return new AABB(centre.getX() + x0 / 16.0, centre.getY() + y0 / 16.0, centre.getZ() + z0 / 16.0, centre.getX() + x1 / 16.0,
+                centre.getY() + y1 / 16.0, centre.getZ() + z1 / 16.0).inflate(0.5);
     }
 }

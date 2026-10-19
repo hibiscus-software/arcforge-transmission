@@ -61,6 +61,13 @@ public final class GridConfig {
     public static final ModConfigSpec.DoubleValue BURNOUT_FIRE_CHANCE;
     public static final ModConfigSpec.EnumValue<Overvoltage> OVERVOLTAGE;
     public static final ModConfigSpec.IntValue TRANSFORMER_BUFFER;
+    public static final ModConfigSpec.DoubleValue FUSE_FACTOR;
+    public static final ModConfigSpec.IntValue BREAKER_TRIP_TICKS;
+    public static final ModConfigSpec.IntValue RECLOSE_DELAY;
+    public static final ModConfigSpec.IntValue RECLOSE_SHOTS;
+    public static final ModConfigSpec.DoubleValue LIGHTNING_CHANCE;
+    public static final ModConfigSpec.BooleanValue LIGHTNING_DAMAGE;
+    public static final ModConfigSpec.IntValue ARRESTER_RANGE;
 
     static {
         BUILDER.comment("Faults.").push("faults");
@@ -75,6 +82,21 @@ public final class GridConfig {
         BUILDER.comment("The Pole-Mount Transformer.").push("poleTransformer");
         TRANSFORMER_BUFFER = BUILDER.comment("FE it holds between its three-phase primary and its split-phase secondary.")
                 .defineInRange("buffer", 4_096, 1, 1_000_000);
+        BUILDER.pop();
+        BUILDER.comment("Protection: fuse cutouts, reclosers and circuit breakers.").push("protection");
+        FUSE_FACTOR = BUILDER.comment("A fuse blows the tick its current passes this times its tier's wire rating.")
+                .defineInRange("fuseFactor", 1.0, 0.1, 10.0);
+        BREAKER_TRIP_TICKS = BUILDER.comment("Ticks in a row over its trip setting before a recloser or breaker trips (well inside a wire's burnout).")
+                .defineInRange("tripTicks", 10, 1, 72_000);
+        RECLOSE_DELAY = BUILDER.comment("Ticks a recloser or breaker waits after a trip before it closes again.").defineInRange("recloseDelay", 60, 1, 72_000);
+        RECLOSE_SHOTS = BUILDER.comment("How many times it recloses before it locks out (closed again by hand).").defineInRange("recloseShots", 3, 0, 10);
+        BUILDER.pop();
+        BUILDER.comment("Lightning.").push("lightning");
+        LIGHTNING_CHANCE = BUILDER.comment("In a thunderstorm, each loaded span's chance each tick of drawing a strike (0 for none).")
+                .defineInRange("strikeChance", 2.0E-6, 0.0, 1.0);
+        LIGHTNING_DAMAGE = BUILDER.comment("Whether a strike on a line destroys the transformers on it that have no Surge Arrester near.")
+                .define("transformerDamage", true);
+        ARRESTER_RANGE = BUILDER.comment("How near (blocks) a Surge Arrester protects a transformer.").defineInRange("arresterRange", 3, 1, 16);
         BUILDER.pop();
     }
 

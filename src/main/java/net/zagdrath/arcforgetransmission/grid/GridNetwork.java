@@ -8,6 +8,7 @@ package net.zagdrath.arcforgetransmission.grid;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -78,12 +79,16 @@ public final class GridNetwork {
             if (head[0] > distance.getOrDefault(node, Double.MAX_VALUE)) {
                 continue;
             }
-            for (GridEdge edge : graph.edgesOf(node)) {
+            // Edges by id and only a strictly shorter way kept: on a tie the first found (the lowest edge id from the node
+            // nearest the source) stays, so routes don't depend on the order things were added in. (Re-choosing on ties
+            // could point two nodes joined by a zero-length jumper at each other, a loop with no way back.)
+            List<GridEdge> out = new ArrayList<>(graph.edgesOf(node));
+            out.sort(Comparator.comparingLong(GridEdge::id));
+            for (GridEdge edge : out) {
                 long next = edge.other(node);
                 double d = head[0] + edge.length();
                 double known = distance.getOrDefault(next, Double.MAX_VALUE);
-                // On a tie, the lower edge id wins, so routes don't depend on the order things were found in.
-                if (d < known - 1.0E-9 || Math.abs(d - known) <= 1.0E-9 && via.get(next) != null && edge.id() < via.get(next).id()) {
+                if (d < known - 1.0E-9) {
                     distance.put(next, d);
                     via.put(next, edge);
                     queue.add(new double[] { d, next });
@@ -97,8 +102,12 @@ public final class GridNetwork {
             List<Long> passed = new ArrayList<>();
             long at = target;
             passed.add(at);
-            while (at != source) {
+            // A route never passes a node twice: a guard, should the tree ever be broken.
+            for (int steps = 0; at != source; steps++) {
                 GridEdge edge = via.get(at);
+                if (edge == null || steps > distance.size()) {
+                    throw new IllegalStateException("Broken route tree in network " + id + " from " + source + " to " + target);
+                }
                 long previous = edge.other(at);
                 path.add(edge);
                 forward.add(edge.a() == previous);

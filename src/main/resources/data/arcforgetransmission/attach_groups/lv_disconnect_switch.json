@@ -1,0 +1,67 @@
+{
+  "model": "lv_disconnect_switch",
+  "units": "px in the model's north-facing frame: x across the line, y up from the base block's bottom, z along the line; origin the centre column's base block's minimum corner",
+  "groups": [
+    {
+      "name": "line",
+      "circuit": "three_phase",
+      "terminals": [
+        {
+          "label": "A",
+          "pos": [
+            2,
+            9.6,
+            3
+          ]
+        },
+        {
+          "label": "B",
+          "pos": [
+            8,
+            9.6,
+            3
+          ]
+        },
+        {
+          "label": "C",
+          "pos": [
+            14,
+            9.6,
+            3
+          ]
+        }
+      ]
+    },
+    {
+      "name": "load",
+      "circuit": "three_phase",
+      "terminals": [
+        {
+          "label": "A",
+          "pos": [
+            2,
+            9.6,
+            13
+          ]
+        },
+        {
+          "label": "B",
+          "pos": [
+            8,
+            9.6,
+            13
+          ]
+        },
+        {
+          "label": "C",
+          "pos": [
+            14,
+            9.6,
+            13
+          ]
+        }
+      ]
+    }
+  ],
+  "reserved": []
+}

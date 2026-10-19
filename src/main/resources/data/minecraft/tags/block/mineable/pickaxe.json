@@ -17,6 +17,18 @@
     "arcforgetransmission:lv_unit_transformer",
     "arcforgetransmission:mv_unit_transformer",
     "arcforgetransmission:hv_unit_transformer",
-    "arcforgetransmission:ehv_unit_transformer"
+    "arcforgetransmission:ehv_unit_transformer",
+    "arcforgetransmission:lv_fuse_cutout",
+    "arcforgetransmission:mv_fuse_cutout",
+    "arcforgetransmission:lv_recloser",
+    "arcforgetransmission:mv_recloser",
+    "arcforgetransmission:hv_circuit_breaker",
+    "arcforgetransmission:ehv_circuit_breaker",
+    "arcforgetransmission:lv_disconnect_switch",
+    "arcforgetransmission:mv_disconnect_switch",
+    "arcforgetransmission:hv_disconnect_switch",
+    "arcforgetransmission:ehv_disconnect_switch",
+    "arcforgetransmission:service_meter",
+    "arcforgetransmission:surge_arrester"
   ]
 }

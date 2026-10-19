@@ -65,8 +65,9 @@ public final class GridManager {
     }
 
     private static final Map<ServerLevel, Set<GridEndpointBlockEntity>> LOADED = new WeakHashMap<>();
-    // The last tick's current on every wire, per level (for the HUD between ticks).
+    // The last tick's current and loss on every wire, per level (for the HUD, devices and the Clamp Meter between ticks).
     private static final Map<ServerLevel, Map<Long, Double>> LAST_AMPS = new WeakHashMap<>();
+    private static final Map<ServerLevel, Map<Long, Double>> LAST_LOSS = new WeakHashMap<>();
 
     private GridManager() {}
 
@@ -86,6 +87,54 @@ public final class GridManager {
     public static void forget(ServerLevel level) {
         LOADED.remove(level);
         LAST_AMPS.remove(level);
+        LAST_LOSS.remove(level);
+    }
+
+    // The last tick's loss on every wire of a level (FE/t, by edge id).
+    public static Map<Long, Double> lastLoss(ServerLevel level) {
+        return LAST_LOSS.getOrDefault(level, Map.of());
+    }
+
+    // A wire burns out on the spot (lightning on an unprotected line): it's gone, Burnt Wire drops under its middle.
+    public static void burnOut(ServerLevel level, GridData.Dimension dimension, GridEdge edge) {
+        if (dimension.graph().removeEdge(edge.id()) != null) {
+            burn(level, dimension, List.of(edge));
+        }
+    }
+
+    // The last tick's current on every wire of a level (A, by edge id).
+    public static Map<Long, Double> lastAmps(ServerLevel level) {
+        return LAST_AMPS.getOrDefault(level, Map.of());
+    }
+
+    // Makes a device's links (jumpers between pairs of its insulators, by index) present or absent. True if any changed.
+    public static boolean link(ServerLevel level, BlockPos pos, List<int[]> pairs, boolean present) {
+        GridData.Dimension dimension = GridData.of(level);
+        boolean changed = false;
+        for (int[] pair : pairs) {
+            Long a = dimension.nodeAt(new GridData.Anchor(pos, pair[0])), b = dimension.nodeAt(new GridData.Anchor(pos, pair[1]));
+            if (a == null || b == null || a < 0 || b < 0 || dimension.graph().node(a) == null || dimension.graph().node(b) == null) {
+                continue;
+            }
+            GridEdge existing = null;
+            for (GridEdge edge : dimension.graph().edgesOf(a)) {
+                if (edge.isJumper() && edge.other(a) == b) {
+                    existing = edge;
+                }
+            }
+            if (present && existing == null) {
+                GridNode node = dimension.graph().node(a);
+                dimension.graph().addEdge(new GridEdge(dimension.newId(), a, b, node.tier(), node.circuit(), 0.0, GridEdge.Kind.JUMPER));
+                changed = true;
+            } else if (!present && existing != null) {
+                dimension.graph().removeEdge(existing.id());
+                changed = true;
+            }
+        }
+        if (changed) {
+            dimension.markDirty();
+        }
+        return changed;
     }
 
     // Tells a block's client what its insulators' HUD shows (GridEndpointBlockEntity.refreshDisplay).
@@ -373,7 +422,7 @@ public final class GridManager {
         double bestDistance = radius;
         double[] o = array(from), d = array(dir.scale(reach));
         for (GridEdge edge : dimension.graph().edges()) {
-            if (edge.isJumper()) {
+            if (edge.isJumper() || edge.kind() == GridEdge.Kind.BURIED) {
                 continue;
             }
             GridData.NodeRecord a = dimension.node(edge.a()), b = dimension.node(edge.b());
@@ -428,12 +477,12 @@ public final class GridManager {
                 continue;
             }
             for (GridEdge edge : dimension.graph().edgesOf(id)) {
-                if (edge.a() != id || edge.isJumper()) {
+                if (edge.a() != id || edge.isJumper() || edge.kind() == GridEdge.Kind.BURIED) {
                     continue;
                 }
                 GridData.NodeRecord a = dimension.node(edge.a()), b = dimension.node(edge.b());
                 if (a != null && b != null) {
-                    wires.add(new WireView(edge.id(), a.at(), b.at(), edge.tier(), edge.kind() == GridEdge.Kind.INSULATED));
+                    wires.add(new WireView(edge.id(), a.at(), b.at(), edge.tier(), edge.kind().name().toLowerCase(java.util.Locale.ROOT)));
                 }
             }
         }
@@ -505,9 +554,14 @@ public final class GridManager {
         byId.forEach((id, handler) -> handler.report(result.status(id), result.drawn(id), result.delivered(id)));
         WireShock.tick(level, dimension, ports, result);
         LAST_AMPS.put(level, result.edgeAmps());
-        for (GridEndpointBlockEntity endpoint : new ArrayList<>(loadedIn(level))) {
-            if (!endpoint.isRemoved()) {
-                display(level, endpoint, false);
+        LAST_LOSS.put(level, result.edgeLoss());
+        GridLightning.storm(level, dimension);
+        // The HUD's numbers every 5 ticks (labels, wiring and device changes go at once, forced, where they happen).
+        if (level.getGameTime() % 5 == 0) {
+            for (GridEndpointBlockEntity endpoint : new ArrayList<>(loadedIn(level))) {
+                if (!endpoint.isRemoved()) {
+                    display(level, endpoint, false);
+                }
             }
         }
         if (!report.burnt().isEmpty()) {

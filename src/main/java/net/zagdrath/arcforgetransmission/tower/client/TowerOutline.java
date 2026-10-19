@@ -35,6 +35,9 @@ import net.zagdrath.arcforgetransmission.tower.TowerTier;
 // and lattice bays) as one outline, not block by block.
 @EventBusSubscriber(modid = net.zagdrath.arcforgetransmission.tower.TowerContent.MODID, value = Dist.CLIENT)
 public final class TowerOutline {
+    // The frame's outline per tier and orientation, about the main block (built once).
+    private static final java.util.Map<Integer, VoxelShape> FRAMES = new java.util.concurrent.ConcurrentHashMap<>();
+
     private TowerOutline() {}
 
     @SubscribeEvent
@@ -47,7 +50,7 @@ public final class TowerOutline {
             return;
         }
         TowerTier tier = tower.tier();
-        Direction facing = event.getLevel().getBlockState(main).getValue(TowerBlock.FACING);
+        int facing = TowerPlacement.eighths(event.getLevel().getBlockState(main));
         Vec3 hit = event.getHitResult().getLocation();
         AABB insulator = null;
         for (AABB box : TowerPlacement.insulatorBoxes(tier, facing, main)) {
@@ -58,7 +61,9 @@ public final class TowerOutline {
                 break;
             }
         }
-        VoxelShape shape = insulator != null ? relative(List.of(insulator), pos) : relative(TowerPlacement.frameBoxes(tier, facing, main), pos);
+        VoxelShape shape = insulator != null ? relative(List.of(insulator), pos)
+                : FRAMES.computeIfAbsent(tier.ordinal() * 8 + facing, k -> relative(TowerPlacement.frameBoxes(tier, k % 8, BlockPos.ZERO), BlockPos.ZERO))
+                        .move(main.getX() - pos.getX(), main.getY() - pos.getY(), main.getZ() - pos.getZ());
         if (shape == null) {
             return;
         }

@@ -61,12 +61,12 @@ class TowerAttachGroupsTest {
     @Test
     void eachTowerHasItsCircuits() {
         assertEquals(2, AttachGroups.get("lv_distribution_pole").groups().size(), "LV groups");
-        assertEquals(1, AttachGroups.get("mv_sub_transmission_pole").groups().size(), "MV circuits");
-        assertEquals(1, AttachGroups.get("hv_h_frame_tower").groups().size(), "HV circuits");
-        assertEquals(2, AttachGroups.get("ehv_lattice_tower").groups().size(), "EHV circuits");
+        assertEquals(2, AttachGroups.get("mv_sub_transmission_pole").groups().size(), "MV circuit and shield");
+        assertEquals(2, AttachGroups.get("hv_h_frame_tower").groups().size(), "HV circuit and shield");
+        assertEquals(3, AttachGroups.get("ehv_lattice_tower").groups().size(), "EHV circuits and shield");
         for (String model : MODELS) {
             for (AttachGroups.Group group : AttachGroups.get(model).groups()) {
-                if (group.name().equals("neutral")) {
+                if (group.name().equals("neutral") || group.name().equals("shield")) {
                     continue;
                 }
                 assertEquals(CircuitType.THREE_PHASE, group.circuit(), model + " " + group.name());

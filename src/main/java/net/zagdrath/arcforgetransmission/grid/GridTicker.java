@@ -34,6 +34,14 @@ public final class GridTicker {
 
     public static Report tick(GridGraph graph, Terminals terminals, GridSettings settings) {
         Collection<Port> ports = terminals.ports();
+        // No ports at all (wires strung, nothing feeding or fed): no flow anywhere, so no solve (and no wire is over its
+        // rating).
+        if (ports.isEmpty()) {
+            for (GridEdge edge : graph.edges()) {
+                edge.overTicks = 0;
+            }
+            return new Report(FlowSolver.Result.EMPTY, List.of());
+        }
         FlowSolver.Result result = FlowSolver.solve(graph, ports, settings);
         Map<Long, Double> offer = new TreeMap<>();
         for (Port port : ports) {
@@ -52,7 +60,7 @@ public final class GridTicker {
         // Overcurrent: a wire over its rating for burnoutTicks in a row burns out.
         List<GridEdge> burning = new ArrayList<>();
         for (GridEdge edge : graph.edges()) {
-            if (edge.isJumper()) {
+            if (!edge.kind().conductor()) {
                 continue;
             }
             double amps = result.amps(edge.id());

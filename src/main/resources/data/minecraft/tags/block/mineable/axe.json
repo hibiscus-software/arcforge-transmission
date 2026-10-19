@@ -2,6 +2,8 @@
   "values": [
     "arcforgetransmission:lv_distribution_pole",
     "arcforgetransmission:mv_sub_transmission_pole",
-    "arcforgetransmission:hv_h_frame_tower"
+    "arcforgetransmission:hv_h_frame_tower",
+    "arcforgetransmission:lv_dead_end_pole",
+    "arcforgetransmission:mv_dead_end_pole"
   ]
 }

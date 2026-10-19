@@ -48,7 +48,7 @@ public class TowerRenderer implements StructureRenderer<TowerBlockEntity, TowerR
     public static final Identifier SHEET = Identifier.fromNamespaceAndPath(TowerContent.MODID, "block/transmission_tower/towers");
     private static final float[] EMPTY = new float[0];
 
-    private record Key(TowerTier tier, int turns) {}
+    private record Key(TowerTier tier, int eighths, boolean alt) {}
 
     // Each tower's model turned to each facing: Arcforge's StaticMeshes keeps a still model on the GPU only for a pose
     // that doesn't turn, so the turn is in the vertices instead. The same array every time, so the GPU copy is shared.
@@ -75,8 +75,9 @@ public class TowerRenderer implements StructureRenderer<TowerBlockEntity, TowerR
         return 256;
     }
 
-    private static float[] model(TowerTier tier, int turns) {
-        return TURNED.computeIfAbsent(new Key(tier, turns), key -> TowerMesh.turned(TowerMesh.get(tier.design()).solid(), turns));
+    private static float[] model(TowerTier tier, int eighths, boolean alt) {
+        return TURNED.computeIfAbsent(new Key(tier, eighths, alt),
+                key -> TowerMesh.turned8((alt ? TowerMesh.variant(tier.design()) : TowerMesh.get(tier.design())).solid(), eighths));
     }
 
     @Override
@@ -84,18 +85,27 @@ public class TowerRenderer implements StructureRenderer<TowerBlockEntity, TowerR
             ModelFeatureRenderer.@Nullable CrumblingOverlay breakProgress) {
         StructureRenderer.super.extractRenderState(tower, state, partialTicks, cameraPosition, breakProgress);
         TowerTier tier = tower.tier();
-        Direction facing = tower.facing();
-        state.solid = model(tier, TowerPlacement.turns(facing));
+        int eighths = tower.eighths();
+        state.solid = model(tier, eighths, tower.showsAlt());
         // The model's frame starts at the centre column's base block.
-        BlockPos offset = TowerPlacement.mainOffset(tier, facing);
+        BlockPos offset = TowerPlacement.mainOffset(tier, eighths);
         state.offsetX = -offset.getX();
         state.offsetZ = -offset.getZ();
         state.sheet = Minecraft.getInstance().getAtlasManager().getAtlasOrThrow(AtlasIds.BLOCKS).getSprite(SHEET);
         Level level = tower.getLevel();
         // The light just above the centre column's foot.
-        state.light = level != null ? LightCoordsUtil.getLightCoords(level, TowerPlacement.centre(tier, facing, tower.getBlockPos()).above())
+        state.light = level != null ? LightCoordsUtil.getLightCoords(level, TowerPlacement.centre(tier, eighths, tower.getBlockPos()).above())
                 : LightCoordsUtil.FULL_BRIGHT;
-        state.wires = WireRenderer.prepare(tower.wires(), tower.getBlockPos(), level);
+        List<net.zagdrath.arcforgetransmission.grid.world.WireView> wires = tower.wires();
+        if (!tower.guys().isEmpty()) {
+            wires = new java.util.ArrayList<>(wires);
+            net.minecraft.world.phys.Vec3 top = tower.guyPoint();
+            for (BlockPos guy : tower.guys()) {
+                wires.add(new net.zagdrath.arcforgetransmission.grid.world.WireView(-1, top, net.minecraft.world.phys.Vec3.atCenterOf(guy).add(0, 0.5, 0),
+                        tier.voltage(), net.zagdrath.arcforgetransmission.grid.world.WireView.GUY));
+            }
+        }
+        state.wires = WireRenderer.prepare(wires, tower.getBlockPos(), level);
     }
 
     @Override

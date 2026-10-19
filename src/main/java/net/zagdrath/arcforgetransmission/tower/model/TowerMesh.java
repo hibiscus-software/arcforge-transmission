@@ -48,7 +48,30 @@ public final class TowerMesh extends MeshBuilder {
         UNIT_LV(1, 0, 0),
         UNIT_MV(2, 0, 0),
         UNIT_HV(2, 0, 0),
-        UNIT_EHV(3, 0, 0);
+        UNIT_EHV(3, 0, 0),
+        FUSE_LV(1, 0, 0),
+        FUSE_MV(1, 0, 0),
+        BREAKER_LV(2, 0, 0),
+        BREAKER_MV(2, 0, 0),
+        BREAKER_HV(3, 0, 0),
+        BREAKER_EHV(3, 0, 0),
+        DISCONNECT_LV(1, 0, 0),
+        DISCONNECT_MV(2, 0, 0),
+        DISCONNECT_HV(2, 0, 0),
+        DISCONNECT_EHV(3, 0, 0),
+        DEAD_END_LV(10, 0, 0),
+        DEAD_END_MV(15, 0, 0),
+        SERVICE(2, 0, 0);
+
+        // The tier (0 LV to 3 EHV) of a device design.
+        public int deviceTier() {
+            return switch (this) {
+                case FUSE_LV, BREAKER_LV, DISCONNECT_LV -> 0;
+                case FUSE_MV, BREAKER_MV, DISCONNECT_MV -> 1;
+                case BREAKER_HV, DISCONNECT_HV -> 2;
+                default -> 3;
+            };
+        }
 
         public final int height, mainX, mainZ;
 
@@ -113,7 +136,7 @@ public final class TowerMesh extends MeshBuilder {
 
     // Flat swatches (4x4 from (64, 224), 32 a row), in the generator's order.
     static final int GALV0 = 0, WOOD0 = 10, PORC0 = 19, GLASS0 = 26, CAN0 = 33, COPPER0 = 40, CONC0 = 44, ALU0 = 50, HAZARD = 53, BLACK = 54,
-            RED = 55;
+            RED = 55, MARKER = 56;
 
     private static final float[] UP = { 0, 1, 0 };
 
@@ -129,13 +152,23 @@ public final class TowerMesh extends MeshBuilder {
     }
 
     private static final Map<Design, Built> BUILT = Collections.synchronizedMap(new EnumMap<>(Design.class));
+    private static final Map<Design, Built> VARIANTS = Collections.synchronizedMap(new EnumMap<>(Design.class));
 
     // The tower, built once.
     public static Built get(Design design) {
         return BUILT.computeIfAbsent(design, TowerMesh::build);
     }
 
+    // The model in its other state, for drawing: a switch or breaker open, a fuse blown (the same shapes as get()).
+    public static Built variant(Design design) {
+        return VARIANTS.computeIfAbsent(design, d -> build(d, true));
+    }
+
     private static Built build(Design design) {
+        return build(design, false);
+    }
+
+    private static Built build(Design design, boolean alt) {
         TowerMesh mesh = new TowerMesh();
         switch (design) {
             case DISTRIBUTION_POLE -> mesh.distributionPole();
@@ -144,6 +177,12 @@ public final class TowerMesh extends MeshBuilder {
             case LATTICE -> mesh.lattice();
             case SUBSTATION_MV, SUBSTATION_HV, SUBSTATION_EHV -> mesh.substation(Substation.of(design));
             case UNIT_LV, UNIT_MV, UNIT_HV, UNIT_EHV -> mesh.unit(Unit.of(design));
+            case FUSE_LV, FUSE_MV -> mesh.fuse(design.deviceTier(), alt);
+            case BREAKER_LV, BREAKER_MV, BREAKER_HV, BREAKER_EHV -> mesh.breaker(design.deviceTier(), alt);
+            case DISCONNECT_LV, DISCONNECT_MV, DISCONNECT_HV, DISCONNECT_EHV -> mesh.disconnect(design.deviceTier(), alt);
+            case DEAD_END_LV -> mesh.deadEndLv();
+            case DEAD_END_MV -> mesh.deadEndMv();
+            case SERVICE -> mesh.service();
         }
         List<float[]> shapes = new ArrayList<>(mesh.frame);
         shapes.addAll(mesh.insulators);
@@ -689,6 +728,196 @@ public final class TowerMesh extends MeshBuilder {
         turned(x, z, new float[][] { { s, 1.6F }, { s + 1.0F, 1.6F } }, 8, Ramp.GALV, true, true);
         insulators.add(new float[] { x - rim, y, z - rim, x + rim, s + 1.0F, z + rim });
         return s + 1.0F;
+    }
+
+    // ================================================================================================================
+    // Protection, line hardware and the service drop
+    // ================================================================================================================
+
+    // A Fuse Cutout (LV or MV), one conductor's fuse, hung on the pole north of it: a steel bracket out from the pole, a
+    // porcelain body with sheds, a contact arm top (line) and bottom (load), and the fuse tube between them; blown, the
+    // tube has dropped open on its bottom hinge. Its terminals are the contacts' outer faces.
+    public static final float FUSE_TOP = 15.2F, FUSE_BOTTOM = 4.8F;
+
+    private void fuse(int tier, boolean blown) {
+        float c = 8, y0 = 6, y1 = 14, r = tier == 0 ? 1.3F : 1.6F, shed = tier == 0 ? 2.2F : 2.7F;
+        plateBox(c - 1.5F, 9, 0, c + 1.5F, 11, c - r, Mat.GALV);
+        List<float[]> profile = new ArrayList<>();
+        profile.add(new float[] { y0, r });
+        for (float y = y0 + 1; y < y1 - 1; y += 2) {
+            profile.add(new float[] { y, r });
+            profile.add(new float[] { y, shed });
+            profile.add(new float[] { y + 0.6F, shed });
+            profile.add(new float[] { y + 1.2F, r });
+        }
+        profile.add(new float[] { y1, r });
+        turned(c, c, profile.toArray(new float[0][]), 8, Ramp.PORCELAIN, false, false);
+        swatchBox(c - 1.2F, y1, c - 1.2F, c + 4.2F, FUSE_TOP, c + 1.2F, GALV0 + 7);
+        swatchBox(c - 1.2F, FUSE_BOTTOM, c - 1.2F, c + 4.2F, y0, c + 1.2F, GALV0 + 7);
+        float tx = c + 3.4F;
+        if (blown) {
+            member(new float[] { tx, y0, c }, new float[] { tx + 3.0F, 0.6F, c }, 1.6F, 1.6F, new float[] { 0, 0, 1 }, Mat.WOOD, true);
+        } else {
+            member(new float[] { tx, y0, c }, new float[] { tx, y1, c }, 1.6F, 1.6F, new float[] { 0, 0, 1 }, Mat.WOOD, true);
+        }
+        frame.add(new float[] { c - 1.5F, 9, 0, c + 1.5F, 11, c - r });
+        frame.add(new float[] { c - shed, y0, c - shed, c + 4.4F, y1, c + shed });
+        insulators.add(new float[] { c - 1.5F, y1, c - 1.5F, c + 4.2F, FUSE_TOP, c + 1.5F });
+        insulators.add(new float[] { c - 1.5F, FUSE_BOTTOM, c - 1.5F, c + 4.2F, y0, c + 1.5F });
+    }
+
+    // A recloser (LV, MV) or circuit breaker (HV, EHV): a galvanized tank on feet, its control cabinet on the east side
+    // with the position flag (red closed, green open), and three bushings each side in its tier's insulator, the line
+    // side north, the load side south. Sized by tier.
+    public record Breaker(int tier, float halfX, float halfZ, float height, float spacing) {
+        public static final float FEET = 2;
+
+        public static Breaker of(int tier) {
+            return new Breaker(tier, 6 + 3 * tier, 6 + 2 * tier, 9 + 4 * tier, new float[] { 5.6F, 6.0F, 6.5F, 8.0F }[tier]);
+        }
+
+        public float top() {
+            return FEET + height + 1;
+        }
+    }
+
+    private void breaker(int tier, boolean open) {
+        Breaker b = Breaker.of(tier);
+        float c = 8, y0 = Breaker.FEET, y1 = y0 + b.height();
+        for (float x : new float[] { c - b.halfX() + 1, c + b.halfX() - 3 }) {
+            plateBox(x, 0, c - b.halfZ() + 1, x + 2, y0, c + b.halfZ() - 1, Mat.GALV);
+        }
+        plateBox(c - b.halfX(), y0, c - b.halfZ(), c + b.halfX(), y1, c + b.halfZ(), Mat.GALV);
+        plateBox(c - b.halfX() - 0.5F, y1, c - b.halfZ() - 0.5F, c + b.halfX() + 0.5F, b.top(), c + b.halfZ() + 0.5F, Mat.GALV);
+        float cab = 3 + tier;
+        plateBox(c + b.halfX(), y0 + 1, c - b.halfZ() * 0.6F, c + b.halfX() + cab, y0 + b.height() * 0.75F, c + b.halfZ() * 0.6F, Mat.GALV);
+        float fy = y0 + b.height() * 0.45F;
+        swatchBox(c + b.halfX() + cab, fy, c - 1.2F, c + b.halfX() + cab + 0.6F, fy + 2.4F, c + 1.2F, open ? MARKER : RED);
+        frame.add(new float[] { c - b.halfX() - 0.5F, 0, c - b.halfZ() - 0.5F, c + b.halfX() + cab + 0.6F, b.top(), c + b.halfZ() + 0.5F });
+        for (int i = -1; i <= 1; i++) {
+            bushing(tier, c + i * b.spacing(), b.top(), c - b.halfZ() + 2.5F, true);
+            bushing(tier, c + i * b.spacing(), b.top(), c + b.halfZ() - 2.5F, true);
+        }
+    }
+
+    // A Disconnect Switch: a galvanized base and, per phase, two post insulators of its tier (line side north, load side
+    // south) bridged by a steel blade: lying across the posts' tops when closed, swung up off the line-side post when
+    // open (a visible break, as on a real air-break switch).
+    public static final float[] DISCONNECT_SPACING = { 6, 7, 9, 12 }, DISCONNECT_HALF = { 5, 6, 8, 10 };
+    public static final float DISCONNECT_BASE = 2;
+
+    private void disconnect(int tier, boolean open) {
+        float c = 8, sp = DISCONNECT_SPACING[tier], half = DISCONNECT_HALF[tier], base = DISCONNECT_BASE;
+        plateBox(c - sp - 3.5F, 0, c - half - 2.5F, c + sp + 3.5F, base, c + half + 2.5F, Mat.GALV);
+        frame.add(new float[] { c - sp - 3.5F, 0, c - half - 2.5F, c + sp + 3.5F, base, c + half + 2.5F });
+        for (int i = -1; i <= 1; i++) {
+            float x = c + i * sp;
+            float top = bushing(tier, x, base, c - half, true);
+            bushing(tier, x, base, c + half, true);
+            float[] hinge = { x, top + 0.6F, c - half };
+            float[] end = open ? new float[] { x, top + 0.6F + 1.7F * half, c - half + 0.9F * half } : new float[] { x, top + 0.6F, c + half };
+            member(hinge, end, 1.2F, 0.7F, new float[] { 1, 0, 0 }, Mat.GALV, true);
+        }
+    }
+
+    // A strain (dead-end) string from a crossarm's face at z0 out along dir (-1 north, +1 south), at (x, y): a clevis,
+    // three porcelain discs on their pin, and the line clamp, its outer face (the terminal) at z0 + dir * STRAIN.
+    public static final float STRAIN = 8.2F;
+
+    private float strain(float x, float y, float z0, float dir) {
+        float[] zs = { z0, z0 + dir * 1.0F };
+        swatchBox(x - 0.5F, y - 0.5F, Math.min(zs[0], zs[1]), x + 0.5F, y + 0.5F, Math.max(zs[0], zs[1]), GALV0 + 7);
+        float p0 = z0 + dir * 1.0F, p1 = z0 + dir * 7.0F;
+        swatchBox(x - 0.4F, y - 0.4F, Math.min(p0, p1), x + 0.4F, y + 0.4F, Math.max(p0, p1), GALV0 + 6);
+        for (int i = 0; i < 3; i++) {
+            float zc = z0 + dir * (2.0F + 2.0F * i);
+            swatchBox(x - 2.0F, y - 2.0F, zc - 0.4F, x + 2.0F, y + 2.0F, zc + 0.4F, PORC0 + 4 - (i % 2));
+        }
+        float c0 = z0 + dir * 7.0F, c1 = z0 + dir * STRAIN;
+        swatchBox(x - 1.0F, y - 1.0F, Math.min(c0, c1), x + 1.0F, y + 1.0F, Math.max(c0, c1), GALV0 + 7);
+        insulators.add(new float[] { x - 2.0F, y - 2.0F, Math.min(z0, c1), x + 2.0F, y + 2.0F, Math.max(z0, c1) });
+        return c1;
+    }
+
+    // The jumper loop under a dead-end's crossarm, from one strain's clamp to the other's: down, across and up, in
+    // copper.
+    private void jumperLoop(float x, float y, float zNorth, float zSouth, float drop) {
+        swatchBox(x - 0.3F, y - drop, zNorth - 0.3F, x + 0.3F, y - 1.0F, zNorth + 0.3F, COPPER0 + 1);
+        swatchBox(x - 0.3F, y - drop - 0.6F, zNorth - 0.3F, x + 0.3F, y - drop, zSouth + 0.3F, COPPER0 + 1);
+        swatchBox(x - 0.3F, y - drop, zSouth - 0.3F, x + 0.3F, y - 1.0F, zSouth + 0.3F, COPPER0 + 1);
+    }
+
+    // LV Dead-End Pole: the LV pole with a crossarm on both faces and a strain string out each way at each phase (A B C
+    // where the LV pole's pins are, so lines line up) with its jumper loop, and the neutral's standoff strained both ways:
+    // where a line ends or turns. Its north and south terminals of each conductor are joined through it.
+    public static final float DEAD_END_LV_ARM = 132, DEAD_END_LV_NORTH = 3, DEAD_END_LV_SOUTH = 13;
+
+    private void deadEndLv() {
+        float cx = 8, cz = 8, top = 150, armY = DEAD_END_LV_ARM;
+        pole(cx, cz, 0, top, 8, 2.0F, false, 140);
+        timber(-12, armY, DEAD_END_LV_NORTH, 28, armY + 4, DEAD_END_LV_NORTH + 3);
+        timber(-12, armY, DEAD_END_LV_SOUTH - 3, 28, armY + 4, DEAD_END_LV_SOUTH);
+        swatchBox(7.5F, armY + 1.5F, DEAD_END_LV_NORTH - 0.6F, 8.5F, armY + 2.5F, DEAD_END_LV_SOUTH + 0.6F, GALV0 + 7);
+        for (float x : new float[] { -8, 1, 24 }) {
+            float n = strain(x, armY + 2, DEAD_END_LV_NORTH, -1), so = strain(x, armY + 2, DEAD_END_LV_SOUTH, 1);
+            jumperLoop(x, armY + 2, n + 0.5F, so - 0.5F, 7);
+        }
+        float ny = NEUTRAL_Y, nx = NEUTRAL_X;
+        swatchBox(nx - 1.2F, ny - 1.4F, cz - 0.7F, cx - 1.0F, ny, cz + 0.7F, GALV0 + 6);
+        float n = strain(nx, ny - 0.7F, cz - 0.7F, -1), so = strain(nx, ny - 0.7F, cz + 0.7F, 1);
+        jumperLoop(nx, ny - 0.7F, n + 0.5F, so - 0.5F, 5);
+        tag(cx, 40, cz + 2.41F, true);
+    }
+
+    // MV Dead-End Pole: the MV pole with both crossarms doubled (north and south faces) and a strain string out each way at
+    // each phase (A on the upper arm, B and C on the lower, where the MV pole's posts are) with its jumper loop.
+    public static final float DEAD_END_MV_UPPER = 196, DEAD_END_MV_LOWER = 166;
+
+    public static float deadEndMvNorth() {
+        return 8 - 3.62F - 3.6F + 0.4F;
+    }
+
+    public static float deadEndMvSouth() {
+        return 8 + 3.62F + 3.6F - 0.4F + 0.4F;
+    }
+
+    private void deadEndMv() {
+        float cx = 8, cz = 8, top = 222, face = cz + 3.62F, back = cz - 3.62F;
+        pole(cx, cz, 0, top, 8, 3.0F, true, 260);
+        float north = deadEndMvNorth(), south = deadEndMvSouth();
+        for (float y : new float[] { DEAD_END_MV_UPPER, DEAD_END_MV_LOWER }) {
+            float x0 = y == DEAD_END_MV_UPPER ? -12 : -20, x1 = y == DEAD_END_MV_UPPER ? 14 : 36;
+            timber(x0, y, north, x1, y + 4, back + 0.4F);
+            timber(x0, y, face - 0.4F, x1, y + 4, south);
+            swatchBox(7.4F, y + 1.4F, north - 0.6F, 8.6F, y + 2.6F, south + 0.6F, GALV0 + 7);
+        }
+        float[][] phases = { { -8, DEAD_END_MV_UPPER }, { -16, DEAD_END_MV_LOWER }, { 32, DEAD_END_MV_LOWER } };
+        for (float[] ph : phases) {
+            float n = strain(ph[0], ph[1] + 2, north, -1), so = strain(ph[0], ph[1] + 2, south, 1);
+            jumperLoop(ph[0], ph[1] + 2, n + 0.5F, so - 0.5F, 8);
+        }
+        shieldPeak(cx, top, cz, 16);
+    }
+
+    // The Service Meter: a steel mast with its weatherhead, a rack of three porcelain spools (L1, N, L2) where the
+    // service drop ties on, and the meter box with its glass dome on the front (north, toward the block it feeds).
+    public static final float SERVICE_SPOOL_TOP = 25.2F, SERVICE_SPOOL_Z = 9;
+    public static final float[] SERVICE_SPOOL_X = { 4.5F, 8, 11.5F };
+
+    private void service() {
+        float c = 8, mz = 11;
+        member(new float[] { c, 0, mz }, new float[] { c, 28, mz }, 2, 2, new float[] { 1, 0, 0 }, Mat.GALV, true);
+        swatchBox(c - 1.8F, 28, mz - 1.8F, c + 1.8F, 29.5F, mz + 1.8F, GALV0 + 6);
+        swatchBox(c - 5.5F, 21.8F, SERVICE_SPOOL_Z - 0.6F, c + 5.5F, 22.8F, mz - 1, GALV0 + 7);
+        for (float x : SERVICE_SPOOL_X) {
+            turned(x, SERVICE_SPOOL_Z, new float[][] { { 22.8F, 1.0F }, { 23.2F, 1.4F }, { 24.6F, 1.4F }, { SERVICE_SPOOL_TOP, 1.0F } }, 8,
+                    Ramp.PORCELAIN, true, false);
+            insulators.add(new float[] { x - 1.4F, 22.8F, SERVICE_SPOOL_Z - 1.4F, x + 1.4F, SERVICE_SPOOL_TOP, SERVICE_SPOOL_Z + 1.4F });
+        }
+        plateBox(c - 3, 6, c - 1.5F, c + 3, 13, mz - 1, Mat.GALV);
+        swatchBox(c - 2, 7.5F, c - 2.2F, c + 2, 11.5F, c - 1.5F, GLASS0 + 4);
+        frame.add(new float[] { c - 1.8F, 0, mz - 1.8F, c + 1.8F, 29.5F, mz + 1.8F });
+        frame.add(new float[] { c - 3, 6, c - 2.2F, c + 3, 13, mz - 1 });
     }
 
     // ================================================================================================================
@@ -1268,6 +1497,38 @@ public final class TowerMesh extends MeshBuilder {
     }
 
     // A point in the model's frame (px) turned the same way, in blocks from the centre column's base block's corner.
+    // A model's vertices turned `eighths` eighths of a turn clockwise (seen from above) about the centre column's middle:
+    // quarter turns exactly as turned(), an odd eighth by 45 degrees more (positions and normals).
+    public static float[] turned8(float[] data, int eighths) {
+        int e = Math.floorMod(eighths, 8);
+        float[] out = turned(data, e / 2);
+        if (e % 2 == 0) {
+            return out;
+        }
+        out = out == data ? data.clone() : out;
+        float c = (float) Math.cos(Math.PI / 4), sn = (float) Math.sin(Math.PI / 4);
+        for (int i = 0; i + 7 < out.length; i += 8) {
+            float dx = out[i] - 0.5F, dz = out[i + 2] - 0.5F;
+            out[i] = 0.5F + dx * c - dz * sn;
+            out[i + 2] = 0.5F + dx * sn + dz * c;
+            float nx = out[i + 5], nz = out[i + 7];
+            out[i + 5] = nx * c - nz * sn;
+            out[i + 7] = nx * sn + nz * c;
+        }
+        return out;
+    }
+
+    // A px point turned `eighths` eighths of a turn about the centre column's middle, in blocks (as turnedPoint).
+    public static double[] turnedPoint8(float x, float y, float z, int eighths) {
+        int e = Math.floorMod(eighths, 8);
+        double[] q = turnedPoint(x, y, z, e / 2);
+        if (e % 2 == 0) {
+            return q;
+        }
+        double c = Math.cos(Math.PI / 4), sn = Math.sin(Math.PI / 4), dx = q[0] - 0.5, dz = q[2] - 0.5;
+        return new double[] { 0.5 + dx * c - dz * sn, q[1], 0.5 + dx * sn + dz * c };
+    }
+
     public static double[] turnedPoint(float x, float y, float z, int turns) {
         double bx = x / PX, by = y / PX, bz = z / PX;
         for (int t = 0; t < Math.floorMod(turns, 4); t++) {

@@ -469,6 +469,75 @@ for tier, size in (("lv", 0), ("mv", 1), ("hv", 2), ("ehv", 3)):
     ITEMS[tier + "_unit_transformer"] = unit_sprite(size, size >= 2)
 
 
+def fuse_sprite(mv):
+    """A Fuse Cutout: its bracket off to the left, the porcelain body with sheds, the contacts and the brown fuse tube."""
+    shapes = box(1, 6, 4, 7, GL, GD, GM)
+    for y in range(4, 12):
+        shed = y % 2 == 0
+        for x in range(5 if shed else 6, 10 if shed else 9):
+            shapes.append((x, y, PL if x < 7 else PM if x < 8 else PD))
+    shapes += box(6, 2, 12, 3, GL, GD, GM) + box(6, 12, 12, 13, GL, GD, GM)
+    shapes += [(11, y, WM if y % 2 else WL) for y in range(3, 12)]
+    if mv:
+        shapes += [(4, 5, PM), (10, 9, PM)]
+    return sprite(shapes)
+
+
+def breaker_sprite(size, glass):
+    """A Recloser or Circuit Breaker: the tank on its feet, the cabinet with its red flag, and its two rows of bushings
+    (glass for HV and EHV), bigger with the tier."""
+    top = 9 - size
+    shapes = box(2, top, 11, 14, GL, GD, GM) + box(12, top + 1, 14, 12, GL, GD, GM) + [(13, top + 3, RED)]
+    shapes += [(3, 15, GD), (10, 15, GD)]
+    lit, mid = bushing_tones(glass)
+    for x in (3, 6, 9):
+        for k in range(size + 2):
+            shapes.append((x, top - 1 - k, lit if k % 2 else mid))
+            shapes.append((x + 1, top - 1 - k, mid if k % 2 else lit))
+    return sprite(shapes)
+
+
+def disconnect_sprite(size, glass):
+    """A Disconnect Switch: the base, and per phase two posts with the blade across their tops (taller with the tier)."""
+    shapes = box(0, 13, 15, 14, GL, GD, GM)
+    lit, mid = bushing_tones(glass)
+    h = 4 + size
+    for x in (1, 6, 11):
+        for k in range(h):
+            shapes += [(x, 12 - k, lit if k % 2 else mid), (x + 3, 12 - k, lit if k % 2 else mid)]
+        shapes += [(xx, 12 - h, GL) for xx in range(x, x + 4)]
+    return sprite(shapes)
+
+
+def dead_end_sprite(mv):
+    """A Dead-End Pole: the pole's top, a double crossarm, and a strain string off each end of it (both ways)."""
+    shapes = vbar(7, 2 if mv else 3, 15, WL, WD) + box(1, 5, 14, 6, WL, WD) + box(1, 8, 14, 9, WL, WD)
+    for x in (0, 15):
+        shapes += [(x, 4, PL), (x, 7, PM), (x, 10, PD)]
+    shapes += [(3, 7, PM), (12, 7, PM)]
+    if mv:
+        shapes += [(7, 0, GL), (8, 0, GM), (7, 1, GM), (8, 1, GD)]
+    return sprite(shapes)
+
+
+def service_sprite():
+    """A Service Meter: the mast and its weatherhead, the spools, and the meter box with its glass dome."""
+    shapes = vbar(9, 1, 15, GL, GD) + box(7, 0, 12, 1, GL, GD, GM)
+    shapes += [(6, 3, PL), (8, 3, PM), (12, 3, PM)]
+    shapes += box(2, 7, 8, 13, GL, GD, GM) + [(4, 9, TL), (5, 9, TM), (4, 10, TM), (5, 10, TL)]
+    return sprite(shapes)
+
+
+ITEMS["lv_fuse_cutout"] = fuse_sprite(False)
+ITEMS["mv_fuse_cutout"] = fuse_sprite(True)
+for tier, size, name in (("lv", 0, "recloser"), ("mv", 1, "recloser"), ("hv", 2, "circuit_breaker"), ("ehv", 3, "circuit_breaker")):
+    ITEMS[tier + "_" + name] = breaker_sprite(size, size >= 2)
+    ITEMS[tier + "_disconnect_switch"] = disconnect_sprite(size, size >= 2)
+ITEMS["lv_dead_end_pole"] = dead_end_sprite(False)
+ITEMS["mv_dead_end_pole"] = dead_end_sprite(True)
+ITEMS["service_meter"] = service_sprite()
+
+
 def main():
     repo = sys.argv[1] if len(sys.argv) > 1 else "."
     out = os.path.join(repo, "src/main/resources/assets/arcforgetransmission/textures/block/transmission_tower/towers.png")

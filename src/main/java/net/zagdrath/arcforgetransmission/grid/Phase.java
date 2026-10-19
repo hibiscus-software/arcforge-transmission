@@ -18,7 +18,9 @@ public enum Phase {
     C(CircuitType.THREE_PHASE, 120.0),
     L1(CircuitType.SINGLE_PHASE, 0.0),
     L2(CircuitType.SINGLE_PHASE, 180.0),
-    N(CircuitType.SINGLE_PHASE, Double.NaN);
+    N(CircuitType.SINGLE_PHASE, Double.NaN),
+    // A shield wire's point (a tower peak): grounded, carrying no circuit; only shield wire joins two of them.
+    G(CircuitType.GROUND, Double.NaN);
 
     private final CircuitType circuit;
     private final double degrees;
@@ -51,12 +53,13 @@ public enum Phase {
             case L1 -> L2;
             case L2 -> N;
             case N -> L1;
+            case G -> G;
         };
     }
 
     // The same label in the other circuit type (A <-> L1, B <-> L2, C <-> N), for switching an unwired insulator.
     public Phase otherCircuit() {
-        return values()[(ordinal() + 3) % 6];
+        return this == G ? G : values()[(ordinal() + 3) % 6];
     }
 
     public String id() {

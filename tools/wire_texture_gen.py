@@ -70,13 +70,14 @@ def glow():
 PLASTIC = [hx(c) for c in ("#0E0F10", "#1C1E20", "#2B2E31", "#3D4145", "#53585D")]
 
 
-def coil(tier, insulated=False):
+def coil(tier, insulated=False, ramp=None, tip=None, stripe=None):
     """A spool of the tier's conductor seen a little from above: two black plastic flanges (discs wider than the winding,
     the top one with its hub hole) and the wire wound between them in turns, lit left of the middle. Insulated wire is
-    wound in its black rubber, the bare conductor showing at the loose end's tip."""
+    wound in its black rubber, the bare conductor showing at the loose end's tip. (ramp, tip, stripe: another winding,
+    its tip's tone, and a tracer colour every third turn, for steel strand and underground cable.)"""
     img = Image.new("RGBA", (16, 16), CLEAR)
     px = img.load()
-    ramp = RUBBER_RAMP if insulated else RAMPS[tier]
+    ramp = ramp or (RUBBER_RAMP if insulated else RAMPS[tier])
     cx, rx, ry = 7.5, 7.0, 2.0
     top, bottom, body_rx = 3.5, 12.5, 4.8
 
@@ -107,14 +108,60 @@ def coil(tier, insulated=False):
                 if y % 2 == 1:
                     t = max(0, t - 1)
                 c = ramp[t]
-                if tier == "ehv" and y % 2 == 0 and abs(d) < 0.7:
+                if tier == "ehv" and y % 2 == 0 and abs(d) < 0.7 and stripe is None and not insulated and ramp is RAMPS["ehv"]:
                     c = EHV_CORE[1]
+                if stripe is not None and y % 3 == 0 and abs(d) < 0.9:
+                    c = stripe
                 px[x, y] = c
     disc(top, True)
     # The loose end: off the winding's right side and out past the flanges (insulated: its tip stripped bare).
     for i, (x, y) in enumerate(((13, 8), (14, 8), (15, 7))):
-        px[x, y] = RAMPS[tier][3] if insulated and i == 2 else ramp[3] if i else ramp[2]
+        px[x, y] = (tip or RAMPS[tier][3]) if (insulated or tip) and i == 2 else ramp[3] if i else ramp[2]
     return outline(img)
+
+
+# Galvanized steel strand (shield wire, guys) and the orange tracer of buried cable.
+STRAND = [hx(c) for c in ("#4A5056", "#6A7178", "#8A9198", "#A8AEB4", "#C4C9CE")]
+STRAND_TONE = hx("#7E858C")
+TRACER = hx("#E0782A")
+
+
+def fuse_link():
+    """A Fuse Link: a short brown fibre tube with a steel cap each end and the button head on top, upright."""
+    img = Image.new("RGBA", (16, 16), CLEAR)
+    px = img.load()
+    brown = [hx(c) for c in ("#3E2414", "#5E3820", "#7E4E2C", "#9C6638")]
+    for y in range(4, 12):
+        for x, t in zip(range(6, 10), (3, 2, 1, 0)):
+            px[x, y] = brown[t]
+    for y in (2, 3, 12, 13):
+        for x, t in zip(range(5, 11), (4, 4, 3, 2, 1, 0)):
+            px[x, y] = STRAND[t]
+    for x in (7, 8):
+        px[x, 1] = STRAND[3 if x == 7 else 2]
+    return outline(img)
+
+
+def clamp_meter():
+    """A Clamp Meter: the yellow body with its dark display and dial, and the steel clamp jaws open at the top."""
+    img = Image.new("RGBA", (16, 16), CLEAR)
+    px = img.load()
+    yellow = [hx(c) for c in ("#7A5A08", "#B8880E", "#E0B020", "#F5D060")]
+    for y in range(6, 15):
+        for x in range(4, 12):
+            px[x, y] = yellow[3] if x == 4 or y == 6 else yellow[0] if x == 11 or y == 14 else yellow[2] if x < 9 else yellow[1]
+    for y in range(7, 10):
+        for x in range(5, 11):
+            px[x, y] = hx("#1E2A24") if (x + y) % 5 else hx("#5FD4C4")
+    for x, y in ((7, 11), (8, 11), (7, 12), (8, 12)):
+        px[x, y] = STRAND[1] if (x, y) == (8, 12) else STRAND[3]
+    # The jaws: a ring open on the right, above the body.
+    for x, y in ((5, 5), (5, 4), (5, 3), (6, 2), (7, 1), (8, 1), (9, 2), (10, 3), (6, 5), (10, 5)):
+        px[x, y] = STRAND[3] if x < 8 else STRAND[1]
+    return outline(img)
+
+
+
 
 
 def outline(img):
@@ -210,6 +257,12 @@ def main():
     for tier in INSULATED:
         save(Image.new("RGBA", (16, 16), RUBBER), os.path.join(tex, "block/wire", tier + "_insulated.png"))
         save(coil(tier, True), os.path.join(tex, "item", tier + "_insulated_wire_coil.png"))
+        save(coil(tier, True, stripe=TRACER), os.path.join(tex, "item", tier + "_underground_cable.png"))
+    save(Image.new("RGBA", (16, 16), STRAND_TONE), os.path.join(tex, "block/wire/steel.png"))
+    save(coil("lv", ramp=STRAND, tip=STRAND[4]), os.path.join(tex, "item/shield_wire_coil.png"))
+    save(coil("lv", ramp=STRAND[:2] + STRAND[1:4], tip=STRAND[3], stripe=STRAND[0]), os.path.join(tex, "item/guy_wire.png"))
+    save(fuse_link(), os.path.join(tex, "item/fuse_link.png"))
+    save(clamp_meter(), os.path.join(tex, "item/clamp_meter.png"))
     save(glow(), os.path.join(tex, "block/wire/ehv_wire_glow.png"))
     save(cutters(), os.path.join(tex, "item/wire_cutters.png"))
     save(burnt(), os.path.join(tex, "item/burnt_wire.png"))

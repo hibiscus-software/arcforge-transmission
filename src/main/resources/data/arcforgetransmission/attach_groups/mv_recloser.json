@@ -1,0 +1,67 @@
+{
+  "model": "mv_recloser",
+  "units": "px in the model's north-facing frame: x across the line, y up from the base block's bottom, z along the line; origin the centre column's base block's minimum corner",
+  "groups": [
+    {
+      "name": "line",
+      "circuit": "three_phase",
+      "terminals": [
+        {
+          "label": "A",
+          "pos": [
+            2.0,
+            26,
+            2.5
+          ]
+        },
+        {
+          "label": "B",
+          "pos": [
+            8.0,
+            26,
+            2.5
+          ]
+        },
+        {
+          "label": "C",
+          "pos": [
+            14.0,
+            26,
+            2.5
+          ]
+        }
+      ]
+    },
+    {
+      "name": "load",
+      "circuit": "three_phase",
+      "terminals": [
+        {
+          "label": "A",
+          "pos": [
+            2.0,
+            26,
+            13.5
+          ]
+        },
+        {
+          "label": "B",
+          "pos": [
+            8.0,
+            26,
+            13.5
+          ]
+        },
+        {
+          "label": "C",
+          "pos": [
+            14.0,
+            26,
+            13.5
+          ]
+        }
+      ]
+    }
+  ],
+  "reserved": []
+}

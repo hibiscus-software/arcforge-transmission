@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "I": "arcforgetransmission:mv_pin_insulator",
+    "S": "#c:rods/silver"
+  },
+  "pattern": [
+    "I",
+    "S",
+    "I"
+  ],
+  "result": {
+    "id": "arcforgetransmission:mv_fuse_cutout"
+  }
+}

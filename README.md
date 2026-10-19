@@ -36,6 +36,20 @@ up, so a power plant can send EHV across the map and step it back down at the ot
 
 **Wire Cutters** cut the wire you look at, or every wire on the insulator you use them on; the coil drops.
 
+**Placing.** Towers and devices face the way you look, to the nearest 45 degrees (as a sign), for corners; the Wrench on
+Rotate turns them an eighth at a time. **Dead-End Poles** end or turn a line, and **Guy Wire** anchors them.
+
+**Protection.** A **Fuse Cutout** blows on overcurrent (a **Fuse Link** replaces it). A **Recloser** or **Circuit Breaker**
+trips, recloses, and locks out after its last try; open or close it by hand, and set its trip current with the Wrench on
+Configure. A **Disconnect Switch** opens a line by hand, so the wire past it is safe to work on. Devices, transformers and
+the Service Meter give a comparator signal with their load.
+
+**Lightning** strikes exposed spans in storms and faults the line. String **Shield Wire** between the towers' peaks (G) to
+catch it, and put a **Surge Arrester** near each transformer so a surge doesn't destroy it.
+
+**At the end of the line.** A **Service Meter** takes L1, N and L2 from a Pole-Mount Transformer and feeds the block it
+faces. **Underground Cable** runs unseen and safe, and the **Clamp Meter** reads any wire's current and loss.
+
 ## Config
 
 Settings are in `arcforgetransmission-common.toml`. Admins (permission level 3) can put them back to their defaults from in

@@ -29,6 +29,7 @@ import net.zagdrath.arcforgetransmission.ArcforgeTransmission;
 import net.zagdrath.arcforgetransmission.grid.ConnectionRules;
 import net.zagdrath.arcforgetransmission.grid.GridEdge;
 import net.zagdrath.arcforgetransmission.grid.GridNode;
+import net.zagdrath.arcforgetransmission.grid.Phase;
 import net.zagdrath.arcforgetransmission.grid.VoltageTier;
 import net.zagdrath.arcforgetransmission.grid.block.GridContent;
 import net.zagdrath.arcforgetransmission.grid.block.GridEndpointBlockEntity;
@@ -38,27 +39,32 @@ import net.zagdrath.arcforgetransmission.grid.world.GridManager;
 import net.zagdrath.arcforgetransmission.tower.TowerBlock;
 import net.zagdrath.arcforgetransmission.tower.TowerPartBlock;
 
-// A coil of one tier's wire (one conductor), bare or (LV and MV) rubber-insulated. Used on an insulator it ties on one end (the insulator nearest where it's
-// clicked); used on another, it strings the wire between them (one coil a wire), or says why it can't (another tier,
-// the other circuit type, too far, already joined). Sneak-use in the air drops the loose end. A tower's parts count as
-// the tower.
+// A coil of wire: one tier's conductor (bare, rubber-insulated or underground cable, the last two LV and MV only), or
+// Shield Wire (grounded steel for the tower peaks, any tier, no tier of its own). Used on an insulator it ties on one end
+// (the insulator nearest where it's clicked); used on another, it strings the wire between them (one coil a wire), or
+// says why it can't (another tier, the other circuit type, a conductor on a shield point or shield wire on a conductor's,
+// too far, already joined). Sneak-use in the air drops the loose end. A tower's parts count as the tower.
 public class WireCoilItem extends Item {
-    private final VoltageTier tier;
-    private final boolean insulated;
+    private final @Nullable VoltageTier tier;
+    private final GridEdge.Kind kind;
 
-    public WireCoilItem(VoltageTier tier, boolean insulated, Item.Properties properties) {
+    public WireCoilItem(@Nullable VoltageTier tier, GridEdge.Kind kind, Item.Properties properties) {
         super(properties);
         this.tier = tier;
-        this.insulated = insulated;
+        this.kind = kind;
     }
 
-    public VoltageTier tier() {
+    // Its tier (null for Shield Wire, which takes the towers').
+    public @Nullable VoltageTier tier() {
         return tier;
     }
 
-    // Rubber-insulated (LV and MV): safe to touch, drawn black.
+    public GridEdge.Kind kind() {
+        return kind;
+    }
+
     public boolean insulated() {
-        return insulated;
+        return kind == GridEdge.Kind.INSULATED;
     }
 
     // The endpoint a click on pos means: the block's own, or for a tower part its tower's.
@@ -95,10 +101,13 @@ public class WireCoilItem extends Item {
         if (node == null) {
             return InteractionResult.PASS;
         }
-        if (node.tier() != tier) {
-            player.sendOverlayMessage(Component.translatable("message." + m + ".wire." + ConnectionRules.Refusal.WRONG_WIRE.key()));
+        boolean shield = kind == GridEdge.Kind.SHIELD;
+        if ((node.phase() == Phase.G) != shield || !shield && node.tier() != tier) {
+            player.sendOverlayMessage(Component.translatable("message." + m + ".wire." + (shield ? "shield_only" : node.phase() == Phase.G
+                    ? "shield_point" : ConnectionRules.Refusal.WRONG_WIRE.key())));
             return InteractionResult.FAIL;
         }
+        VoltageTier wireTier = shield ? node.tier() : tier;
         ItemStack stack = context.getItemInHand();
         String dimension = level.dimension().identifier().toString();
         LinkTarget pending = stack.get(GridContent.LINK.get());
@@ -108,11 +117,10 @@ public class WireCoilItem extends Item {
             level.playSound(null, here.pos(), SoundEvents.UI_BUTTON_CLICK.value(), SoundSource.BLOCKS, 0.3F, 1.2F);
             return InteractionResult.SUCCESS;
         }
-        ConnectionRules.Refusal refusal = GridManager.connect(server, new GridData.Anchor(pending.pos(), pending.index()), here, tier,
-                insulated ? GridEdge.Kind.INSULATED : GridEdge.Kind.BARE);
+        ConnectionRules.Refusal refusal = GridManager.connect(server, new GridData.Anchor(pending.pos(), pending.index()), here, wireTier, kind);
         if (refusal != null) {
             Component message = refusal == ConnectionRules.Refusal.TOO_LONG
-                    ? Component.translatable("message." + m + ".wire.too_long", (int) GridConfig.SETTINGS.maxSpan(tier))
+                    ? Component.translatable("message." + m + ".wire.too_long", (int) GridConfig.SETTINGS.maxSpan(wireTier))
                     : Component.translatable("message." + m + ".wire." + refusal.key());
             player.sendOverlayMessage(message);
             if (refusal == ConnectionRules.Refusal.MISSING) {
@@ -146,12 +154,17 @@ public class WireCoilItem extends Item {
     @Override
     public void appendHoverText(ItemStack stack, Item.TooltipContext context, TooltipDisplay display, Consumer<Component> builder, TooltipFlag flag) {
         String m = ArcforgeTransmission.MODID;
+        if (tier == null) {
+            builder.accept(Component.translatable("tooltip." + m + ".wire.shield").withStyle(ChatFormatting.GRAY));
+            return;
+        }
         builder.accept(Component.translatable("tooltip." + m + ".wire.tier", tier.name(), tier.volts(),
                 Component.translatable("conductor." + m + "." + tier.conductor())).withStyle(ChatFormatting.GRAY));
         builder.accept(Component.translatable("tooltip." + m + ".wire.rating", amps(GridConfig.SETTINGS.ratedAmps(tier)),
                 (int) GridConfig.SETTINGS.maxSpan(tier)).withStyle(ChatFormatting.GRAY));
-        if (insulated) {
-            builder.accept(Component.translatable("tooltip." + m + ".wire.insulated").withStyle(ChatFormatting.DARK_AQUA));
+        if (kind == GridEdge.Kind.INSULATED || kind == GridEdge.Kind.BURIED) {
+            builder.accept(Component.translatable("tooltip." + m + ".wire." + (kind == GridEdge.Kind.BURIED ? "buried" : "insulated"))
+                    .withStyle(ChatFormatting.DARK_AQUA));
         }
         LinkTarget link = stack.get(GridContent.LINK.get());
         if (link != null) {

@@ -78,7 +78,7 @@ public final class InsulatorHud {
                 return null;
             }
             boolean onInsulator = false;
-            for (AABB box : TowerPlacement.insulatorBoxes(block.tier(), state.getValue(TowerBlock.FACING), tower.getBlockPos())) {
+            for (AABB box : TowerPlacement.insulatorBoxes(block.tier(), TowerPlacement.eighths(state), tower.getBlockPos())) {
                 if (box.inflate(1.0 / 16.0 + 1.0E-3).contains(at)) {
                     onInsulator = true;
                     break;
@@ -131,7 +131,7 @@ public final class InsulatorHud {
             PortHud port = (PortHud) endpoint;
             lines.add(mode.copy().withStyle(ChatFormatting.YELLOW));
             boolean bushing = endpoint instanceof PinInsulatorBlockEntity insulator && insulator.onWallBushing();
-            if (!bushing) {
+            if (!bushing && port.hudFlow()) {
                 FlowSolver.PortStatus status = port.status();
                 MutableComponent statusText = Component.translatable("port_status." + m + "." + status.name().toLowerCase(Locale.ROOT));
                 lines.add((port.lastFlow() >= 1 ? Component.translatable("hud." + m + ".pin_insulator.flow", statusText, Math.round(port.lastFlow()))

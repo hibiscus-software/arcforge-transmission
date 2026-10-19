@@ -44,10 +44,12 @@ public final class ConnectionRules {
         if (a == b) {
             return Refusal.SAME_ENDPOINT;
         }
-        if (na.tier() != nb.tier()) {
+        // Shield wire joins two towers' peaks whatever their tiers.
+        boolean shield = na.circuit() == CircuitType.GROUND && nb.circuit() == CircuitType.GROUND;
+        if (!shield && na.tier() != nb.tier()) {
             return Refusal.MIXED_TIER;
         }
-        if (na.tier() != wireTier) {
+        if (!shield && na.tier() != wireTier) {
             return Refusal.WRONG_WIRE;
         }
         if (na.circuit() != nb.circuit()) {

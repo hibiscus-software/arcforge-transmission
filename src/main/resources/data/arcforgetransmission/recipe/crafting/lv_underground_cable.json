@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "C": "arcforgetransmission:lv_insulated_wire_coil",
+    "L": "#c:plates/lead"
+  },
+  "pattern": [
+    "CCC",
+    "CLC",
+    "CCC"
+  ],
+  "result": {
+    "count": 8,
+    "id": "arcforgetransmission:lv_underground_cable"
+  }
+}

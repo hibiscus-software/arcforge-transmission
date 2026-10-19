@@ -34,13 +34,16 @@ import net.zagdrath.arcforgetransmission.grid.item.WireCoilItem;
 // player faced placing it. Placed by TowerItem; its other blocks are TowerPartBlocks.
 public class TowerBlock extends BaseEntityBlock {
     public static final EnumProperty<Direction> FACING = HorizontalDirectionalBlock.FACING;
+    // Turned an eighth further clockwise than FACING (45 degrees, for corners).
+    public static final net.minecraft.world.level.block.state.properties.BooleanProperty DIAGONAL =
+            net.minecraft.world.level.block.state.properties.BooleanProperty.create("diagonal");
 
     private final TowerTier tier;
 
     public TowerBlock(TowerTier tier, BlockBehaviour.Properties properties) {
         super(properties);
         this.tier = tier;
-        registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH));
+        registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH).setValue(DIAGONAL, false));
     }
 
     public TowerTier tier() {
@@ -49,7 +52,7 @@ public class TowerBlock extends BaseEntityBlock {
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(FACING);
+        builder.add(FACING, DIAGONAL);
     }
 
     @Override
@@ -82,8 +85,8 @@ public class TowerBlock extends BaseEntityBlock {
     // Its own piece of the model (the foot of a pole, or a leg on its footing).
     @Override
     protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        Direction facing = state.getValue(FACING);
-        return TowerPlacement.shape(tier, facing, TowerPlacement.mainOffset(tier, facing));
+        int eighths = TowerPlacement.eighths(state);
+        return TowerPlacement.shape(tier, eighths, TowerPlacement.mainOffset(tier, eighths));
     }
 
     @Override
@@ -96,6 +99,32 @@ public class TowerBlock extends BaseEntityBlock {
         if (!level.isClientSide() && level.getBlockState(main).getBlock() instanceof TowerBlock) {
             level.destroyBlock(main, drop);
         }
+    }
+
+    // Empty-handed: a recloser, breaker or disconnect switch opens or closes by hand (GridInteractions has the Wrench).
+    @Override
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        if (WireCoilItem.endpointAt(level, pos) instanceof TowerBlockEntity tower && tower.tier().isDevice()) {
+            if (level instanceof net.minecraft.server.level.ServerLevel server) {
+                net.minecraft.network.chat.Component now = tower.operate(server);
+                if (now != null) {
+                    player.sendOverlayMessage(now);
+                }
+            }
+            return InteractionResult.SUCCESS;
+        }
+        return InteractionResult.PASS;
+    }
+
+    // A comparator reads a transformer's or device's load off its main block.
+    @Override
+    protected boolean hasAnalogOutputSignal(BlockState state) {
+        return true;
+    }
+
+    @Override
+    protected int getAnalogOutputSignal(BlockState state, Level level, BlockPos pos, Direction direction) {
+        return level.getBlockEntity(pos) instanceof TowerBlockEntity tower ? tower.comparator() : 0;
     }
 
     // Arcforge's Wrench on any part of the tower: its insulators' labels (see GridInteractions).

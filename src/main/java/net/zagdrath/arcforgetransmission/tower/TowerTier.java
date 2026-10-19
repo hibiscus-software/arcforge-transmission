@@ -26,12 +26,29 @@ public enum TowerTier {
     LV_UNIT("lv_unit_transformer", Kind.UNIT, VoltageTier.LV, null, TowerMesh.Design.UNIT_LV),
     MV_UNIT("mv_unit_transformer", Kind.UNIT, VoltageTier.MV, null, TowerMesh.Design.UNIT_MV),
     HV_UNIT("hv_unit_transformer", Kind.UNIT, VoltageTier.HV, null, TowerMesh.Design.UNIT_HV),
-    EHV_UNIT("ehv_unit_transformer", Kind.UNIT, VoltageTier.EHV, null, TowerMesh.Design.UNIT_EHV);
+    EHV_UNIT("ehv_unit_transformer", Kind.UNIT, VoltageTier.EHV, null, TowerMesh.Design.UNIT_EHV),
+    LV_FUSE("lv_fuse_cutout", Kind.FUSE, VoltageTier.LV, null, TowerMesh.Design.FUSE_LV),
+    MV_FUSE("mv_fuse_cutout", Kind.FUSE, VoltageTier.MV, null, TowerMesh.Design.FUSE_MV),
+    LV_RECLOSER("lv_recloser", Kind.BREAKER, VoltageTier.LV, null, TowerMesh.Design.BREAKER_LV),
+    MV_RECLOSER("mv_recloser", Kind.BREAKER, VoltageTier.MV, null, TowerMesh.Design.BREAKER_MV),
+    HV_BREAKER("hv_circuit_breaker", Kind.BREAKER, VoltageTier.HV, null, TowerMesh.Design.BREAKER_HV),
+    EHV_BREAKER("ehv_circuit_breaker", Kind.BREAKER, VoltageTier.EHV, null, TowerMesh.Design.BREAKER_EHV),
+    LV_DISCONNECT("lv_disconnect_switch", Kind.DISCONNECT, VoltageTier.LV, null, TowerMesh.Design.DISCONNECT_LV),
+    MV_DISCONNECT("mv_disconnect_switch", Kind.DISCONNECT, VoltageTier.MV, null, TowerMesh.Design.DISCONNECT_MV),
+    HV_DISCONNECT("hv_disconnect_switch", Kind.DISCONNECT, VoltageTier.HV, null, TowerMesh.Design.DISCONNECT_HV),
+    EHV_DISCONNECT("ehv_disconnect_switch", Kind.DISCONNECT, VoltageTier.EHV, null, TowerMesh.Design.DISCONNECT_EHV),
+    LV_DEAD_END("lv_dead_end_pole", Kind.DEAD_END, VoltageTier.LV, null, TowerMesh.Design.DEAD_END_LV),
+    MV_DEAD_END("mv_dead_end_pole", Kind.DEAD_END, VoltageTier.MV, null, TowerMesh.Design.DEAD_END_MV),
+    SERVICE_METER("service_meter", Kind.SERVICE, VoltageTier.LV, null, TowerMesh.Design.SERVICE);
 
     // A tower carries a line; a substation transformer joins a line of its tier (primary) to one a tier down (secondary)
-    // through an FE buffer, stepping down or up; a unit transformer joins a line to the FE block in front of it.
+    // through an FE buffer, stepping down or up; a unit transformer joins a line to the FE block in front of it. The
+    // protection devices join each line-side conductor to its load-side one while closed: a fuse cutout (one conductor;
+    // blows on overcurrent), a recloser or circuit breaker (three; trips and recloses), a disconnect switch (three; by
+    // hand). A dead-end pole ends lines both ways, each conductor jumpered through. A service meter feeds a building's
+    // FE block from a split-phase service drop, counting what it delivers.
     public enum Kind {
-        TOWER, SUBSTATION, UNIT
+        TOWER, SUBSTATION, UNIT, FUSE, BREAKER, DISCONNECT, DEAD_END, SERVICE
     }
 
     private final String id;
@@ -58,7 +75,27 @@ public enum TowerTier {
     }
 
     public boolean isTransformer() {
-        return kind != Kind.TOWER;
+        return kind == Kind.SUBSTATION || kind == Kind.UNIT;
+    }
+
+    // A fuse cutout, recloser / breaker or disconnect switch: its line side joined to its load side while closed.
+    public boolean isDevice() {
+        return kind == Kind.FUSE || kind == Kind.BREAKER || kind == Kind.DISCONNECT;
+    }
+
+    // Whether its groups come in pairs joined through it (devices while closed, dead-ends always).
+    public boolean linked() {
+        return isDevice() || kind == Kind.DEAD_END;
+    }
+
+    // Whether the Wrench on Rotate turns it (everything placed but the lines' own towers and poles).
+    public boolean rotatable() {
+        return kind != Kind.TOWER && kind != Kind.DEAD_END;
+    }
+
+    // Whether it serves the FE block in front of it (so it only ever faces square on).
+    public boolean servesBlock() {
+        return kind == Kind.UNIT || kind == Kind.SERVICE;
     }
 
     // Its line's tier (a substation's primary, the higher side).
@@ -82,7 +119,7 @@ public enum TowerTier {
 
     // Galvanized steel (a pickaxe takes it, steel particles), not treated wood.
     public boolean steel() {
-        return this != LV && this != MV && this != HV;
+        return this != LV && this != MV && this != HV && this != LV_DEAD_END && this != MV_DEAD_END;
     }
 
     public TowerMesh.Design design() {

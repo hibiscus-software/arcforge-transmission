@@ -103,9 +103,9 @@ public class TowerPartBlock extends BaseEntityBlock {
             return Shapes.block();
         }
         TowerBlock block = (TowerBlock) tower.getBlock();
-        Direction facing = tower.getValue(TowerBlock.FACING);
-        BlockPos centre = TowerPlacement.centre(block.tier(), facing, main);
-        VoxelShape shape = TowerPlacement.shape(block.tier(), facing, pos.subtract(centre));
+        int eighths = TowerPlacement.eighths(tower);
+        BlockPos centre = TowerPlacement.centre(block.tier(), eighths, main);
+        VoxelShape shape = TowerPlacement.shape(block.tier(), eighths, pos.subtract(centre));
         // Never nothing at all: a part that only grazes the model still has something to aim at.
         return shape.isEmpty() ? Block.box(7.0, 7.0, 7.0, 9.0, 9.0, 9.0) : shape;
     }
@@ -153,6 +153,21 @@ public class TowerPartBlock extends BaseEntityBlock {
         if (mainState(level, pos) == null) {
             level.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
         }
+    }
+
+    // Empty-handed: a recloser, breaker or disconnect switch opens or closes by hand (GridInteractions has the Wrench).
+    @Override
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        if (WireCoilItem.endpointAt(level, pos) instanceof TowerBlockEntity tower && tower.tier().isDevice()) {
+            if (level instanceof net.minecraft.server.level.ServerLevel server) {
+                net.minecraft.network.chat.Component now = tower.operate(server);
+                if (now != null) {
+                    player.sendOverlayMessage(now);
+                }
+            }
+            return InteractionResult.SUCCESS;
+        }
+        return InteractionResult.PASS;
     }
 
     // Arcforge's Wrench on any part of the tower: its insulators' labels (see GridInteractions).

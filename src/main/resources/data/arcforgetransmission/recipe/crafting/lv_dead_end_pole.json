@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "key": {
+    "I": "arcforgetransmission:lv_pin_insulator",
+    "R": "#c:rods/steel",
+    "L": "arcforge:treated_log"
+  },
+  "pattern": [
+    "IRI",
+    " L ",
+    " L "
+  ],
+  "result": {
+    "id": "arcforgetransmission:lv_dead_end_pole"
+  }
+}

@@ -9,6 +9,8 @@ package net.zagdrath.arcforgetransmission.grid.block;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jspecify.annotations.Nullable;
+
 import com.mojang.serialization.Codec;
 
 import net.minecraft.core.BlockPos;
@@ -67,8 +69,20 @@ public class PoleTransformerBlockEntity extends GridEndpointBlockEntity implemen
         return lastOut;
     }
 
+    // Its insulators, worked out once per facing.
+    private @Nullable List<Insulator> insulatorCache;
+    private @Nullable Direction cacheFacing;
+
     @Override
     public List<Insulator> insulators() {
+        if (insulatorCache == null || cacheFacing != facing()) {
+            cacheFacing = facing();
+            insulatorCache = List.copyOf(buildInsulators());
+        }
+        return insulatorCache;
+    }
+
+    private List<Insulator> buildInsulators() {
         int turns = TowerPlacement.turns(facing());
         List<Insulator> out = new ArrayList<>();
         List<AttachGroups.Group> groups = AttachGroups.get("pole_transformer").groups();

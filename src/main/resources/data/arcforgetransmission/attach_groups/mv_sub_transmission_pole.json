@@ -31,17 +31,21 @@
           ]
         }
       ]
-    }
-  ],
-  "reserved": [
+    },
     {
       "name": "shield",
-      "use": "the shield wire (later)",
-      "pos": [
-        8,
-        238,
-        8
+      "circuit": "ground",
+      "terminals": [
+        {
+          "label": "G",
+          "pos": [
+            8,
+            238,
+            8
+          ]
+        }
       ]
     }
-  ]
+  ],
+  "reserved": []
 }

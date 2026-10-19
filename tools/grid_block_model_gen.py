@@ -9,6 +9,7 @@ Writes:
     assets/arcforgetransmission/models/block/creative_{source,sink}/<tier>.json and their 16x16 textures
     data/arcforgetransmission/attach_groups/{pin_insulator_<tier>,pole_transformer}.json
     assets/arcforgetransmission/models/block/wall_bushing{,_blank}.json and textures/block/wall_bushing.png
+    assets/arcforgetransmission/models/block/surge_arrester.json and textures/block/surge_arrester.png
 
 A Pin Insulator is one insulator, like the ones on the towers (the same glazed porcelain, glass and galvanizing ramps as
 tools/transmission_tower_texture_gen.py): a wire is one conductor, and a Pin Insulator its one end, mounted on any face of the
@@ -127,6 +128,19 @@ def pin_insulator(tier):
     parts += stack(levels)
     top = parts[-1]["to"][1]
     return parts, [8.0, top, 8.0]
+
+
+def surge_arrester():
+    """A Surge Arrester: a galvanized base, a porcelain column with four sheds, and the steel line terminal on top; it
+    points up (mounted on the block below), turned like the pin insulators."""
+    levels = [("foot", 1, 2, 1.5, "galv")]
+    y = 2.0
+    for i in range(4):
+        levels += [(f"core_{i}", y, y + 1.5, 1.6, "porcelain"), (f"shed_{i}", y + 1.5, y + 2.5, 2.8, "porcelain")]
+        y += 2.5
+    levels += [("neck", y, y + 0.5, 1.6, "porcelain"), ("cap", y + 0.5, y + 1.5, 1.8, "galv"), ("stud", y + 1.5, y + 2.5, 0.6, "galv")]
+    parts = [part("base", (5, 0, 5), (11, 1, 11), "galv", cull={"down": "down"})]
+    return parts + stack(levels)
 
 
 def pole_transformer_terminals():
@@ -425,6 +439,10 @@ def main():
             save(creative_texture("out" if kind == "source" else "in", i), os.path.join(assets, f"textures/block/creative_{kind}", tier + ".png"))
             write_json(os.path.join(assets, f"models/block/creative_{kind}", tier + ".json"),
                        {"parent": "minecraft:block/cube_all", "textures": {"all": f"{NS}:block/creative_{kind}/{tier}"}})
+    parts = surge_arrester()
+    placed = pack(parts)
+    save(sheet(placed), os.path.join(assets, "textures/block/surge_arrester.png"))
+    write_json(os.path.join(assets, "models/block/surge_arrester.json"), model_json(f"{NS}:block/surge_arrester", parts, placed, DISPLAY))
     save(wall_bushing_texture(), os.path.join(assets, "textures/block/wall_bushing.png"))
     write_json(os.path.join(assets, "models/block/wall_bushing.json"), {"parent": "minecraft:block/cube_all", "textures": {"all": f"{NS}:block/wall_bushing"}})
     # A Wall Bushing under a blank Conduit Facade (WallBushingModel): Arcforge's blank facade texture on a full block.

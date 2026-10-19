@@ -45,8 +45,13 @@ public class TowerItem extends BlockItem {
         }
         Level level = context.getLevel();
         BlockPos centre = context.getClickedPos();
-        Direction facing = context.getHorizontalDirection();
-        List<BlockPos> positions = TowerPlacement.positions(tier, facing, centre);
+        // Facing the way the player looks, to the nearest eighth of a turn (as a sign); square on for what serves a block.
+        float yaw = context.getPlayer() != null ? context.getPlayer().getYRot() : context.getRotation();
+        int eighths = Math.floorMod(Math.round((yaw - 180.0F) / 45.0F), 8);
+        if (tier.servesBlock()) {
+            eighths = TowerPlacement.turns(context.getHorizontalDirection()) * 2;
+        }
+        List<BlockPos> positions = TowerPlacement.positions(tier, eighths, centre);
         for (BlockPos pos : positions) {
             if (!level.getBlockState(pos).canBeReplaced(context) || !level.getWorldBorder().isWithinBounds(pos) || level.isOutsideBuildHeight(pos)) {
                 Player player = context.getPlayer();
@@ -59,7 +64,7 @@ public class TowerItem extends BlockItem {
         }
         if (!level.isClientSide()) {
             BlockPos main = positions.get(0);
-            BlockState state = getBlock().defaultBlockState().setValue(TowerBlock.FACING, facing);
+            BlockState state = TowerPlacement.oriented(getBlock().defaultBlockState(), eighths);
             level.setBlock(main, state, Block.UPDATE_ALL);
             BlockState part = TowerContent.TOWER_PART.get().defaultBlockState()
                     .setValue(TowerPartBlock.STEEL, tier.steel());

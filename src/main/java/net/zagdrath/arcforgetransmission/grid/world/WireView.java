@@ -15,8 +15,13 @@ import net.minecraft.world.phys.Vec3;
 import net.zagdrath.arcforgetransmission.grid.VoltageTier;
 
 // One wire as its owning end draws it (the end it was strung from): from that insulator to the other, world positions,
-// and whether it's in a rubber sheath. Synced to the client with the endpoint's block entity.
-public record WireView(long edge, Vec3 from, Vec3 to, VoltageTier tier, boolean insulated) {
+// and what it is (bare, insulated, a shield wire; a guy, for a tower's guys). Synced with the endpoint's block entity.
+public record WireView(long edge, Vec3 from, Vec3 to, VoltageTier tier, String kind) {
+    public static final String GUY = "guy";
+
+    public boolean insulated() {
+        return kind.equals("insulated");
+    }
     static final Codec<Vec3> VEC = Codec.DOUBLE.listOf().xmap(list -> new Vec3(list.get(0), list.get(1), list.get(2)),
             v -> List.of(v.x, v.y, v.z));
     static final Codec<VoltageTier> TIER = Codec.STRING.xmap(VoltageTier::byId, VoltageTier::id);
@@ -25,6 +30,6 @@ public record WireView(long edge, Vec3 from, Vec3 to, VoltageTier tier, boolean 
             VEC.fieldOf("from").forGetter(WireView::from),
             VEC.fieldOf("to").forGetter(WireView::to),
             TIER.fieldOf("tier").forGetter(WireView::tier),
-            Codec.BOOL.optionalFieldOf("insulated", false).forGetter(WireView::insulated)).apply(i, WireView::new));
+            Codec.STRING.optionalFieldOf("kind", "bare").forGetter(WireView::kind)).apply(i, WireView::new));
     public static final Codec<List<WireView>> LIST_CODEC = CODEC.listOf();
 }

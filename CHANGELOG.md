@@ -1,5 +1,39 @@
 # Changelog
 
+## Unreleased: Phase 3, protection and the field
+
+### Added
+- **Fuse Cutouts** (LV, MV). One conductor's fuse hung beside a pole: line on top, load below. It blows the moment its
+  current passes its rating (`protection.fuseFactor` times the wire's), opening the line; a **Fuse Link** puts it back.
+- **Reclosers** (LV, MV) and **Circuit Breakers** (HV, EHV). Three-phase, north bushings (line) to south (load). Over
+  their trip current for `protection.tripTicks` they trip, reclose after `recloseDelay` ticks, and after `recloseShots`
+  tries lock out. Empty hand opens or closes one; the Wrench on Configure sets its trip current in eighths of the rating.
+- **Disconnect Switches** (LV, MV, HV, EHV): a visible break opened and closed by hand. Wire past an open switch is dead.
+- **Lightning.** Storms strike exposed spans (`lightning.strikeChance`), and any bolt near a line faults it: a breaker
+  trips, else a fuse blows, else the span burns out. A transformer on the line without a **Surge Arrester** within
+  `lightning.arresterRange` blocks is destroyed (`lightning.transformerDamage`).
+- **Shield Wire.** Grounded steel strung between the towers' peaks (their new G points, MV and up): a bolt within reach of
+  a shield wire above the conductors goes to ground instead.
+- **Dead-End Poles** (LV, MV): strain insulators both ways with each conductor jumpered through, for line ends and corners.
+  **Guy Wire** anchors a pole to the ground (use it on the pole, then the ground; sneak-use takes the last one off).
+- **Clamp Meter.** Reads a wire's current, rating, loss and length, at the wire or from an insulator.
+- **Comparator output** from devices (0 open, 1 to 15 with the load through them), transformers and the service meter.
+- **Service Meter.** Takes L1, N and L2 from a Pole-Mount Transformer and feeds the FE block it faces, counting the FE.
+- **Underground Cable** (LV, MV): insulated coils with a lead sheath. Never drawn, safe to touch, out of lightning's reach.
+- **Placing at 45 degrees.** Every tower, pole and device faces the way you look to the nearest eighth of a turn, as a sign
+  does, so corners are easy. The Wrench on Rotate turns them an eighth at a time (blocks that serve the block in front,
+  like unit transformers, still go square).
+- Recipes, item info (Shift) and HUD lines for all of it.
+
+### Changed
+- Network work is cached: routes per network, a tower's insulators and links per orientation, placement cells and shapes
+  per tier and orientation, outlines per tier. The HUD refreshes every 5 ticks, a grid with no ports skips its solve, and
+  storms draw once per grid instead of once per span.
+- Towers no longer cast a shadow on the ground under them (light passes through their blocks).
+
+### Fixed
+- An out-of-memory crash when zero-length links (wall bushings, jumpers) formed a loop: routing could build a cycle.
+
 ## Unreleased: Phase 2, a usable grid
 
 ### Added

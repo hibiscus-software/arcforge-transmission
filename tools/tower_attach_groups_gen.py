@@ -12,10 +12,10 @@ Every terminal is one insulator, wired on its own (one wire is one conductor); i
 no DC.
   LV Distribution Pole      the crossarm's three pins (A, B, C); the neutral (N) on its standoff below the crossarm, for the split phase
                             the pole-mount transformer gives
-  MV Sub-Transmission Pole  one circuit: the upper post (A) and the lower arm's two (B, C); the shield peak reserved
-  HV H-Frame Tower          one circuit: the three strings; both shield peaks reserved
+  MV Sub-Transmission Pole  one circuit: the upper post (A) and the lower arm's two (B, C); the shield peak (G)
+  HV H-Frame Tower          one circuit: the three strings; both shield peaks (G)
   EHV Lattice Tower          two circuits (double circuit): west A/B/C top to bottom, east likewise; the shield peak
-                            reserved
+                            (G)
   Substation Transformers   the primary (A B C, its own tier, along the north edge) and the secondary (A B C, a tier
                             down, along the south): each group names its tier
   Unit Transformers         one circuit: the three bushings on the lid, A B C west to east
@@ -57,9 +57,15 @@ def mv():
         "groups": [{"name": "circuit", "circuit": "three_phase",
                     "terminals": [{"label": "A", "pos": p(-8, upper + 4 + 12, z)},
                                   {"label": "B", "pos": p(-16, lower + 4 + 12, z)},
-                                  {"label": "C", "pos": p(32, lower + 4 + 12, z)}]}],
-        "reserved": [{"name": "shield", "use": "the shield wire (later)", "pos": p(8, 222 + 16, 8)}],
+                                  {"label": "C", "pos": p(32, lower + 4 + 12, z)}]},
+                   shield([p(8, 222 + 16, 8)])],
+        "reserved": [],
     }
+
+
+def shield(points):
+    """The shield wire's points: each peak's clamp top, a G (ground) point that only Shield Wire joins."""
+    return {"name": "shield", "circuit": "ground", "terminals": [{"label": "G", "pos": pos} for pos in points]}
 
 
 def string_bottom(y, discs):
@@ -75,9 +81,9 @@ def hv():
     return {
         "groups": [{"name": "circuit", "circuit": "three_phase",
                     "terminals": [{"label": "A", "pos": p(-42, y, z)}, {"label": "B", "pos": p(8, y, z)},
-                                  {"label": "C", "pos": p(58, y, z)}]}],
-        "reserved": [{"name": "shield_west", "use": "the shield wire (later)", "pos": p(-24, 316 + 18, 8)},
-                     {"name": "shield_east", "use": "the shield wire (later)", "pos": p(40, 316 + 18, 8)}],
+                                  {"label": "C", "pos": p(58, y, z)}]},
+                   shield([p(-24, 316 + 18, 8), p(40, 316 + 18, 8)])],
+        "reserved": [],
     }
 
 
@@ -93,7 +99,8 @@ def ehv():
             x = c + side * reach - side * 1.0
             terminals.append({"label": label, "pos": p(x, string_bottom(level - 4.0, 13), c)})
         groups.append({"name": name, "circuit": "three_phase", "terminals": terminals})
-    return {"groups": groups, "reserved": [{"name": "shield", "use": "the shield wire (later)", "pos": p(8, 496 + 14, 8)}]}
+    groups.append(shield([p(8, 496 + 14, 8)]))
+    return {"groups": groups, "reserved": []}
 
 
 def bushing_top(tier, y, unit):
@@ -142,10 +149,80 @@ def unit(tier):
     }
 
 
+def abc(points):
+    return [{"label": label, "pos": pos} for label, pos in zip("ABC", points)]
+
+
+def fuse():
+    """TowerMesh.fuse: the top contact's top (line) and the bottom contact's bottom (load), on the body's axis."""
+    return lambda: {"groups": [{"name": "line", "circuit": "three_phase", "terminals": [{"label": "A", "pos": p(8, 15.2, 8)}]},
+                               {"name": "load", "circuit": "three_phase", "terminals": [{"label": "A", "pos": p(8, 4.8, 8)}]}],
+                    "reserved": []}
+
+
+def breaker(tier):
+    """TowerMesh.Breaker: halfZ 6 + 2 tier, height 9 + 4 tier on 2 px feet and a 1 px lid; bushings (a unit's) across
+    it at x 8 + i * spacing, the line row 2.5 in from the north edge, the load row from the south."""
+    half_z, top = 6 + 2 * tier, 2 + 9 + 4 * tier + 1
+    spacing = (5.6, 6.0, 6.5, 8.0)[tier]
+    y = bushing_top(tier, top, True)
+    return lambda: {"groups": [{"name": "line", "circuit": "three_phase",
+                                "terminals": abc([p(8 + i * spacing, y, 8 - half_z + 2.5) for i in (-1, 0, 1)])},
+                               {"name": "load", "circuit": "three_phase",
+                                "terminals": abc([p(8 + i * spacing, y, 8 + half_z - 2.5) for i in (-1, 0, 1)])}],
+                    "reserved": []}
+
+
+def disconnect(tier):
+    """TowerMesh.disconnect: posts (a unit's bushings) on the 2 px base, a phase every spacing across, the line post at
+    8 - half and the load post at 8 + half; the terminal is each post's top."""
+    spacing, half = (6, 7, 9, 12)[tier], (5, 6, 8, 10)[tier]
+    y = bushing_top(tier, 2, True)
+    return lambda: {"groups": [{"name": "line", "circuit": "three_phase", "terminals": abc([p(8 + i * spacing, y, 8 - half) for i in (-1, 0, 1)])},
+                               {"name": "load", "circuit": "three_phase", "terminals": abc([p(8 + i * spacing, y, 8 + half) for i in (-1, 0, 1)])}],
+                    "reserved": []}
+
+
+STRAIN = 8.2
+
+
+def dead_end_lv():
+    """TowerMesh.deadEndLv: strain strings from the north arm's face (z 3) and the south's (z 13) at y 134, x -8, 1 and
+    24; the neutral's from its standoff (x 2.2, y 99.3, z 8 -/+ 0.7). Each terminal the clamp's outer face."""
+    xs = (-8, 1, 24)
+    return lambda: {"groups": [{"name": "north", "circuit": "three_phase", "terminals": abc([p(x, 134, 3 - STRAIN) for x in xs])},
+                               {"name": "south", "circuit": "three_phase", "terminals": abc([p(x, 134, 13 + STRAIN) for x in xs])},
+                               {"name": "north_neutral", "circuit": "single_phase", "terminals": [{"label": "N", "pos": p(2.2, 99.3, 7.3 - STRAIN)}]},
+                               {"name": "south_neutral", "circuit": "single_phase", "terminals": [{"label": "N", "pos": p(2.2, 99.3, 8.7 + STRAIN)}]}],
+                    "reserved": []}
+
+
+def dead_end_mv():
+    """TowerMesh.deadEndMv: strings from the north arms' face (8 - 3.62 - 3.2) and the south's (8 + 3.62 + 3.6), A on the
+    upper arm (x -8, y 198), B and C on the lower (x -16 and 32, y 168); the shield peak (G)."""
+    north, south = 8 - 3.62 - 3.6 + 0.4, 8 + 3.62 + 3.6 - 0.4 + 0.4
+    phases = ((-8, 198), (-16, 168), (32, 168))
+    return lambda: {"groups": [{"name": "north", "circuit": "three_phase", "terminals": abc([p(x, y, north - STRAIN) for x, y in phases])},
+                               {"name": "south", "circuit": "three_phase", "terminals": abc([p(x, y, south + STRAIN) for x, y in phases])},
+                               shield([p(8, 222 + 16, 8)])],
+                    "reserved": []}
+
+
+def service():
+    """TowerMesh.service: the spools' tops, L1 N L2 west to east."""
+    return lambda: {"groups": [{"name": "service", "circuit": "single_phase",
+                                "terminals": [{"label": label, "pos": p(x, 25.2, 9)} for label, x in (("L1", 4.5), ("N", 8), ("L2", 11.5))]}],
+                    "reserved": []}
+
+
 MODELS = {"lv_distribution_pole": lv, "mv_sub_transmission_pole": mv, "hv_h_frame_tower": hv, "ehv_lattice_tower": ehv,
           "mv_substation_transformer": substation("mv"), "hv_substation_transformer": substation("hv"),
           "ehv_substation_transformer": substation("ehv"), "lv_unit_transformer": unit(0), "mv_unit_transformer": unit(1),
-          "hv_unit_transformer": unit(2), "ehv_unit_transformer": unit(3)}
+          "hv_unit_transformer": unit(2), "ehv_unit_transformer": unit(3),
+          "lv_fuse_cutout": fuse(), "mv_fuse_cutout": fuse(), "lv_recloser": breaker(0), "mv_recloser": breaker(1),
+          "hv_circuit_breaker": breaker(2), "ehv_circuit_breaker": breaker(3), "lv_disconnect_switch": disconnect(0),
+          "mv_disconnect_switch": disconnect(1), "hv_disconnect_switch": disconnect(2), "ehv_disconnect_switch": disconnect(3),
+          "lv_dead_end_pole": dead_end_lv(), "mv_dead_end_pole": dead_end_mv(), "service_meter": service()}
 
 
 def main():

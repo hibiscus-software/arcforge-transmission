@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "T": "minecraft:terracotta",
+    "C": "#c:rods/copper",
+    "Z": "#c:gems/zircon",
+    "P": "#c:plates/steel"
+  },
+  "pattern": [
+    " T ",
+    "CZC",
+    " P "
+  ],
+  "result": {
+    "id": "arcforgetransmission:surge_arrester"
+  }
+}

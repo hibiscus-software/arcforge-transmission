@@ -53,6 +53,19 @@ public final class TowerContent {
     public static final DeferredBlock<TowerBlock> MV_UNIT_TRANSFORMER = tower(TowerTier.MV_UNIT, true);
     public static final DeferredBlock<TowerBlock> HV_UNIT_TRANSFORMER = tower(TowerTier.HV_UNIT, true);
     public static final DeferredBlock<TowerBlock> EHV_UNIT_TRANSFORMER = tower(TowerTier.EHV_UNIT, true);
+    // Everything else placed whole: protection, line hardware and the service meter (by TowerTier, in its order).
+    public static final java.util.Map<TowerTier, DeferredBlock<TowerBlock>> MORE = new java.util.EnumMap<>(TowerTier.class);
+    public static final java.util.Map<TowerTier, DeferredItem<TowerItem>> MORE_ITEMS = new java.util.EnumMap<>(TowerTier.class);
+
+    static {
+        for (TowerTier tier : TowerTier.values()) {
+            if (tier.ordinal() >= TowerTier.LV_FUSE.ordinal()) {
+                DeferredBlock<TowerBlock> block = tower(tier, tier.steel());
+                MORE.put(tier, block);
+                MORE_ITEMS.put(tier, item(block, tier));
+            }
+        }
+    }
     // The invisible blocks round a tower's main block, shaped like the tower in them. No item, no drops.
     public static final DeferredBlock<TowerPartBlock> TOWER_PART = BLOCKS.registerBlock("transmission_tower_part", TowerPartBlock::new,
             p -> p.mapColor(MapColor.COLOR_BROWN).strength(2.5F, 6.0F).sound(SoundType.WOOD).noOcclusion().noLootTable()
@@ -73,9 +86,7 @@ public final class TowerContent {
     public static final DeferredItem<TowerItem> EHV_UNIT_TRANSFORMER_ITEM = item(EHV_UNIT_TRANSFORMER, TowerTier.EHV_UNIT);
 
     public static final Supplier<BlockEntityType<TowerBlockEntity>> TOWER_ENTITY = BLOCK_ENTITY_TYPES.register("transmission_tower",
-            () -> new BlockEntityType<>(TowerBlockEntity::new, LV_DISTRIBUTION_POLE.get(), MV_SUB_TRANSMISSION_POLE.get(), HV_H_FRAME_TOWER.get(),
-                    EHV_LATTICE_TOWER.get(), MV_SUBSTATION_TRANSFORMER.get(), HV_SUBSTATION_TRANSFORMER.get(), EHV_SUBSTATION_TRANSFORMER.get(),
-                    LV_UNIT_TRANSFORMER.get(), MV_UNIT_TRANSFORMER.get(), HV_UNIT_TRANSFORMER.get(), EHV_UNIT_TRANSFORMER.get()));
+            () -> new BlockEntityType<>(TowerBlockEntity::new, allBlocks().toArray(TowerBlock[]::new)));
     public static final Supplier<BlockEntityType<TowerPartBlockEntity>> TOWER_PART_ENTITY = BLOCK_ENTITY_TYPES.register("transmission_tower_part",
             () -> new BlockEntityType<>(TowerPartBlockEntity::new, TOWER_PART.get()));
 
@@ -84,7 +95,7 @@ public final class TowerContent {
             .title(Component.translatable("itemGroup." + MODID + ".transmission"))
             .icon(() -> EHV_LATTICE_TOWER_ITEM.get().getDefaultInstance())
             .displayItems((parameters, output) -> {
-                towerItems().forEach(item -> output.accept(item.get()));
+                allItems().forEach(item -> output.accept(item.get()));
                 GridContent.tabItems().forEach(item -> output.accept(item.get()));
                 MaterialContent.tabItems().forEach(item -> output.accept(item.get()));
             })
@@ -96,6 +107,22 @@ public final class TowerContent {
         return List.of(LV_DISTRIBUTION_POLE_ITEM, MV_SUB_TRANSMISSION_POLE_ITEM, HV_H_FRAME_TOWER_ITEM, EHV_LATTICE_TOWER_ITEM,
                 MV_SUBSTATION_TRANSFORMER_ITEM, HV_SUBSTATION_TRANSFORMER_ITEM, EHV_SUBSTATION_TRANSFORMER_ITEM, LV_UNIT_TRANSFORMER_ITEM,
                 MV_UNIT_TRANSFORMER_ITEM, HV_UNIT_TRANSFORMER_ITEM, EHV_UNIT_TRANSFORMER_ITEM);
+    }
+
+    // Every block placed whole (each draws and holds its structure).
+    private static List<TowerBlock> allBlocks() {
+        List<TowerBlock> out = new java.util.ArrayList<>(List.of(LV_DISTRIBUTION_POLE.get(), MV_SUB_TRANSMISSION_POLE.get(), HV_H_FRAME_TOWER.get(),
+                EHV_LATTICE_TOWER.get(), MV_SUBSTATION_TRANSFORMER.get(), HV_SUBSTATION_TRANSFORMER.get(), EHV_SUBSTATION_TRANSFORMER.get(),
+                LV_UNIT_TRANSFORMER.get(), MV_UNIT_TRANSFORMER.get(), HV_UNIT_TRANSFORMER.get(), EHV_UNIT_TRANSFORMER.get()));
+        MORE.values().forEach(block -> out.add(block.get()));
+        return out;
+    }
+
+    // Everything placed whole, in the tab's order: the towers and transformers, then the rest.
+    public static List<DeferredItem<TowerItem>> allItems() {
+        List<DeferredItem<TowerItem>> out = new java.util.ArrayList<>(towerItems());
+        out.addAll(MORE_ITEMS.values());
+        return out;
     }
 
     private static DeferredBlock<TowerBlock> tower(TowerTier tier, boolean steel) {

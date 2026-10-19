@@ -30,6 +30,7 @@ import net.zagdrath.arcforgetransmission.grid.world.GridData;
 import net.zagdrath.arcforgetransmission.grid.world.GridManager;
 import net.zagdrath.arcforgetransmission.grid.world.Insulator;
 import net.zagdrath.arcforgetransmission.tower.TowerBlockEntity;
+import net.zagdrath.arcforgetransmission.tower.TowerTier;
 
 // What Arcforge's Wrench does to anything with insulators (Arcforge's wrench passes on blocks that aren't its own, so
 // they handle it in useItemOn):
@@ -68,7 +69,7 @@ public final class GridInteractions {
         switch (mode) {
             case ROTATE -> {
                 // A transformer turns, like an Arcforge machine (sneaking: the other way).
-                if (endpoint instanceof TowerBlockEntity tower && tower.tier().isTransformer()) {
+                if (endpoint instanceof TowerBlockEntity tower && tower.tier().rotatable()) {
                     boolean turned = tower.rotate(!sneaking);
                     tell(player, Component.translatable("message." + ArcforgeTransmission.MODID + ".transformer." + (turned ? "rotated" : "no_room")));
                     if (turned) {
@@ -126,8 +127,9 @@ public final class GridInteractions {
                         tell(player, Component.translatable("message." + ArcforgeTransmission.MODID + ".pin_insulator.mode",
                                 Component.translatable("pin_insulator_mode." + ArcforgeTransmission.MODID + "." + next.id())));
                     }
-                } else if (endpoint instanceof TowerBlockEntity tower && tower.tier().isTransformer()) {
-                    tell(player, tower.configure());
+                } else if (endpoint instanceof TowerBlockEntity tower && tower.tier().kind() != TowerTier.Kind.TOWER
+                        && tower.tier().kind() != TowerTier.Kind.DEAD_END && tower.configure() != null) {
+                    tell(player, tower.hudMode());
                 } else {
                     tell(player, Component.translatable("message." + ArcforgeTransmission.MODID + ".phase.labels", labels(server, endpoint, group)));
                 }

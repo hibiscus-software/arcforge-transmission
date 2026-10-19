@@ -1,0 +1,28 @@
+{
+  "variants": {
+    "diagonal=false,facing=east": {
+      "model": "arcforgetransmission:block/transmission_tower/steel"
+    },
+    "diagonal=false,facing=north": {
+      "model": "arcforgetransmission:block/transmission_tower/steel"
+    },
+    "diagonal=false,facing=south": {
+      "model": "arcforgetransmission:block/transmission_tower/steel"
+    },
+    "diagonal=false,facing=west": {
+      "model": "arcforgetransmission:block/transmission_tower/steel"
+    },
+    "diagonal=true,facing=east": {
+      "model": "arcforgetransmission:block/transmission_tower/steel"
+    },
+    "diagonal=true,facing=north": {
+      "model": "arcforgetransmission:block/transmission_tower/steel"
+    },
+    "diagonal=true,facing=south": {
+      "model": "arcforgetransmission:block/transmission_tower/steel"
+    },
+    "diagonal=true,facing=west": {
+      "model": "arcforgetransmission:block/transmission_tower/steel"
+    }
+  }
+}

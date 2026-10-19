@@ -21,4 +21,9 @@ public interface PortHud {
 
     // FE/t through it last tick.
     double lastFlow();
+
+    // Whether the HUD shows its status and FE/t (not for a switch, only its position).
+    default boolean hudFlow() {
+        return true;
+    }
 }

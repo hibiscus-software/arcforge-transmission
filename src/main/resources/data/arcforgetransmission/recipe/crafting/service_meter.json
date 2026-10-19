@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "P": "#c:plates/steel",
+    "G": "#c:glass_blocks",
+    "C": "#c:rods/copper",
+    "R": "minecraft:redstone"
+  },
+  "pattern": [
+    "PGP",
+    "CRC",
+    "PPP"
+  ],
+  "result": {
+    "id": "arcforgetransmission:service_meter"
+  }
+}

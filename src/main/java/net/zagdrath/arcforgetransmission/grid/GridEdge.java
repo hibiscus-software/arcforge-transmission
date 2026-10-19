@@ -9,10 +9,17 @@ package net.zagdrath.arcforgetransmission.grid;
 // One wire: a single conductor between two insulators, its length the curve's arc in blocks. overTicks counts the
 // ticks in a row it has run over its rating.
 public final class GridEdge {
-    // A bare conductor; one in a rubber sheath (LV and MV only: safe to touch); or a jumper, the link a Wall Bushing
-    // makes through itself between its insulators of one label (no length, never drawn, dropped or burnt out).
+    // A bare conductor; one in a rubber sheath (LV and MV only: safe to touch); an underground cable (LV and MV: insulated,
+    // never drawn, out of lightning's reach); a jumper, the link a Wall Bushing or a protection device makes through
+    // itself (no length, never drawn, dropped or burnt out); or a shield wire, grounded steel between tower peaks that
+    // catches lightning and carries no current.
     public enum Kind {
-        BARE, INSULATED, JUMPER;
+        BARE, INSULATED, JUMPER, BURIED, SHIELD;
+
+        // Whether it carries a circuit's current (a conductor), not a jumper or a shield.
+        public boolean conductor() {
+            return this == BARE || this == INSULATED || this == BURIED;
+        }
 
         public String id() {
             return name().toLowerCase(java.util.Locale.ROOT);

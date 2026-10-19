@@ -14,7 +14,9 @@ import java.util.Set;
 // conductor; a circuit is a port's whole set of them (Port).
 public enum CircuitType {
     SINGLE_PHASE,
-    THREE_PHASE;
+    THREE_PHASE,
+    // A tower's shield wire points: no circuit at all (lightning protection).
+    GROUND;
 
     public Set<Phase> phases() {
         Set<Phase> phases = EnumSet.noneOf(Phase.class);

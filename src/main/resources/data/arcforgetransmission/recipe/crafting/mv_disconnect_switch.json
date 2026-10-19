@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "I": "arcforgetransmission:mv_pin_insulator",
+    "C": "#c:rods/copper",
+    "P": "#c:plates/steel",
+    "S": "#c:rods/steel"
+  },
+  "pattern": [
+    "ICI",
+    "PSP"
+  ],
+  "result": {
+    "id": "arcforgetransmission:mv_disconnect_switch"
+  }
+}
