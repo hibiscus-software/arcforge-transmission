@@ -216,7 +216,7 @@ public final class GridManager {
     // --- Wires ------------------------------------------------------------------------------------------------------
 
     // Strings a wire of a tier between two insulators, or says why not.
-    public static @Nullable ConnectionRules.Refusal connect(ServerLevel level, GridData.Anchor from, GridData.Anchor to, VoltageTier wire) {
+    public static ConnectionRules.@Nullable Refusal connect(ServerLevel level, GridData.Anchor from, GridData.Anchor to, VoltageTier wire) {
         GridData.Dimension dimension = GridData.of(level);
         Long a = dimension.nodeAt(from), b = dimension.nodeAt(to);
         if (a == null || b == null) {

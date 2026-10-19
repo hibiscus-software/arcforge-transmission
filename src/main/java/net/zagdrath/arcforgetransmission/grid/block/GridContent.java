@@ -55,7 +55,7 @@ public final class GridContent {
             boolean glass = tier == VoltageTier.HV || tier == VoltageTier.EV;
             DeferredBlock<InductorBlock> inductor = BLOCKS.registerBlock(tier.id() + "_inductor", p -> new InductorBlock(tier, p),
                     p -> p.mapColor(glass ? MapColor.COLOR_LIGHT_GRAY : MapColor.TERRACOTTA_BROWN).strength(1.5F, 6.0F)
-                            .sound(glass ? SoundType.GLASS : SoundType.STONE).noOcclusion().pushReaction(PushReaction.DESTROY));
+                            .sound(glass ? SoundType.GLASS : SoundType.STONE).noOcclusion().pushReaction(PushReaction.POPPED));
             INDUCTORS.put(tier, inductor);
             TAB_ITEMS.add(ITEMS.registerSimpleBlockItem(inductor));
         }
@@ -66,7 +66,7 @@ public final class GridContent {
     }
 
     public static final DeferredBlock<PoleTransformerBlock> POLE_TRANSFORMER = BLOCKS.registerBlock("pole_transformer", PoleTransformerBlock::new,
-            p -> p.mapColor(MapColor.METAL).strength(3.0F, 6.0F).sound(SoundType.METAL).noOcclusion().pushReaction(PushReaction.DESTROY));
+            p -> p.mapColor(MapColor.METAL).strength(3.0F, 6.0F).sound(SoundType.METAL).noOcclusion().pushReaction(PushReaction.POPPED));
     public static final DeferredItem<BlockItem> POLE_TRANSFORMER_ITEM = ITEMS.registerSimpleBlockItem(POLE_TRANSFORMER);
     public static final DeferredItem<Item> BURNT_WIRE = ITEMS.registerSimpleItem("burnt_wire");
 
