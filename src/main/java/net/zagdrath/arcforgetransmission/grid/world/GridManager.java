@@ -107,7 +107,7 @@ public final class GridManager {
                 continue;
             }
             if (record != null) {
-                dimension.graph().removeNode(record.id());
+                dropWires(level, dimension, pos, record.id());
                 dimension.nodes.remove(record.id());
             }
             dimension.putNode(new GridData.NodeRecord(dimension.newId(), pos, i, insulator.tier(), insulator.phase(), insulator.at(), insulator.group()));
@@ -115,13 +115,34 @@ public final class GridManager {
         for (int i = insulators.size(); i < existing.size(); i++) {
             long id = existing.get(i);
             if (id >= 0) {
-                dimension.graph().removeNode(id);
+                dropWires(level, dimension, pos, id);
                 dimension.nodes.remove(id);
                 dimension.byPos.get(pos.asLong()).set(i, -1L);
                 dimension.markDirty();
             }
         }
-        endpoint.setWires(wiresOf(dimension, pos), false);
+        // Only told again when they've changed (a far end went while this was unloaded): its chunk's data went out with
+        // what it had saved.
+        List<WireView> wires = wiresOf(dimension, pos);
+        if (!wires.equals(endpoint.wires())) {
+            endpoint.setWires(wires, true);
+        }
+    }
+
+    // Takes a node out of the graph, its wires dropping their coils at pos and the far ends told.
+    private static void dropWires(ServerLevel level, GridData.Dimension dimension, BlockPos pos, long id) {
+        Set<BlockPos> others = new LinkedHashSet<>();
+        for (GridEdge edge : dimension.graph().edgesOf(id)) {
+            GridData.NodeRecord other = dimension.node(edge.other(id));
+            if (other != null && !other.pos().equals(pos)) {
+                others.add(other.pos());
+            }
+        }
+        for (GridEdge edge : dimension.graph().removeNode(id)) {
+            Block.popResource(level, pos, new ItemStack(GridContent.coil(edge.tier())));
+        }
+        dimension.markDirty();
+        others.forEach(other -> refresh(level, dimension, other));
     }
 
     // A block with insulators is gone: its wires go too, each dropping its coil (drop) at the block, and the other ends
@@ -276,15 +297,18 @@ public final class GridManager {
 
             @Override
             public void commit(Map<Long, Integer> draws, Map<Long, Integer> deliveries) {
-                // Draw first; if a source gave less than it offered (it changed since), every delivery shrinks to match, so
-                // nothing is made.
-                long planned = 0, got = 0;
+                // Draw first; if a source gave less than it offered (it changed since), the deliveries in its part of
+                // the grid (the ports joined through any network) shrink to match, so nothing is made.
+                Map<Long, Long> group = groups(dimension, ports);
+                Map<Long, long[]> plannedGot = new HashMap<>();
                 for (Map.Entry<Long, Integer> draw : draws.entrySet()) {
-                    planned += draw.getValue();
-                    got += byId.get(draw.getKey()).draw(draw.getValue());
+                    long[] pg = plannedGot.computeIfAbsent(group.get(draw.getKey()), k -> new long[2]);
+                    pg[0] += draw.getValue();
+                    pg[1] += byId.get(draw.getKey()).draw(draw.getValue());
                 }
-                double share = planned > 0 ? Math.min(1.0, (double) got / planned) : 1.0;
                 for (Map.Entry<Long, Integer> delivery : deliveries.entrySet()) {
+                    long[] pg = plannedGot.get(group.get(delivery.getKey()));
+                    double share = pg == null || pg[0] <= 0 ? 0.0 : Math.min(1.0, (double) pg[1] / pg[0]);
                     int fe = (int) Math.floor(delivery.getValue() * share);
                     if (fe > 0) {
                         byId.get(delivery.getKey()).deliver(fe);
@@ -297,6 +321,39 @@ public final class GridManager {
         if (!report.burnt().isEmpty()) {
             burn(level, dimension, report.burnt());
         }
+    }
+
+    // Ports joined through any network share a group (union-find over their nodes' networks): a port's group id.
+    private static Map<Long, Long> groups(GridData.Dimension dimension, List<Port> ports) {
+        Map<Long, Long> parent = new HashMap<>();
+        Map<Long, Long> byNetwork = new HashMap<>();
+        for (Port port : ports) {
+            parent.putIfAbsent(port.id(), port.id());
+            for (long node : port.nodes()) {
+                var network = dimension.graph().networkOf(node);
+                if (network == null) {
+                    continue;
+                }
+                Long other = byNetwork.putIfAbsent(network.id(), port.id());
+                if (other != null) {
+                    parent.put(find(parent, port.id()), find(parent, other));
+                }
+            }
+        }
+        Map<Long, Long> out = new HashMap<>();
+        for (Port port : ports) {
+            out.put(port.id(), find(parent, port.id()));
+        }
+        return out;
+    }
+
+    private static long find(Map<Long, Long> parent, long id) {
+        long root = id;
+        while (parent.get(root) != root) {
+            root = parent.get(root);
+        }
+        parent.put(id, root);
+        return root;
     }
 
     // Burnt-out wires: already off the graph; each drops Burnt Wire under its middle and may set a fire there.

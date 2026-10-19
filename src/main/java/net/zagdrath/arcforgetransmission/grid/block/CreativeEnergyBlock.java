@@ -53,7 +53,8 @@ public class CreativeEnergyBlock extends BaseEntityBlock {
     protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand,
             BlockHitResult hit) {
         if (!(stack.getItem() instanceof WrenchItem) || WrenchItem.mode(stack) != WrenchMode.CONFIGURE) {
-            return InteractionResult.TRY_WITH_EMPTY_HAND;
+            // Anything else in hand (an inductor to mount on it) is the item's to use.
+            return stack.isEmpty() ? InteractionResult.TRY_WITH_EMPTY_HAND : InteractionResult.PASS;
         }
         if (!level.isClientSide() && level.getBlockEntity(pos) instanceof CreativeEnergyBlockEntity creative) {
             int setpoint = creative.step(!player.isSecondaryUseActive());

@@ -53,6 +53,8 @@ public class InductorBlockEntity extends GridEndpointBlockEntity implements Grid
     // How the last tick went, for the status line.
     private FlowSolver.PortStatus status = FlowSolver.PortStatus.UNWIRED;
     private double lastFlow;
+    // Just placed (nothing loaded from a save): takes its port's settings from the inductors already there.
+    private boolean fresh = true;
 
     public InductorBlockEntity(BlockPos pos, BlockState state) {
         super(GridContent.INDUCTOR_ENTITY.get(), pos, state);
@@ -142,6 +144,20 @@ public class InductorBlockEntity extends GridEndpointBlockEntity implements Grid
         }
     }
 
+    @Override
+    public void onLoad() {
+        if (fresh && level != null && !level.isClientSide()) {
+            for (InductorBlockEntity other : siblings()) {
+                if (other != this) {
+                    set(other.mode, other.limitEighths);
+                    break;
+                }
+            }
+        }
+        fresh = false;
+        super.onLoad();
+    }
+
     // --- The port ---------------------------------------------------------------------------------------------------
 
     @Override
@@ -167,7 +183,8 @@ public class InductorBlockEntity extends GridEndpointBlockEntity implements Grid
         VoltageTier tier = tier();
         // Overvoltage once it's live: switched on, against a foreign block, with a wire on any of its conductors.
         boolean wired = nodes.stream().anyMatch(id -> dimension.graph().networkOf(id) != null);
-        if (mode != InductorMode.OFF && wired && handler != null && tier != VoltageTier.LV && !isNative(level, mount)) {
+        if (mode != InductorMode.OFF && wired && handler != null && tier != VoltageTier.LV && !isNative(level, mount)
+                && GridConfig.OVERVOLTAGE.get() != GridConfig.Overvoltage.NONE) {
             overvoltage(level, mount, nodes.get(0), tier);
             return;
         }
@@ -181,9 +198,6 @@ public class InductorBlockEntity extends GridEndpointBlockEntity implements Grid
 
     private static void overvoltage(ServerLevel level, BlockPos pos, long node, VoltageTier tier) {
         GridConfig.Overvoltage action = GridConfig.OVERVOLTAGE.get();
-        if (action == GridConfig.Overvoltage.NONE) {
-            return;
-        }
         GridFaults.raise(FaultEvent.node(node, FaultEvent.Cause.OVERVOLTAGE, tier.volts()));
         switch (action) {
             case BREAK -> level.destroyBlock(pos, true);
@@ -280,6 +294,7 @@ public class InductorBlockEntity extends GridEndpointBlockEntity implements Grid
     @Override
     protected void loadAdditional(ValueInput input) {
         super.loadAdditional(input);
+        fresh = false;
         mode = input.read("mode", InductorMode.CODEC).orElse(InductorMode.OFF);
         limitEighths = Math.max(1, Math.min(8, input.read("limit_eighths", Codec.INT).orElse(8)));
     }

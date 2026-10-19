@@ -128,7 +128,8 @@ public class PoleTransformerBlock extends BaseEntityBlock {
                 return result;
             }
         }
-        return InteractionResult.TRY_WITH_EMPTY_HAND;
+        // Anything else in hand (a wire coil, a block to place against it) is the item's to use.
+        return stack.isEmpty() ? InteractionResult.TRY_WITH_EMPTY_HAND : InteractionResult.PASS;
     }
 
     @Override
