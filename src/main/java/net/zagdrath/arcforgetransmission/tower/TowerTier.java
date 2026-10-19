@@ -175,6 +175,12 @@ public enum TowerTier {
         };
     }
 
+    // Whether its renderer draws its links' jumpers as hanging conductors (WireView.JUMPER), from each link pair's first
+    // insulator to its second, rather than the model carrying them: the gantries.
+    public boolean drawsJumpers() {
+        return design == TowerMesh.Design.GANTRY_HV || design == TowerMesh.Design.GANTRY_EHV;
+    }
+
     public TowerMesh.Design design() {
         return design;
     }

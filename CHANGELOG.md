@@ -16,6 +16,15 @@
   quarter of the new pole rating); `/arcforgetransmission config reset all` lists them with a note that the defaults
   changed, and `/arcforgetransmission config reset all confirm` (or `reset wires`, `reset transformers.poleRating`) puts
   them on the new ones. Shocks and voltage ratings (`arcforgetransmission:rated/<tier>`) are by tier and unchanged.
+- **Dead-End Gantry jumpers** (HV, EHV) are real conductors: a smooth slack loop in the tier's own wire (EHV's glow
+  too), hanging 0.8 (HV) or 1.1 (EHV) blocks below the straight line from the strain's line clamp to the drop on the yard
+  side, drawn by the tower's renderer with the wires' tube; the copper right-angle jumpers are gone from the model. The
+  strain strings run out along the incoming line, 8 degrees below level, their line clamp the line's attach point.
+  Electrically nothing changes: the jumper is the same link, with no hitbox, and isn't a span for shocks, lightning, the
+  Clamp Meter or Wire Cutters. The jumper and the tilted strain string are shared code (`TowerTier.drawsJumpers`,
+  `Catenary.jumperSag`, `TowerMesh.glassStrainEnd`) for the dead-end and transposition towers to take up.
+- `./gradlew renderPreviews -Pdesigns=NAME#3` renders a model from the front, the side and 45 degrees, with its
+  jumpers.
 
 ## Unreleased: Phase 4, substations, line hardware and the voltage model
 

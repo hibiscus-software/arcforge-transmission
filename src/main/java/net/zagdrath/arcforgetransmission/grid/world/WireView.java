@@ -18,6 +18,8 @@ import net.zagdrath.arcforgetransmission.grid.VoltageTier;
 // and what it is (bare, insulated, a shield wire; a guy, for a tower's guys). Synced with the endpoint's block entity.
 public record WireView(long edge, Vec3 from, Vec3 to, VoltageTier tier, String kind) {
     public static final String GUY = "guy";
+    // A dead-end's jumper, drawn by the tower that carries it (never synced: the grid's jumper is a link of no length).
+    public static final String JUMPER = "jumper";
 
     public boolean insulated() {
         return kind.equals("insulated");

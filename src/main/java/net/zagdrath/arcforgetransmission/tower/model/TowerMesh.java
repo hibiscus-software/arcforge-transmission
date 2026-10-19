@@ -953,6 +953,21 @@ public final class TowerMesh extends MeshBuilder {
         }
     }
 
+    // Turns what's been added since `from` (lying along z from z0 the way dir points, centred at height y; px) down by
+    // `tilt` degrees about its root, its far end lowest.
+    private void tiltDown(int from, float y, float z0, float dir, float tilt) {
+        double a = Math.toRadians(tilt), cos = Math.cos(a), sin = Math.sin(a);
+        float yb = y / PX, zb = z0 / PX;
+        for (int i = from; i < solid.size(); i += 8) {
+            double u = dir * (solid.get(i + 2) - zb), v = solid.get(i + 1) - yb;
+            solid.set(i + 1, (float) (yb + v * cos - u * sin));
+            solid.set(i + 2, (float) (zb + dir * (u * cos + v * sin)));
+            double nu = dir * solid.get(i + 7), nv = solid.get(i + 6);
+            solid.set(i + 6, (float) (nv * cos - nu * sin));
+            solid.set(i + 7, (float) (dir * (nu * cos + nv * sin)));
+        }
+    }
+
     // The jumper loop under a dead-end's crossarm, from one strain's clamp to the other's: down, across and up, in
     // copper.
     private void jumperLoop(float x, float y, float zNorth, float zSouth, float drop) {
@@ -1261,6 +1276,18 @@ public final class TowerMesh extends MeshBuilder {
     }
 
     private float glassStrain(float x, float y, float z0, float dir, int discs, float rim) {
+        return glassStrain(x, y, z0, dir, discs, rim, 0.0F);
+    }
+
+    // The point (px: x, y, z) a strain string's line clamp ends at when it runs out from (x, y, z0) the way dir points,
+    // tilted `tilt` degrees below level (as a strain string pulled down toward a lower line hangs): where its wire attaches.
+    public static float[] glassStrainEnd(float x, float y, float z0, float dir, int discs, float tilt) {
+        double a = Math.toRadians(tilt), length = glassStrainLength(discs);
+        return new float[] { x, (float) (y - length * Math.sin(a)), (float) (z0 + dir * length * Math.cos(a)) };
+    }
+
+    // The strain string tilted `tilt` degrees below level about its root (the clevis at z0); returns its clamp's z.
+    private float glassStrain(float x, float y, float z0, float dir, int discs, float rim, float tilt) {
         int solidFrom = solid.size(), boxesFrom = boxes.size();
         turned(0, 0, new float[][] { { 0, 0.6F }, { 1.0F, 0.6F } }, 6, Ramp.GALV, false, false);
         float s = 1.0F;
@@ -1273,9 +1300,13 @@ public final class TowerMesh extends MeshBuilder {
         }
         turned(0, 0, new float[][] { { s, 1.4F }, { s + 1.6F, 1.4F } }, 8, Ramp.GALV, true, true);
         alongZ(solidFrom, x, y, z0, dir);
+        if (tilt != 0) {
+            tiltDown(solidFrom, y, z0, dir, tilt);
+        }
         boxes.subList(boxesFrom, boxes.size()).clear();
-        float end = z0 + dir * glassStrainLength(discs);
-        float[] box = { x - rim, y - rim, Math.min(z0, end), x + rim, y + rim, Math.max(z0, end) };
+        float[] clamp = glassStrainEnd(x, y, z0, dir, discs, tilt);
+        float end = clamp[2];
+        float[] box = { x - rim, clamp[1] - rim, Math.min(z0, end), x + rim, y + rim, Math.max(z0, end) };
         boxes.add(box);
         insulators.add(box);
         return end;
@@ -1346,13 +1377,14 @@ public final class TowerMesh extends MeshBuilder {
     }
 
     // Dead-End Gantry (HV, EHV): where lines come into the yard. Two galvanized A-frame legs (each two members spread
-    // along the line) carry a box girder; each phase dead-ends on its north face on a glass strain string, and a copper
-    // jumper drops under the girder to a suspension string on its south side (the yard's terminal). Shield peaks on the
-    // legs.
+    // along the line) carry a box girder; each phase dead-ends on its north face on a glass strain string running out
+    // along the incoming line, tilted GANTRY_TILT below level, its line clamp the line's terminal; a suspension string on
+    // the girder's south side is the yard's. The jumper between them is a real conductor, drawn by the tower's renderer as
+    // a slack loop in the tier's own wire (TowerTier.drawsJumpers), not part of this model. Shield peaks on the legs.
     public static final float[] GANTRY_SPACING = { 0, 0, 20, 28 }, GANTRY_BEAM = { 0, 0, 64, 96 }, GANTRY_LEG = { 0, 0, 32, 48 };
     public static final int[] GANTRY_DISCS = { 0, 0, 6, 8 }, GANTRY_DROP = { 0, 0, 4, 6 };
     public static final float[] GANTRY_RIM = { 0, 0, 3.0F, 4.0F };
-    public static final float GANTRY_HALF = 2.5F;
+    public static final float GANTRY_HALF = 2.5F, GANTRY_TILT = 8.0F;
 
     private void gantry(int tier) {
         float c = 8, sp = GANTRY_SPACING[tier], beamY = GANTRY_BEAM[tier], leg = GANTRY_LEG[tier];
@@ -1371,11 +1403,8 @@ public final class TowerMesh extends MeshBuilder {
         float y = beamY + 2, discs = GANTRY_DISCS[tier];
         for (int i = -1; i <= 1; i++) {
             float x = c + i * sp;
-            float end = glassStrain(x, y, c - GANTRY_HALF, -1, (int) discs, GANTRY_RIM[tier]);
+            glassStrain(x, y, c - GANTRY_HALF, -1, (int) discs, GANTRY_RIM[tier], GANTRY_TILT);
             suspension(x, beamY, c + GANTRY_HALF + 3.2F, GANTRY_DROP[tier]);
-            float bottom = beamY - 2.2F - 3.0F * GANTRY_DROP[tier] - 3.0F;
-            jumper(new float[] { x, y - 1.4F, end }, new float[] { x, bottom - 6, end }, new float[] { x, bottom - 6, c + GANTRY_HALF + 3.2F },
-                    new float[] { x, bottom - 1.0F, c + GANTRY_HALF + 3.2F });
         }
     }
 

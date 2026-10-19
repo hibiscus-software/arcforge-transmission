@@ -42,7 +42,7 @@ import net.zagdrath.arcforgetransmission.tower.model.TowerMesh;
 // Draws a transmission tower from its main block: the model (TowerMesh, on the sheet block/transmission_tower/towers),
 // built once per tower and turned once per facing, drawn from its copy on the GPU and shaded like Arcforge's other
 // large models (Arcforge's MeshRendering: each face as a block face turned its way is), and the wires strung from it
-// (WireRenderer). Arcforge's StructureRenderer keeps it drawn while any of it is in view, not only while its main
+// (WireRenderer), and on a gantry its jumpers. Arcforge's StructureRenderer keeps it drawn while any of it is in view, not only while its main
 // block's chunk section is.
 public class TowerRenderer implements StructureRenderer<TowerBlockEntity, TowerRenderer.State> {
     public static final Identifier SHEET = Identifier.fromNamespaceAndPath(TowerContent.MODID, "block/transmission_tower/towers");
@@ -103,6 +103,15 @@ public class TowerRenderer implements StructureRenderer<TowerBlockEntity, TowerR
             for (BlockPos guy : tower.guys()) {
                 wires.add(new net.zagdrath.arcforgetransmission.grid.world.WireView(-1, top, net.minecraft.world.phys.Vec3.atCenterOf(guy).add(0, 0.5, 0),
                         tier.voltage(), net.zagdrath.arcforgetransmission.grid.world.WireView.GUY));
+            }
+        }
+        if (tier.drawsJumpers()) {
+            // Its jumpers: from each link's line-side insulator (the strain's clamp) to its yard side, turned with the tower.
+            wires = new java.util.ArrayList<>(wires);
+            var insulators = tower.insulators();
+            for (int[] pair : tower.linkPairs()) {
+                wires.add(new net.zagdrath.arcforgetransmission.grid.world.WireView(-1, insulators.get(pair[0]).at(), insulators.get(pair[1]).at(),
+                        insulators.get(pair[0]).tier(), net.zagdrath.arcforgetransmission.grid.world.WireView.JUMPER));
             }
         }
         state.wires = WireRenderer.prepare(wires, tower.getBlockPos(), level);

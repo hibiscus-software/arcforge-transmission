@@ -21,6 +21,7 @@ no DC.
   Unit Transformers         one circuit: the three bushings on the lid, A B C west to east
 """
 import json
+import math
 import os
 import sys
 
@@ -232,15 +233,20 @@ def bus(tier):
                     "reserved": []}
 
 
+GANTRY_TILT = 8.0
+
+
 def gantry(tier):
-    """TowerMesh.gantry: each phase dead-ends on its girder's north face (2.5 px off the middle) on a glass string (the
-    clamp's outer face), and drops to a suspension string 3.2 px past its south face (the clamp's bottom); shield peaks
-    on the legs."""
+    """TowerMesh.gantry: each phase dead-ends on its girder's north face (2.5 px off the middle) on a glass string running
+    out along the line, tilted GANTRY_TILT degrees below level (TowerMesh.glassStrainEnd: the clamp's outer face), and
+    drops to a suspension string 3.2 px past its south face (the clamp's bottom); shield peaks on the legs. The jumper
+    between them is drawn by the renderer, from the line terminal to the yard's."""
     spacing, beam, leg = (0, 0, 20, 28)[tier], (0, 0, 64, 96)[tier], (0, 0, 32, 48)[tier]
     discs, drop = (0, 0, 6, 8)[tier], (0, 0, 4, 6)[tier]
     xs = [8 + i * spacing for i in (-1, 0, 1)]
-    north = 8 - 2.5 - glass_strain_length(discs)
-    return lambda: {"groups": [{"name": "line", "circuit": "three_phase", "terminals": abc([p(x, beam + 2, north) for x in xs])},
+    length, tilt = glass_strain_length(discs), math.radians(GANTRY_TILT)
+    north, y = 8 - 2.5 - length * math.cos(tilt), beam + 2 - length * math.sin(tilt)
+    return lambda: {"groups": [{"name": "line", "circuit": "three_phase", "terminals": abc([p(x, y, north) for x in xs])},
                                {"name": "yard", "circuit": "three_phase",
                                 "terminals": abc([p(x, string_bottom(beam, drop), 8 + 2.5 + 3.2) for x in xs])},
                                shield([p(8 - leg, beam + 4 + 14, 8), p(8 + leg, beam + 4 + 14, 8)])],

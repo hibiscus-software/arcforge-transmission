@@ -67,7 +67,8 @@ or from a Relay Panel.
 **Transformers work both ways.** A substation transformer, a Pole-Mount Transformer and the **MV Distribution
 Transformer** (an MV feeder straight to houses) pass power whichever way the grid needs, holding none.
 
-**Substations.** Bring lines in on a **Dead-End Gantry**, join them on **Bus** sections (placed in a row, they join),
+**Substations.** Bring lines in on a **Dead-End Gantry** (each phase's strain string runs out along the incoming line,
+and a slack jumper of the line's own conductor loops from its clamp to the drop on the yard side), join them on **Bus** sections (placed in a row, they join),
 switch them with breakers and disconnects, and fence the yard with **Station Fence** over **Ground Grid** (a fault in an
 ungrounded yard shocks anyone standing near). A **Ground Switch** grounds a dead line so it's safe to work on.
 Interlocks: a disconnect only operates with its breaker open (link them with **Control Cable**), a ground switch only
@@ -125,7 +126,7 @@ game or the server console, as with Arcforge's `/arcforge config reset`:
 ./gradlew build          # the mod (compiles against libs/arcforge-<version>+<mc>.jar)
 ./gradlew test           # the grid's unit tests, attach points and texel density (plain Java)
 ./gradlew runGameTestServer   # the game tests (src/gametest, never in the jar): real blocks in a running world, with Arcforge's own
-./gradlew renderPreviews      # renders every structure's model to build/previews (-Pdesigns=NAME,NAME~ALT,NAME@lo:hi)
+./gradlew renderPreviews      # renders every structure's model to build/previews (-Pdesigns=NAME,NAME~ALT,NAME@lo:hi,NAME#3)
 python tools/audit.py    # the art: rebuilds every generator and checks the output
 ```
 

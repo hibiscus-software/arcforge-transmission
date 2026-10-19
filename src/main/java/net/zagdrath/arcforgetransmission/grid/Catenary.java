@@ -22,6 +22,23 @@ public final class Catenary {
         return new double[] { a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t - drop, a[2] + (b[2] - a[2]) * t };
     }
 
+    // A point on a curve hanging `sag` blocks below the straight line at its middle (a parabola, as a wire's).
+    public static double[] point(double[] a, double[] b, double t, double sag) {
+        double drop = 4.0 * sag * t * (1.0 - t);
+        return new double[] { a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t - drop, a[2] + (b[2] - a[2]) * t };
+    }
+
+    // How far (blocks) a dead-end's jumper hangs below the straight line from the strain's line clamp to where it drops to:
+    // a slack loop, clearly deeper than a span's 5%, deeper on the bigger tiers.
+    public static double jumperSag(VoltageTier tier) {
+        return switch (tier) {
+            case LV -> 0.6;
+            case MV -> 0.7;
+            case HV -> 0.8;
+            case EHV -> 1.1;
+        };
+    }
+
     // The wire's length along its curve.
     public static double length(double[] a, double[] b) {
         double total = 0;

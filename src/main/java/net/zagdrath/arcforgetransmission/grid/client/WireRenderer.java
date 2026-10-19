@@ -36,7 +36,8 @@ import net.zagdrath.arcforgetransmission.grid.world.WireView;
 // half a block, its four sides lit by their own normals and coloured from the tier's flat sprite (block/wire/<tier>), so
 // nothing on it shimmers at a distance. The EHV superconductor glows full-bright over its dark sheath
 // (block/wire/ehv_wire_glow). A wire's tube is worked out once (its quads cached by wire and drawing block) and only
-// drawn each frame.
+// drawn each frame. A dead-end's jumper (WireView.JUMPER) is drawn the same, in its tier's conductor, but hangs in a slack
+// loop (Catenary.jumperSag) rather than a span's sag.
 public final class WireRenderer {
     public static final Identifier GLOW = Identifier.fromNamespaceAndPath(ArcforgeTransmission.MODID, "block/wire/ehv_wire_glow");
 
@@ -135,13 +136,16 @@ public final class WireRenderer {
     private static float[] mesh(float[] from, float[] to, VoltageTier tier, String kind) {
         boolean steel = kind.equals("shield") || kind.equals(WireView.GUY), insulated = kind.equals("insulated");
         double[] a = { from[0], from[1], from[2] }, b = { to[0], to[1], to[2] };
-        double length = Catenary.length(a, b);
-        int segments = Math.max(4, (int) Math.ceil(length * 2.0));
+        boolean jumper = kind.equals(WireView.JUMPER);
+        double sag = jumper ? Catenary.jumperSag(tier) : Catenary.SAG * Catenary.distance(a, b);
+        // A jumper's tight loop gets finer segments (a quarter block) so it reads as a curve, not a polyline.
+        int segments = jumper ? Math.max(8, (int) Math.ceil((Catenary.distance(a, b) + 2 * sag) * 4.0))
+                : Math.max(4, (int) Math.ceil(Catenary.length(a, b) * 2.0));
         // The rubber sheath adds half a pixel round an insulated conductor.
         double half = (steel ? 1.0 : tier.wireWidthPx() + (insulated ? 0.5 : 0.0)) / 32.0;
         double[][] points = new double[segments + 1][];
         for (int i = 0; i <= segments; i++) {
-            points[i] = Catenary.point(a, b, (double) i / segments);
+            points[i] = Catenary.point(a, b, (double) i / segments, sag);
         }
         // Each point's frame (flat: level and square to the wire; up: square to both), from the wire's direction there,
         // so neighbouring segments share their corners and the tube has no gaps or seams where it bends.

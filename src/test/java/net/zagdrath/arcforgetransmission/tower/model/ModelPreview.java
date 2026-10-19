@@ -18,9 +18,16 @@ import java.util.List;
 
 import javax.imageio.ImageIO;
 
+import net.zagdrath.arcforgetransmission.grid.Catenary;
+import net.zagdrath.arcforgetransmission.grid.VoltageTier;
+import net.zagdrath.arcforgetransmission.grid.data.AttachGroups;
+import net.zagdrath.arcforgetransmission.tower.TowerTier;
+
 // Renders TowerMesh designs to PNGs for review (./gradlew renderPreviews, or with -Pdesigns=A,B): each from two sides
 // (front left and back right, from a little above), on a ground of block squares for scale, textured from the real
 // sheet, nearest texel, lit like the game's block faces. Written to build/previews/<design>.png and a contact sheet.
+// NAME#3 draws it from the front (looking along the line), the side and 45 degrees instead, for sign-off. A tower whose
+// renderer draws its jumpers (TowerTier.drawsJumpers) shows them as the game does: a slack loop of its tier's conductor.
 // Not a test: a tool, run outside the game.
 public final class ModelPreview {
     private static final int VIEW = 560, SUPER = 2;
@@ -43,30 +50,38 @@ public final class ModelPreview {
         List<BufferedImage> all = new ArrayList<>();
         for (String name : names) {
             // NAME, NAME~ALT (its other state), NAME@lo:hi (only what's between those heights, blocks: a close-up).
-            String base = name.contains("@") ? name.substring(0, name.indexOf('@')) : name;
+            boolean three = name.endsWith("#3");
+            String spec = three ? name.substring(0, name.length() - 2) : name;
+            String base = spec.contains("@") ? spec.substring(0, spec.indexOf('@')) : spec;
             boolean alt = base.endsWith("~ALT");
             // POLE_LV / POLE_MV: the pole-mount transformers (blocks of their own, not designs).
             TowerMesh.Design design = base.startsWith("POLE_") ? null : TowerMesh.Design.valueOf(base.replace("~ALT", ""));
             TowerMesh.Built built = design == null ? (base.equals("POLE_MV") ? TowerMesh.poleTransformerMv() : TowerMesh.poleTransformer())
                     : alt ? TowerMesh.variant(design) : TowerMesh.get(design);
             float[] solid = built.solid();
-            if (name.contains("@")) {
-                String[] range = name.substring(name.indexOf('@') + 1).split(":");
-                solid = crop(solid, Float.parseFloat(range[0]), Float.parseFloat(range[1]));
+            List<double[]> extra = design == null ? List.of() : jumpers(design);
+            if (spec.contains("@")) {
+                String[] range = spec.substring(spec.indexOf('@') + 1).split(":");
+                float lo = Float.parseFloat(range[0]), hi = Float.parseFloat(range[1]);
+                solid = crop(solid, lo, hi);
+                extra = extra.stream().filter(q -> q[1] >= lo && q[1] <= hi).toList();
             }
-            BufferedImage image = new BufferedImage(VIEW * 2, VIEW + 28, BufferedImage.TYPE_INT_RGB);
+            double[][] views = three ? new double[][] { { 0, 6 }, { 90, 6 }, { 45, 28 } } : new double[][] { { 35, 28 }, { 215, 28 } };
+            BufferedImage image = new BufferedImage(VIEW * views.length, VIEW + 28, BufferedImage.TYPE_INT_RGB);
             Graphics2D g = image.createGraphics();
-            boolean ground = !name.contains("@");
-            g.drawImage(render(solid, 35, 28, ground), 0, 28, null);
-            g.drawImage(render(solid, 215, 28, ground), VIEW, 28, null);
+            boolean ground = !spec.contains("@");
+            for (int v = 0; v < views.length; v++) {
+                g.drawImage(render(solid, extra, views[v][0], views[v][1], ground), VIEW * v, 28, null);
+            }
             g.setColor(new Color(0x20, 0x22, 0x26));
-            g.fillRect(0, 0, VIEW * 2, 28);
+            g.fillRect(0, 0, VIEW * views.length, 28);
             g.setColor(Color.WHITE);
             g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
             g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 16));
-            g.drawString(name + "   (" + (design == null ? 1 : design.height) + " blocks tall; grid squares are blocks)", 10, 20);
+            g.drawString(name + "   (" + (design == null ? 1 : design.height) + " blocks tall; grid squares are blocks)"
+                    + (three ? "   front, side, 45 degrees" : ""), 10, 20);
             g.dispose();
-            ImageIO.write(image, "png", new File(out, name.toLowerCase().replaceAll("[~@:]", "_") + ".png"));
+            ImageIO.write(image, "png", new File(out, name.toLowerCase().replaceAll("[~@:#]", "_") + ".png"));
             all.add(image);
             System.out.println("rendered " + name);
         }
@@ -82,6 +97,66 @@ public final class ModelPreview {
             g.dispose();
             ImageIO.write(contact, "png", new File(out, "contact_sheet.png"));
         }
+    }
+
+    // The jumpers a design's renderer draws (TowerTier.drawsJumpers), as flat quads ({x, y, z} x 4, argb, then the normal):
+    // from each link pair's line terminal to its yard terminal (each even attach group to the next, in the model's frame),
+    // hanging Catenary.jumperSag, a square tube the tier's wire width across in its conductor's colour (EHV's glow added
+    // over its dark sheath, as the game draws it full-bright).
+    private static List<double[]> jumpers(TowerMesh.Design design) {
+        List<double[]> quads = new ArrayList<>();
+        for (TowerTier tier : TowerTier.values()) {
+            if (tier.design() != design || !tier.drawsJumpers()) {
+                continue;
+            }
+            List<AttachGroups.Group> groups = AttachGroups.get(tier.id()).groups();
+            VoltageTier voltage = tier.voltage();
+            int argb = switch (voltage) {
+                case LV -> 0xFF5E3219;
+                case MV -> 0xFF575D63;
+                case HV -> 0xFF4B4F55;
+                case EHV -> 0xFF296B7E;
+            };
+            double half = voltage.wireWidthPx() / 32.0, sag = Catenary.jumperSag(voltage);
+            for (int g = 0; g + 1 < groups.size(); g += 2) {
+                List<AttachGroups.Terminal> from = groups.get(g).terminals(), to = groups.get(g + 1).terminals();
+                for (int k = 0; k < Math.min(from.size(), to.size()); k++) {
+                    double[] a = scaled(from.get(k).pos(), 1 / 16.0), b = scaled(to.get(k).pos(), 1 / 16.0);
+                    int n = 48;
+                    double[][] points = new double[n + 1][];
+                    for (int i = 0; i <= n; i++) {
+                        points[i] = Catenary.point(a, b, (double) i / n, sag);
+                    }
+                    for (int i = 0; i < n; i++) {
+                        double[] d = normalize(new double[] { points[i + 1][0] - points[i][0], points[i + 1][1] - points[i][1], points[i + 1][2] - points[i][2] });
+                        double[] flat = normalize(new double[] { -d[2], 0, d[0] });
+                        double[] up = normalize(new double[] { d[1] * flat[2] - d[2] * flat[1], d[2] * flat[0] - d[0] * flat[2], d[0] * flat[1] - d[1] * flat[0] });
+                        double[][] sides = { up, flat, scaled(up, -1), scaled(flat, -1) };
+                        for (int side = 0; side < 4; side++) {
+                            double[] normal = sides[side], e = sides[(side + 1) % 4];
+                            double[][] corners = { corner(points[i], normal, e, half, 1), corner(points[i], normal, e, half, -1),
+                                    corner(points[i + 1], normal, e, half, -1), corner(points[i + 1], normal, e, half, 1) };
+                            double[] q = new double[16];
+                            for (int c = 0; c < 4; c++) {
+                                System.arraycopy(corners[c], 0, q, c * 3, 3);
+                            }
+                            q[12] = argb;
+                            System.arraycopy(normal, 0, q, 13, 3);
+                            quads.add(q);
+                        }
+                    }
+                }
+            }
+        }
+        return quads;
+    }
+
+    private static double[] scaled(double[] v, double s) {
+        return new double[] { v[0] * s, v[1] * s, v[2] * s };
+    }
+
+    private static double[] corner(double[] p, double[] n, double[] e, double half, double sign) {
+        return new double[] { p[0] + (n[0] + e[0] * sign) * half, p[1] + (n[1] + e[1] * sign) * half, p[2] + (n[2] + e[2] * sign) * half };
     }
 
     // The quads wholly between two heights (blocks).
@@ -103,7 +178,7 @@ public final class ModelPreview {
     }
 
     // One view: orthographic, turned yaw degrees about the vertical and looking down pitch degrees.
-    private static BufferedImage render(float[] solid, double yawDeg, double pitchDeg, boolean ground) {
+    private static BufferedImage render(float[] solid, List<double[]> extra, double yawDeg, double pitchDeg, boolean ground) {
         int size = VIEW * SUPER;
         double yaw = Math.toRadians(yawDeg), pitch = Math.toRadians(pitchDeg);
         double cy = Math.cos(yaw), sy = Math.sin(yaw), cp = Math.cos(pitch), sp = Math.sin(pitch);
@@ -168,6 +243,18 @@ public final class ModelPreview {
             shade = Math.min(1.0, shade * (0.85 + 0.25 * Math.max(0, nx * light[0] + ny * light[1] + nz * light[2])));
             triangle(s[0], s[1], s[2], new double[][] { uv[0], uv[1], uv[2] }, 0, shade, colour, depth, size);
             triangle(s[0], s[2], s[3], new double[][] { uv[0], uv[2], uv[3] }, 0, shade, colour, depth, size);
+        }
+        for (double[] q : extra) {
+            double[][] s = new double[4][];
+            for (int k = 0; k < 4; k++) {
+                s[k] = screen(new double[] { q[k * 3], q[k * 3 + 1], q[k * 3 + 2] }, cx, cyMid, cz, cy, sy, cp, sp, scale, ox, oy);
+            }
+            double nx = q[13], ny = q[14], nz = q[15];
+            double shade = Math.abs(ny) > 0.5 ? (ny > 0 ? 1.0 : 0.5) : 0.6 + 0.2 * Math.abs(nx);
+            shade = Math.min(1.0, shade * (0.85 + 0.25 * Math.max(0, nx * light[0] + ny * light[1] + nz * light[2])));
+            int argb = (int) (long) q[12];
+            triangle(s[0], s[1], s[2], null, argb, shade, colour, depth, size);
+            triangle(s[0], s[2], s[3], null, argb, shade, colour, depth, size);
         }
         BufferedImage big = new BufferedImage(size, size, BufferedImage.TYPE_INT_RGB);
         big.setRGB(0, 0, size, size, colour, 0, size);
