@@ -12,7 +12,7 @@ Exits non-zero (listing every problem) when anything fails. Checks:
               tones: no noise or dithering); the large-model sheets are exempt (their grain is controlled)
   models      element models: UVs inside the sheet; every face laid at 1 texel per px (its UV rect the face's size);
               no face samples a clear texel; no two faces facing the same way overlapping in one plane (z-fighting)
-  attach      each inductor's attach point is its model's top, centred
+  attach      each pin insulator's attach point is its model's top, centred
 """
 import filecmp
 import hashlib
@@ -40,7 +40,7 @@ def files_under(root):
     out = []
     for base, _, names in os.walk(root):
         for name in names:
-            out.append(os.path.relpath(os.path.join(base, name), root))
+            out.append(os.path.relpath(os.path.join(base, name), root).replace(os.sep, "/"))
     return sorted(out)
 
 
@@ -64,14 +64,24 @@ def rebuild(repo):
             for rel in files_under(runs[0]):
                 written.add(rel)
                 a, b = os.path.join(runs[0], rel), os.path.join(runs[1], rel)
-                if not os.path.exists(b) or not filecmp.cmp(a, b, shallow=False):
+                if not os.path.exists(b) or not same(a, b):
                     problem(f"rebuild: {generator} isn't deterministic: {rel}")
                 committed = os.path.join(repo, rel)
                 if not os.path.exists(committed):
                     problem(f"rebuild: {generator} writes {rel}, which isn't in the repo")
-                elif not filecmp.cmp(a, committed, shallow=False):
+                elif not same(a, committed):
                     problem(f"rebuild: {rel} differs from what {generator} writes (sha {sha(committed)} vs {sha(a)})")
     return written
+
+
+def same(a, b):
+    """Two outputs match: PNGs pixel for pixel (encoders differ between Pillow versions), text with line endings
+    normalised (git may check text out with CRLF), anything else byte for byte."""
+    if a.endswith(".png"):
+        ia, ib = Image.open(a).convert("RGBA"), Image.open(b).convert("RGBA")
+        return ia.size == ib.size and ia.tobytes() == ib.tobytes()
+    with open(a, "rb") as fa, open(b, "rb") as fb:
+        return fa.read().replace(b"\r\n", b"\n") == fb.read().replace(b"\r\n", b"\n")
 
 
 def sha(path):
@@ -84,7 +94,7 @@ def check_textures(repo, written):
     for rel in files_under(tex):
         if not rel.endswith(".png"):
             continue
-        full = os.path.join("src/main/resources/assets", NS, "textures", rel)
+        full = f"src/main/resources/assets/{NS}/textures/{rel}"
         if full not in written:
             problem(f"manifest: textures/{rel} isn't written by any generator")
         img = Image.open(os.path.join(tex, rel))
@@ -180,11 +190,11 @@ def check_models(repo):
 def check_attach(repo):
     data = os.path.join(repo, "src/main/resources/data", NS, "attach_groups")
     for tier in ("lv", "mv", "hv", "ev"):
-        point = json.load(open(os.path.join(data, f"inductor_{tier}.json")))["groups"][0]["terminals"][0]["pos"]
-        model = json.load(open(os.path.join(repo, "src/main/resources/assets", NS, "models/block/inductor", tier + ".json")))
+        point = json.load(open(os.path.join(data, f"pin_insulator_{tier}.json")))["groups"][0]["terminals"][0]["pos"]
+        model = json.load(open(os.path.join(repo, "src/main/resources/assets", NS, "models/block/pin_insulator", tier + ".json")))
         top = max(e["to"][1] for e in model["elements"])
         if point != [8.0, top, 8.0]:
-            problem(f"attach: inductor_{tier} attaches at {point}, its model's top is (8, {top}, 8)")
+            problem(f"attach: pin_insulator_{tier} attaches at {point}, its model's top is (8, {top}, 8)")
 
 
 def main():
@@ -198,7 +208,7 @@ def main():
         for p in problems:
             print("  " + p)
         sys.exit(1)
-    print(f"audit: OK ({len(GENERATORS)} generators rebuilt byte-identically, {len(written)} files)")
+    print(f"audit: OK ({len(GENERATORS)} generators rebuilt identically, {len(written)} files)")
 
 
 if __name__ == "__main__":

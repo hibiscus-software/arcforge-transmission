@@ -57,7 +57,7 @@ public final class GridManager {
         default void report(FlowSolver.PortStatus status, double drawn, double delivered) {}
     }
 
-    // Something in the world that brings ports: the inductors' blocks, a transformer.
+    // Something in the world that brings ports: the pin insulators' blocks, a transformer.
     public interface PortSource {
         void ports(ServerLevel level, GridData.Dimension dimension, List<PortHandler> out);
     }
@@ -234,6 +234,90 @@ public final class GridManager {
         refresh(level, dimension, ra.pos());
         refresh(level, dimension, rb.pos());
         return null;
+    }
+
+    // A wire a ray passes near: its edge, the point on it nearest the ray, and how far along the ray that is.
+    public record WireHit(long edge, Vec3 at, double along) {}
+
+    // Cuts one wire (the Wire Cutters): off the graph, its coil dropped at `drop`, both ends told. False if it's gone.
+    public static boolean cut(ServerLevel level, long edgeId, Vec3 drop) {
+        GridData.Dimension dimension = GridData.of(level);
+        GridEdge edge = dimension.graph().removeEdge(edgeId);
+        if (edge == null) {
+            return false;
+        }
+        Block.popResource(level, BlockPos.containing(drop), new ItemStack(GridContent.coil(edge.tier())));
+        dimension.markDirty();
+        for (long node : new long[] { edge.a(), edge.b() }) {
+            GridData.NodeRecord record = dimension.node(node);
+            if (record != null) {
+                refresh(level, dimension, record.pos());
+            }
+        }
+        return true;
+    }
+
+    // The wires on an insulator.
+    public static List<Long> wiresAt(ServerLevel level, GridData.Anchor anchor) {
+        GridData.Dimension dimension = GridData.of(level);
+        Long id = dimension.nodeAt(anchor);
+        List<Long> out = new ArrayList<>();
+        if (id != null) {
+            dimension.graph().edgesOf(id).forEach(edge -> out.add(edge.id()));
+        }
+        return out;
+    }
+
+    // The wire whose curve passes nearest a ray (from `from` along the unit `dir`, up to `reach`), within `radius` of it,
+    // the first along the ray when two are as near; null if none does.
+    public static @Nullable WireHit wireAlong(ServerLevel level, Vec3 from, Vec3 dir, double reach, double radius) {
+        GridData.Dimension dimension = GridData.of(level);
+        WireHit best = null;
+        double bestDistance = radius;
+        double[] o = array(from), d = array(dir.scale(reach));
+        for (GridEdge edge : dimension.graph().edges()) {
+            GridData.NodeRecord a = dimension.node(edge.a()), b = dimension.node(edge.b());
+            if (a == null || b == null || a.at().distanceTo(from) > reach + edge.length() && b.at().distanceTo(from) > reach + edge.length()) {
+                continue;
+            }
+            double[] pa = array(a.at()), pb = array(b.at());
+            int segments = Math.max(4, (int) Math.ceil(edge.length() * 2.0));
+            double[] prev = Catenary.point(pa, pb, 0.0);
+            for (int i = 1; i <= segments; i++) {
+                double[] next = Catenary.point(pa, pb, (double) i / segments);
+                double[] st = closest(o, d, prev, next);
+                double[] onRay = { o[0] + d[0] * st[0], o[1] + d[1] * st[0], o[2] + d[2] * st[0] };
+                double[] onWire = { prev[0] + (next[0] - prev[0]) * st[1], prev[1] + (next[1] - prev[1]) * st[1], prev[2] + (next[2] - prev[2]) * st[1] };
+                double dx = onRay[0] - onWire[0], dy = onRay[1] - onWire[1], dz = onRay[2] - onWire[2];
+                double distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+                double along = st[0] * reach;
+                if (distance < bestDistance - 1.0E-6 || best != null && Math.abs(distance - bestDistance) <= 1.0E-6 && along < best.along()) {
+                    bestDistance = distance;
+                    best = new WireHit(edge.id(), new Vec3(onWire[0], onWire[1], onWire[2]), along);
+                }
+                prev = next;
+            }
+        }
+        return best;
+    }
+
+    // The closest points of segment o..o+d and segment p..q: {s along the first, t along the second}, each in [0, 1].
+    private static double[] closest(double[] o, double[] d, double[] p, double[] q) {
+        double[] e = { q[0] - p[0], q[1] - p[1], q[2] - p[2] }, r = { o[0] - p[0], o[1] - p[1], o[2] - p[2] };
+        double a = dot(d, d), b = dot(d, e), c = dot(e, e), f = dot(d, r), g = dot(e, r);
+        double denom = a * c - b * b;
+        double s = denom > 1.0E-12 ? clamp((b * g - c * f) / denom) : 0.0;
+        double t = c > 1.0E-12 ? clamp((b * s + g) / c) : 0.0;
+        s = a > 1.0E-12 ? clamp((b * t - f) / a) : 0.0;
+        return new double[] { s, t };
+    }
+
+    private static double dot(double[] a, double[] b) {
+        return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+    }
+
+    private static double clamp(double v) {
+        return Math.max(0.0, Math.min(1.0, v));
     }
 
     // The wires a block draws: those strung from one of its insulators (each wire is drawn once, by its first end).

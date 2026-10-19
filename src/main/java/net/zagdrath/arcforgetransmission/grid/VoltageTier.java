@@ -17,7 +17,7 @@ public enum VoltageTier {
     LV(128, "copper", 8, 0.008, 16, 1.0F),
     MV(512, "aluminium", 16, 0.011, 24, 1.25F),
     HV(2_048, "silver_alloy", 32, 0.017, 32, 1.5F),
-    EV(8_192, "superconductor", 64, 0.00001, 32, 2.0F);
+    EV(8_192, "superconductor", 64, 0.00001, 64, 2.0F);
 
     private final int volts, ratedAmps, defaultMaxSpan;
     private final String conductor;

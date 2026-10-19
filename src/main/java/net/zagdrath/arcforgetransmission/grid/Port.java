@@ -8,7 +8,7 @@ package net.zagdrath.arcforgetransmission.grid;
 
 import java.util.List;
 
-// Where FE enters or leaves the grid: a whole circuit's set of insulators on one thing (the inductors mounted on one
+// Where FE enters or leaves the grid: a whole circuit's set of insulators on one thing (the pin insulators mounted on one
 // block, or one side of a transformer), one node per conductor. offer and demand are FE/t this tick; limitAmps caps the
 // current in each of its conductors (infinity for none).
 public record Port(long id, VoltageTier tier, List<Long> nodes, double offer, double demand, double limitAmps) {

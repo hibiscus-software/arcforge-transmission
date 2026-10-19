@@ -1,10 +1,10 @@
 {
   "values": [
     "arcforgetransmission:ev_lattice_tower",
-    "arcforgetransmission:lv_inductor",
-    "arcforgetransmission:mv_inductor",
-    "arcforgetransmission:hv_inductor",
-    "arcforgetransmission:ev_inductor",
+    "arcforgetransmission:lv_pin_insulator",
+    "arcforgetransmission:mv_pin_insulator",
+    "arcforgetransmission:hv_pin_insulator",
+    "arcforgetransmission:ev_pin_insulator",
     "arcforgetransmission:pole_transformer"
   ]
 }

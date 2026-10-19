@@ -20,10 +20,10 @@ import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.zagdrath.arcforge.client.renderer.blockentity.StructureRenderer;
-import net.zagdrath.arcforgetransmission.grid.block.InductorBlockEntity;
+import net.zagdrath.arcforgetransmission.grid.block.PinInsulatorBlockEntity;
 
-// An Inductor's wires (the inductor itself is its block model). Drawn while any of them is in view.
-public class WiresOnlyRenderer implements StructureRenderer<InductorBlockEntity, WiresOnlyRenderer.State> {
+// A Pin Insulator's wires (the pin insulator itself is its block model). Drawn while any of them is in view.
+public class WiresOnlyRenderer implements StructureRenderer<PinInsulatorBlockEntity, WiresOnlyRenderer.State> {
     public static class State extends BlockEntityRenderState {
         public List<WireRenderer.Prepared> wires = List.of();
     }
@@ -41,10 +41,10 @@ public class WiresOnlyRenderer implements StructureRenderer<InductorBlockEntity,
     }
 
     @Override
-    public void extractRenderState(InductorBlockEntity inductor, State state, float partialTicks, Vec3 cameraPosition,
+    public void extractRenderState(PinInsulatorBlockEntity pinInsulator, State state, float partialTicks, Vec3 cameraPosition,
             ModelFeatureRenderer.@Nullable CrumblingOverlay breakProgress) {
-        StructureRenderer.super.extractRenderState(inductor, state, partialTicks, cameraPosition, breakProgress);
-        state.wires = WireRenderer.prepare(inductor.wires(), inductor.getBlockPos(), inductor.getLevel());
+        StructureRenderer.super.extractRenderState(pinInsulator, state, partialTicks, cameraPosition, breakProgress);
+        state.wires = WireRenderer.prepare(pinInsulator.wires(), pinInsulator.getBlockPos(), pinInsulator.getLevel());
     }
 
     @Override
@@ -53,7 +53,7 @@ public class WiresOnlyRenderer implements StructureRenderer<InductorBlockEntity,
     }
 
     @Override
-    public AABB getRenderBoundingBox(InductorBlockEntity inductor) {
-        return inductor.getRenderBox();
+    public AABB getRenderBoundingBox(PinInsulatorBlockEntity pinInsulator) {
+        return pinInsulator.getRenderBox();
     }
 }

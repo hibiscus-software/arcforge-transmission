@@ -10,7 +10,7 @@ centre column's base block's minimum corner. TowerAttachGroupsTest checks every 
 Every terminal is one insulator, wired on its own (one wire is one conductor); its label is the phase it starts with
 (the wrench relabels it in game). A group is the insulators of one circuit, for the wrench's ABC/ACB swap. There is
 no DC.
-  LV Distribution Pole      the crossarm's three pins (A, B, C); the pole-top pin, the neutral (N) for the split phase
+  LV Distribution Pole      the crossarm's three pins (A, B, C); the neutral (N) on its standoff below the crossarm, for the split phase
                             the pole-mount transformer gives
   MV Sub-Transmission Pole  one circuit: the upper post (A) and the lower arm's two (B, C); the shield peak reserved
   HV H-Frame Tower          one circuit: the three strings; both shield peaks reserved
@@ -34,12 +34,13 @@ def lv():
     # pinInsulator(x, armY + 4, (armZ0 + armZ1) / 2): crown top at (armY + 4) + 2 + 5.6.
     arm_y, z = 132.0, (10.0 + 13.0) / 2
     top = arm_y + 4 + 2.0 + 5.6
-    pole_top = 150.0 + 2.0 + 5.6
+    # The neutral: pinInsulator(NEUTRAL_X, NEUTRAL_Y, 8) on its standoff, crown top at NEUTRAL_Y + 2 + 5.6.
+    neutral_x, neutral_top = 2.2, 100.0 + 2.0 + 5.6
     return {
         "groups": [{"name": "circuit", "circuit": "three_phase",
                     "terminals": [{"label": "A", "pos": p(-8, top, z)}, {"label": "B", "pos": p(1, top, z)},
                                   {"label": "C", "pos": p(24, top, z)}]},
-                   {"name": "pole_top", "circuit": "single_phase", "terminals": [{"label": "N", "pos": p(8, pole_top, 8)}]}],
+                   {"name": "neutral", "circuit": "single_phase", "terminals": [{"label": "N", "pos": p(neutral_x, neutral_top, 8)}]}],
         "reserved": [],
     }
 

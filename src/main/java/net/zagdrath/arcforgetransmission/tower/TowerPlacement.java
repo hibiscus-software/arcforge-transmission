@@ -21,10 +21,9 @@ import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.zagdrath.arcforgetransmission.tower.model.TowerMesh;
 
-// Where a transmission tower's blocks go and what each one's shape is, from its model (TowerMesh): the
-// model's solid boxes (each member, slanted ones as a stair of 2 px steps) cut into the block cells they reach, so every
-// part is hit and walked into only where the tower really is (between the H-frame's poles and through the lattice's
-// open bays is open air).
+// Where a transmission tower's blocks go and what each one's shape is, from its model (TowerMesh): the model's shape
+// boxes cut into the block cells they reach: one uniform box per pole, crossarm, peak and lattice bay, and one per
+// insulator (TowerOutline draws the whole frame as one outline, or the insulator looked at).
 //
 // A tower stands on its centre column's base block (where it was placed) facing the way the player faced, the line's
 // direction. The model is drawn facing north; facing east it's turned a quarter clockwise seen from above, and so on.
@@ -84,7 +83,7 @@ public final class TowerPlacement {
             return BY_CELL.computeIfAbsent(tier, t -> {
                 Map<Long, List<float[]>> map = new HashMap<>();
                 float e = 0.05F;
-                for (float[] b : TowerMesh.get(t.design()).boxes()) {
+                for (float[] b : TowerMesh.get(t.design()).shapes()) {
                     for (int x = (int) Math.floor((b[0] + e) / 16.0F); x <= (int) Math.floor((b[3] - e) / 16.0F); x++) {
                         for (int y = Math.max(0, (int) Math.floor((b[1] + e) / 16.0F)); y <= (int) Math.floor((b[4] - e) / 16.0F); y++) {
                             for (int z = (int) Math.floor((b[2] + e) / 16.0F); z <= (int) Math.floor((b[5] - e) / 16.0F); z++) {
@@ -152,6 +151,35 @@ public final class TowerPlacement {
 
     private static double snapUp(double px) {
         return Math.max(0, Math.min(16, Math.ceil(px - 1.0E-3))) / 16.0;
+    }
+
+    // A model box (px) turned with the tower and placed in the world, from its main block.
+    public static AABB worldBox(float[] b, TowerTier tier, Direction facing, BlockPos main) {
+        BlockPos centre = centre(tier, facing, main);
+        int turns = turns(facing);
+        double[] p = TowerMesh.turnedPoint(b[0], b[1], b[2], turns), q = TowerMesh.turnedPoint(b[3], b[4], b[5], turns);
+        return new AABB(centre.getX() + p[0], centre.getY() + p[1], centre.getZ() + p[2], centre.getX() + q[0], centre.getY() + q[1], centre.getZ() + q[2]);
+    }
+
+    // The tower's insulators' boxes in the world, from its main block.
+    public static List<AABB> insulatorBoxes(TowerTier tier, Direction facing, BlockPos main) {
+        List<AABB> out = new ArrayList<>();
+        for (float[] b : TowerMesh.get(tier.design()).insulators()) {
+            out.add(worldBox(b, tier, facing, main));
+        }
+        return out;
+    }
+
+    // The tower's frame (each pole, crossarm, peak and lattice bay) in the world, from the main block.
+    public static List<AABB> frameBoxes(TowerTier tier, Direction facing, BlockPos main) {
+        List<AABB> out = new ArrayList<>();
+        TowerMesh.Built built = TowerMesh.get(tier.design());
+        for (float[] b : built.shapes()) {
+            if (!built.insulators().contains(b)) {
+                out.add(worldBox(b, tier, facing, main));
+            }
+        }
+        return out;
     }
 
     // The box the whole tower is drawn in (for culling), from its main block.

@@ -30,7 +30,7 @@ import net.zagdrath.arcforgetransmission.grid.world.GridManager;
 import net.zagdrath.arcforgetransmission.grid.world.Insulator;
 import net.zagdrath.arcforgetransmission.grid.world.WireView;
 
-// A block entity with insulators wires attach to (a tower's main block, an inductor, a transformer). The grid's record is
+// A block entity with insulators wires attach to (a tower's main block, a pin insulator, a transformer). The grid's record is
 // GridData's; this only says what insulators the block has (insulators()), keeps the grid told as it loads and goes, and
 // mirrors the wires it draws (those strung from it) for its renderer.
 public abstract class GridEndpointBlockEntity extends BlockEntity {

@@ -8,7 +8,7 @@ package net.zagdrath.arcforgetransmission.grid;
 
 import java.util.Locale;
 
-// What one conductor carries. Every insulator (a tower's, an inductor's, a transformer's bushing) has one. A, B and C
+// What one conductor carries. Every insulator (a tower's, a pin insulator's, a transformer's bushing) has one. A, B and C
 // are the three phases of a three-phase circuit (120 degrees apart); L1, L2 and N are single-phase (split-phase: L1 and
 // L2 opposite each other, N the neutral both return on). Only labels of the same circuit type may be wired together;
 // two different letters of one type is a transposition, and allowed.

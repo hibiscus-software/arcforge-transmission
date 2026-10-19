@@ -28,7 +28,7 @@ import org.jspecify.annotations.Nullable;
 // current through it as phasors (each conductor's at its phase angle from the source's label, the neutral carrying its
 // line's back), so opposite flows cancel and a shared neutral carries only the difference of its two lines. Each wire
 // loses I squared R, paid by the pairs through it in proportion to their own currents, on top of what they deliver. A
-// port's current limit (an inductor's) caps every pair through any of its insulators. A source that can't cover its
+// port's current limit (a pin insulator's) caps every pair through any of its insulators. A source that can't cover its
 // deliveries plus losses has its pairs scaled back (losses scaling with the square), and the whole is worked again until
 // nothing needs scaling.
 //

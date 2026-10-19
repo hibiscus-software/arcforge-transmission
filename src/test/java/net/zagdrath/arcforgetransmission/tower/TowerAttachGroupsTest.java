@@ -66,7 +66,7 @@ class TowerAttachGroupsTest {
         assertEquals(2, AttachGroups.get("ev_lattice_tower").groups().size(), "EV circuits");
         for (String model : MODELS) {
             for (AttachGroups.Group group : AttachGroups.get(model).groups()) {
-                if (group.name().equals("pole_top")) {
+                if (group.name().equals("neutral")) {
                     continue;
                 }
                 assertEquals(CircuitType.THREE_PHASE, group.circuit(), model + " " + group.name());
@@ -74,7 +74,7 @@ class TowerAttachGroupsTest {
                         model + " " + group.name() + " phases");
             }
         }
-        // The LV pole-top pin is the neutral for the pole-mount transformer's split phase.
+        // The LV pole's neutral (below the crossarm) is for the pole-mount transformer's split phase.
         AttachGroups.Group top = AttachGroups.get("lv_distribution_pole").groups().get(1);
         assertEquals(CircuitType.SINGLE_PHASE, top.circuit());
         assertEquals(Phase.N, top.terminals().get(0).phase());

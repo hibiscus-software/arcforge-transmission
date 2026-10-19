@@ -31,8 +31,9 @@ import net.zagdrath.arcforgetransmission.ArcforgeTransmission;
 import net.zagdrath.arcforgetransmission.grid.VoltageTier;
 import net.zagdrath.arcforgetransmission.grid.item.LinkTarget;
 import net.zagdrath.arcforgetransmission.grid.item.WireCoilItem;
+import net.zagdrath.arcforgetransmission.grid.item.WireCuttersItem;
 
-// Everything the grid registers: per tier an Inductor, a Wire Coil and a Creative Source and Sink; the Pole-Mount
+// Everything the grid registers: per tier a Pin Insulator, a Wire Coil and a Creative Source and Sink; Wire Cutters; the Pole-Mount
 // Transformer; Burnt Wire; their block entity types; the coil's loose-end component; and the creative blocks' FE
 // capability. Call register(modEventBus) from the mod's constructor.
 public final class GridContent {
@@ -43,7 +44,7 @@ public final class GridContent {
     public static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITY_TYPES = DeferredRegister.create(Registries.BLOCK_ENTITY_TYPE, MODID);
     public static final DeferredRegister.DataComponents DATA_COMPONENTS = DeferredRegister.createDataComponents(Registries.DATA_COMPONENT_TYPE, MODID);
 
-    public static final Map<VoltageTier, DeferredBlock<InductorBlock>> INDUCTORS = new EnumMap<>(VoltageTier.class);
+    public static final Map<VoltageTier, DeferredBlock<PinInsulatorBlock>> PIN_INSULATORS = new EnumMap<>(VoltageTier.class);
     public static final Map<VoltageTier, DeferredBlock<CreativeEnergyBlock>> CREATIVE_SOURCES = new EnumMap<>(VoltageTier.class);
     public static final Map<VoltageTier, DeferredBlock<CreativeEnergyBlock>> CREATIVE_SINKS = new EnumMap<>(VoltageTier.class);
     public static final Map<VoltageTier, DeferredItem<WireCoilItem>> COILS = new EnumMap<>(VoltageTier.class);
@@ -53,11 +54,11 @@ public final class GridContent {
         for (VoltageTier tier : VoltageTier.values()) {
             // Porcelain (LV, MV) or glass (HV, EV) on galvanized steel.
             boolean glass = tier == VoltageTier.HV || tier == VoltageTier.EV;
-            DeferredBlock<InductorBlock> inductor = BLOCKS.registerBlock(tier.id() + "_inductor", p -> new InductorBlock(tier, p),
+            DeferredBlock<PinInsulatorBlock> pinInsulator = BLOCKS.registerBlock(tier.id() + "_pin_insulator", p -> new PinInsulatorBlock(tier, p),
                     p -> p.mapColor(glass ? MapColor.COLOR_LIGHT_GRAY : MapColor.TERRACOTTA_BROWN).strength(1.5F, 6.0F)
                             .sound(glass ? SoundType.GLASS : SoundType.STONE).noOcclusion().pushReaction(PushReaction.POPPED));
-            INDUCTORS.put(tier, inductor);
-            TAB_ITEMS.add(ITEMS.registerSimpleBlockItem(inductor));
+            PIN_INSULATORS.put(tier, pinInsulator);
+            TAB_ITEMS.add(ITEMS.registerSimpleBlockItem(pinInsulator));
         }
         for (VoltageTier tier : VoltageTier.values()) {
             COILS.put(tier, ITEMS.registerItem(tier.id() + "_wire_coil", p -> new WireCoilItem(tier, p), p -> p.stacksTo(64)));
@@ -69,8 +70,10 @@ public final class GridContent {
             p -> p.mapColor(MapColor.METAL).strength(3.0F, 6.0F).sound(SoundType.METAL).noOcclusion().pushReaction(PushReaction.POPPED));
     public static final DeferredItem<BlockItem> POLE_TRANSFORMER_ITEM = ITEMS.registerSimpleBlockItem(POLE_TRANSFORMER);
     public static final DeferredItem<Item> BURNT_WIRE = ITEMS.registerSimpleItem("burnt_wire");
+    public static final DeferredItem<WireCuttersItem> WIRE_CUTTERS = ITEMS.registerItem("wire_cutters", WireCuttersItem::new, p -> p.durability(238));
 
     static {
+        TAB_ITEMS.add(WIRE_CUTTERS);
         TAB_ITEMS.add(POLE_TRANSFORMER_ITEM);
         TAB_ITEMS.add(BURNT_WIRE);
         // Creative only: unbreakable outside creative, no recipe.
@@ -85,8 +88,8 @@ public final class GridContent {
         }
     }
 
-    public static final Supplier<BlockEntityType<InductorBlockEntity>> INDUCTOR_ENTITY = BLOCK_ENTITY_TYPES.register("inductor",
-            () -> new BlockEntityType<>(InductorBlockEntity::new, INDUCTORS.values().stream().map(DeferredBlock::get).toArray(InductorBlock[]::new)));
+    public static final Supplier<BlockEntityType<PinInsulatorBlockEntity>> PIN_INSULATOR_ENTITY = BLOCK_ENTITY_TYPES.register("pin_insulator",
+            () -> new BlockEntityType<>(PinInsulatorBlockEntity::new, PIN_INSULATORS.values().stream().map(DeferredBlock::get).toArray(PinInsulatorBlock[]::new)));
     public static final Supplier<BlockEntityType<PoleTransformerBlockEntity>> POLE_TRANSFORMER_ENTITY = BLOCK_ENTITY_TYPES.register("pole_transformer",
             () -> new BlockEntityType<>(PoleTransformerBlockEntity::new, POLE_TRANSFORMER.get()));
     public static final Supplier<BlockEntityType<CreativeEnergyBlockEntity>> CREATIVE_ENERGY_ENTITY = BLOCK_ENTITY_TYPES.register("creative_energy",

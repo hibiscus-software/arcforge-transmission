@@ -31,10 +31,10 @@ import net.zagdrath.arcforgetransmission.grid.VoltageTier;
 import net.zagdrath.arcforgetransmission.grid.world.WireView;
 
 // Draws wires: each a single conductor hanging in its curve (Catenary: 0.05 x span of sag at mid-span) from one
-// insulator to the other. A wire is two crossed ribbons (one flat, one upright, like Immersive Engineering's) carrying
-// the tier's wire sprite (block/wire/<tier>: u along the wire, v across it, its 16 rows the conductor's round profile)
-// at the tier's width; the sprite is laid at 1:1 along the wire, a segment of at most half a block at a time, so it
-// never stretches. The EV superconductor's core (rows 6 to 9) glows full-bright (block/wire/ev_wire_glow).
+// insulator to the other. A wire is a solid square tube the tier's width across (LV 1 x 1 px), in segments of at most
+// half a block, its four sides lit by their own normals and coloured from the tier's flat sprite (block/wire/<tier>), so
+// nothing on it shimmers at a distance. The EV superconductor glows full-bright over its dark sheath
+// (block/wire/ev_wire_glow).
 public final class WireRenderer {
     public static final Identifier GLOW = Identifier.fromNamespaceAndPath(ArcforgeTransmission.MODID, "block/wire/ev_wire_glow");
 
@@ -89,51 +89,76 @@ public final class WireRenderer {
         double length = Catenary.length(a, b);
         int segments = Math.max(4, (int) Math.ceil(length * 2.0));
         double half = wire.tier().wireWidthPx() / 32.0;
-        double[] prev = Catenary.point(a, b, 0.0);
-        for (int i = 1; i <= segments; i++) {
-            double[] next = Catenary.point(a, b, (double) i / segments);
-            double dx = next[0] - prev[0], dy = next[1] - prev[1], dz = next[2] - prev[2];
-            double len = Math.sqrt(dx * dx + dy * dy + dz * dz);
-            if (len < 1.0E-6) {
-                prev = next;
-                continue;
-            }
-            // Across: flat (horizontal, square to the wire) and upright (square to both).
+        double[][] points = new double[segments + 1][];
+        for (int i = 0; i <= segments; i++) {
+            points[i] = Catenary.point(a, b, (double) i / segments);
+        }
+        // Each point's frame (flat: level and square to the wire; up: square to both), from the wire's direction there,
+        // so neighbouring segments share their corners and the tube has no gaps or seams where it bends.
+        double[][] flats = new double[segments + 1][], ups = new double[segments + 1][];
+        for (int i = 0; i <= segments; i++) {
+            double[] p = points[Math.max(0, i - 1)], q = points[Math.min(segments, i + 1)];
+            double dx = q[0] - p[0], dy = q[1] - p[1], dz = q[2] - p[2];
             double hx = -dz, hz = dx, hl = Math.sqrt(hx * hx + hz * hz);
             double[] flat = hl < 1.0E-6 ? new double[] { 1, 0, 0 } : new double[] { hx / hl, 0, hz / hl };
             double[] up = { dy * flat[2] - dz * flat[1], dz * flat[0] - dx * flat[2], dx * flat[1] - dy * flat[0] };
             double ul = Math.sqrt(up[0] * up[0] + up[1] * up[1] + up[2] * up[2]);
-            up = new double[] { up[0] / ul, up[1] / ul, up[2] / ul };
-            // u: this segment's length along the sprite, from its left edge (at most half of it: 1:1).
-            float u0 = sprite.getU(0.0F), u1 = sprite.getU((float) Math.min(1.0, len));
-            float v0 = sprite.getV(0.0F), v1 = sprite.getV(1.0F);
-            ribbon(pose, buffer, prev, next, flat, half, u0, u1, v0, v1, light);
-            ribbon(pose, buffer, prev, next, up, half, u0, u1, v0, v1, light);
-            prev = next;
+            if (ul < 1.0E-9) {
+                up = new double[] { 0, 1, 0 };
+            } else {
+                up = new double[] { up[0] / ul, up[1] / ul, up[2] / ul };
+                if (up[1] < 0) {
+                    up = new double[] { -up[0], -up[1], -up[2] };
+                }
+            }
+            flats[i] = flat;
+            ups[i] = up;
+        }
+        // Both sprites are one flat tone (nothing finer than a pixel, nothing to shimmer): sampled in their middle.
+        float u0 = sprite.getU(0.25F), u1 = sprite.getU(0.75F), v0 = sprite.getV(0.25F), v1 = sprite.getV(0.75F);
+        for (int i = 0; i < segments; i++) {
+            // The four sides: up, flat, down, -flat, each the side's normal and its two edges either side of it.
+            for (int side = 0; side < 4; side++) {
+                double sn = side < 2 ? 1 : -1;
+                double[] n0 = scaled(side % 2 == 0 ? ups[i] : flats[i], sn), n1 = scaled(side % 2 == 0 ? ups[i + 1] : flats[i + 1], sn);
+                double[] e0 = side % 2 == 0 ? flats[i] : ups[i], e1 = side % 2 == 0 ? flats[i + 1] : ups[i + 1];
+                double[] c0 = corner(points[i], n0, e0, half, 1), c1 = corner(points[i], n0, e0, half, -1);
+                double[] c2 = corner(points[i + 1], n1, e1, half, -1), c3 = corner(points[i + 1], n1, e1, half, 1);
+                face(pose, buffer, c0, c1, c2, c3, n0, u0, u1, v0, v1, light);
+            }
         }
     }
 
-    // A two-sided quad from p to q, `half` either side along `across`.
-    private static void ribbon(PoseStack.Pose pose, VertexConsumer buffer, double[] p, double[] q, double[] across, double half, float u0, float u1,
-            float v0, float v1, int light) {
-        float[] a = { (float) (p[0] + across[0] * half), (float) (p[1] + across[1] * half), (float) (p[2] + across[2] * half) };
-        float[] b = { (float) (p[0] - across[0] * half), (float) (p[1] - across[1] * half), (float) (p[2] - across[2] * half) };
-        float[] c = { (float) (q[0] - across[0] * half), (float) (q[1] - across[1] * half), (float) (q[2] - across[2] * half) };
-        float[] d = { (float) (q[0] + across[0] * half), (float) (q[1] + across[1] * half), (float) (q[2] + across[2] * half) };
-        // Its normal: up-ish for lighting either way round.
-        float nx = 0, ny = 1, nz = 0;
-        vertex(pose, buffer, a, u0, v0, nx, ny, nz, light);
-        vertex(pose, buffer, b, u0, v1, nx, ny, nz, light);
-        vertex(pose, buffer, c, u1, v1, nx, ny, nz, light);
-        vertex(pose, buffer, d, u1, v0, nx, ny, nz, light);
-        vertex(pose, buffer, d, u1, v0, nx, ny, nz, light);
-        vertex(pose, buffer, c, u1, v1, nx, ny, nz, light);
-        vertex(pose, buffer, b, u0, v1, nx, ny, nz, light);
-        vertex(pose, buffer, a, u0, v0, nx, ny, nz, light);
+    private static double[] scaled(double[] v, double s) {
+        return new double[] { v[0] * s, v[1] * s, v[2] * s };
     }
 
-    private static void vertex(PoseStack.Pose pose, VertexConsumer buffer, float[] p, float u, float v, float nx, float ny, float nz, int light) {
-        buffer.addVertex(pose, p[0], p[1], p[2])
+    // A corner of the tube's square section: out along n by half, and half to one side (sign) along e.
+    private static double[] corner(double[] p, double[] n, double[] e, double half, double sign) {
+        return new double[] { p[0] + (n[0] + e[0] * sign) * half, p[1] + (n[1] + e[1] * sign) * half, p[2] + (n[2] + e[2] * sign) * half };
+    }
+
+    // One side of a segment, wound to face out along n (front faces are counter-clockwise seen from outside).
+    private static void face(PoseStack.Pose pose, VertexConsumer buffer, double[] c0, double[] c1, double[] c2, double[] c3, double[] n, float u0,
+            float u1, float v0, float v1, int light) {
+        double ax = c1[0] - c0[0], ay = c1[1] - c0[1], az = c1[2] - c0[2], bx = c2[0] - c1[0], by = c2[1] - c1[1], bz = c2[2] - c1[2];
+        double facing = (ay * bz - az * by) * n[0] + (az * bx - ax * bz) * n[1] + (ax * by - ay * bx) * n[2];
+        float nx = (float) n[0], ny = (float) n[1], nz = (float) n[2];
+        if (facing >= 0) {
+            vertex(pose, buffer, c0, u0, v0, nx, ny, nz, light);
+            vertex(pose, buffer, c1, u0, v1, nx, ny, nz, light);
+            vertex(pose, buffer, c2, u1, v1, nx, ny, nz, light);
+            vertex(pose, buffer, c3, u1, v0, nx, ny, nz, light);
+        } else {
+            vertex(pose, buffer, c3, u1, v0, nx, ny, nz, light);
+            vertex(pose, buffer, c2, u1, v1, nx, ny, nz, light);
+            vertex(pose, buffer, c1, u0, v1, nx, ny, nz, light);
+            vertex(pose, buffer, c0, u0, v0, nx, ny, nz, light);
+        }
+    }
+
+    private static void vertex(PoseStack.Pose pose, VertexConsumer buffer, double[] p, float u, float v, float nx, float ny, float nz, int light) {
+        buffer.addVertex(pose, (float) p[0], (float) p[1], (float) p[2])
                 .setColor(0xFFFFFFFF)
                 .setUv(u, v)
                 .setOverlay(OverlayTexture.NO_OVERLAY)

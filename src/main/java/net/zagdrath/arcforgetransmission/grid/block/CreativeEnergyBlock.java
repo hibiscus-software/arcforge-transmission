@@ -24,7 +24,7 @@ import net.zagdrath.arcforge.item.tool.WrenchMode;
 import net.zagdrath.arcforgetransmission.ArcforgeTransmission;
 import net.zagdrath.arcforgetransmission.grid.VoltageTier;
 
-// A Creative Source or Sink of one tier (creative tab only): a plain FE block to mount inductors on. The Wrench on
+// A Creative Source or Sink of one tier (creative tab only): a plain FE block to mount pin insulators on. The Wrench on
 // Configure doubles its setpoint (sneaking: halves it); empty-handed, it says its setpoint and what it has moved.
 public class CreativeEnergyBlock extends BaseEntityBlock {
     private final VoltageTier tier;
@@ -53,9 +53,15 @@ public class CreativeEnergyBlock extends BaseEntityBlock {
     protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand,
             BlockHitResult hit) {
         if (!(stack.getItem() instanceof WrenchItem) || WrenchItem.mode(stack) != WrenchMode.CONFIGURE) {
-            // Anything else in hand (an inductor to mount on it) is the item's to use.
+            // Anything else in hand (a pin insulator to mount on it) is the item's to use.
             return stack.isEmpty() ? InteractionResult.TRY_WITH_EMPTY_HAND : InteractionResult.PASS;
         }
+        return configure(level, pos, player);
+    }
+
+    // The Wrench on Configure: the setpoint up a step (sneaking: down). Also reached from GridWrenchEvents, since a
+    // sneaking click with an item never gets to useItemOn.
+    static InteractionResult configure(Level level, BlockPos pos, Player player) {
         if (!level.isClientSide() && level.getBlockEntity(pos) instanceof CreativeEnergyBlockEntity creative) {
             int setpoint = creative.step(!player.isSecondaryUseActive());
             player.sendOverlayMessage(Component.translatable("message." + ArcforgeTransmission.MODID + ".creative.setpoint", setpoint));

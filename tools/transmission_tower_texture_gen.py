@@ -14,8 +14,8 @@ part shows its own window of them (TowerMesh picks it from where the part is). R
 ramps across them. Everything here is deterministic (fixed seeds), so the sheet is the same on every run.
 
 The layout is TowerMesh's (keep the two in step):
-    SKIN_LV     (0, 0, 16, 512)    LV pole skin: 8 facets x 2 px round, one 8 px ramp twice round, grain up it
-    SKIN_MV     (16, 0, 30, 512)   MV / HV pole skin: 10 facets of 3 px, each with its own 3 px ramp and grain
+    SKIN_LV     (0, 0, 16, 512)    LV pole skin: 8 facets x 2 px round, one 8 px ramp twice round, soft grain up it
+    SKIN_MV     (16, 0, 30, 512)   MV / HV pole skin: 10 facets of 3 px, each with its own 3 px ramp and soft grain
     GALV        (48, 0, 128, 128)  galvanized steel spangle field
     WOOD        (48, 128, 128, 48) treated timber field, grain along x
     CONCRETE    (176, 0, 64, 32)   concrete field
@@ -169,52 +169,31 @@ def blotch_field(x0, y0, w, h, tones, idx, seed):
 
 # --- pole skins -------------------------------------------------------------------------------------------------
 
+# The poles' skin: a finer treated-wood ramp than WOOD (close steps, like a vanilla log's side), dark to light.
+POLE = [hx(c) for c in ("#2B1E13", "#332417", "#3B2A1B", "#43301F", "#4B3624", "#543D29", "#5C432D", "#654A32", "#6E5237", "#77593C")]
+
+
 def pole_skin(x0, w, ramp, seed, facet=None):
-    """A pole's unrolled skin, 512 tall: the ramp across (one tone per column), the wood's grain running up it (long
-    runs one step darker or lighter, never shorter than 6 px), dark checks (1 px cracks 5-14 px long, sometimes
-    forked) and darker bands round the whole pole (the same rows in every column, so they meet round it)."""
+    """A pole's unrolled skin, 512 tall, painted like a vanilla log's side: a smooth ramp across (one tone per column,
+    close steps of POLE) and the grain running up it as long, soft runs one step off the column's tone (16-56 px, never
+    an isolated pixel); no cracks or bands, so nothing busy shows at a distance."""
     rnd = random.Random(seed)
-    grid = [[0] * w for _ in range(H)]
     for c in range(w):
         base = ramp[c if facet is None else c % facet]
-        pos = -rnd.randrange(0, 30)
+        pos = -rnd.randrange(0, 40)
         while pos < H:
-            run = rnd.randint(8, 40)
-            off = rnd.choice((-1, -1, 0, 0, 0, 0, 1))
+            run = rnd.randint(16, 56)
+            off = rnd.choice((-1, 0, 0, 0, 1))
             for y in range(max(0, pos), min(H, pos + run)):
-                grid[y][c] = base + off
+                put(x0 + c, y, POLE[max(0, min(len(POLE) - 1, base + off))])
             pos += run
-    # Bands: 2-3 rows one step darker right round, every 36-90 px.
-    y = rnd.randint(20, 50)
-    bands = []
-    while y < H - 4:
-        hgt = rnd.choice((2, 2, 3))
-        for yy in range(y, y + hgt):
-            for c in range(w):
-                grid[yy][c] -= 1
-        bands.append(y)
-        y += rnd.randint(36, 90)
-    # Checks: drying cracks along the grain.
-    for _ in range(w * H // 260):
-        c, y0 = rnd.randrange(0, w), rnd.randrange(0, H - 16)
-        ln = rnd.randint(5, 14)
-        for y in range(y0, y0 + ln):
-            grid[y][c] = 1
-        if rnd.random() < 0.25 and 0 < c < w - 1:
-            d = rnd.choice((-1, 1))
-            for y in range(y0 + ln, y0 + ln + rnd.randint(2, 4)):
-                if y < H:
-                    grid[y][c + d] = 1
-    for y in range(H):
-        for c in range(w):
-            put(x0 + c, y, WOOD[max(1, min(7, grid[y][c]))])
 
 
-# LV: 8 facets of 2 px, one ramp 8 px wide twice round (period 8: lightest just off centre, darkest at the edges).
-LV_RAMP = [3, 4, 5, 6, 6, 5, 4, 3]
+# LV: 8 facets of 2 px, one ramp 8 px wide twice round (period 8: lightest just off centre, darker to the edges).
+LV_RAMP = [4, 5, 6, 7, 7, 6, 5, 4]
 pole_skin(0, 16, LV_RAMP + LV_RAMP, 1101)
-# MV / HV: 10 facets of 3 px, each carrying the whole ramp across it.
-pole_skin(16, 30, [4, 6, 5], 1202, facet=3)
+# MV / HV: 10 facets of 3 px, each carrying a gentle ramp across it.
+pole_skin(16, 30, [5, 7, 6], 1202, facet=3)
 
 # --- fields -----------------------------------------------------------------------------------------------------
 spangle_field(48, 0, 128, 128, GALV, (4, 5, 6), 2201)
@@ -420,10 +399,10 @@ def pin(x, y):
 
 
 ITEMS = {}
-# LV Distribution Pole: the pole's top, one crossarm with three pins, the pole-top pin and the transformer can.
+# LV Distribution Pole: the pole's top, one crossarm with three pins, and the neutral's pin on its standoff below.
 ITEMS["lv_distribution_pole"] = sprite(
-    vbar(7, 3, 15, WL, WD) + box(0, 5, 15, 6, WL, WD) + pin(1, 3) + pin(4, 3) + pin(12, 3) + pin(7, 1)
-    + box(10, 9, 12, 12, GL, GD, GM) + [(9, 10, GM)])
+    vbar(7, 2, 15, WL, WD) + box(0, 5, 15, 6, WL, WD) + pin(1, 3) + pin(4, 3) + pin(12, 3)
+    + pin(3, 9) + [(5, 11, GM), (6, 11, GD)])
 # MV Sub-Transmission Pole: the pole, the short upper arm and the wide lower arm with their posts, the shield peak.
 ITEMS["mv_sub_transmission_pole"] = sprite(
     vbar(7, 2, 15, WL, WD) + box(2, 4, 9, 5, WL, WD) + box(0, 9, 15, 10, WL, WD)

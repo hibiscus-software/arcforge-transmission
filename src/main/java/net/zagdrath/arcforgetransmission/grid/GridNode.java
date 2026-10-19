@@ -6,7 +6,7 @@
 
 package net.zagdrath.arcforgetransmission.grid;
 
-// One insulator wires attach to: one conductor's attach point on a tower, an inductor or a transformer. Its phase label
+// One insulator wires attach to: one conductor's attach point on a tower, a pin insulator or a transformer. Its phase label
 // can change (the wrench); between circuit types only while it has no wires (GridGraph checks).
 public final class GridNode {
     private final long id;

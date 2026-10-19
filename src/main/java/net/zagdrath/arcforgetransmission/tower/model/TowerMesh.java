@@ -25,8 +25,8 @@ import java.util.Set;
 // every member and plate shading itself from its own edge strips (lit top and left, dark bottom and right) over its own
 // window of a big non-repeating grain field (galvanized spangle, treated timber, concrete), picked from where the face
 // is; seams only where parts really join (a lattice member ends at its panel point, a can's lid at its flange). The
-// wood poles carry their own unrolled skin (the ramp across, the grain, checks and bands up it, the bands meeting round
-// the pole); insulators and the discs carry stepped ramps round them, the discs a ramp from rim to
+// wood poles carry their own unrolled skin (a smooth ramp across and soft grain up it, like a vanilla log's side);
+// insulators and the discs carry stepped ramps round them, the discs a ramp from rim to
 // cap as well. No two faces facing the same way share a plane where both show (no z-fighting), and every part is
 // closed where it can be seen.
 //
@@ -52,9 +52,11 @@ public final class TowerMesh extends MeshBuilder {
         }
     }
 
-    // A built tower: its quads, its solid boxes (px, for collision and hits) and the block cells they touch (from the
-    // centre column's base block).
-    public record Built(float[] solid, List<float[]> boxes, List<int[]> cells) {}
+    // A built tower: its quads, its solid boxes (px, the model's every part), the boxes its blocks are shaped from (px,
+    // for collision, hits and outlines: its frame as uniform boxes, a pole, crossarm, peak or lattice bay each, and each
+    // insulator its own), its insulators' boxes (px, in the order they're built) and the
+    // block cells the shapes reach into (from the centre column's base block).
+    public record Built(float[] solid, List<float[]> boxes, List<float[]> shapes, List<float[]> insulators, List<int[]> cells) {}
 
     // --- The sheet (tools/transmission_tower_texture_gen.py) ---
 
@@ -109,6 +111,9 @@ public final class TowerMesh extends MeshBuilder {
     private static final float[] UP = { 0, 1, 0 };
 
     private final List<float[]> boxes = new ArrayList<>();
+    // The uniform frame boxes (poles, crossarms, peaks, the lattice's bays) and every insulator's box.
+    private final List<float[]> frame = new ArrayList<>();
+    private final List<float[]> insulators = new ArrayList<>();
     // Where each face's grain window comes from: a running count, mixed with where the face is.
     private long faceSeed;
 
@@ -131,7 +136,9 @@ public final class TowerMesh extends MeshBuilder {
             case H_FRAME -> mesh.hFrame();
             case LATTICE -> mesh.lattice();
         }
-        return new Built(mesh.solid.toArray(), List.copyOf(mesh.boxes), cells(mesh.boxes));
+        List<float[]> shapes = new ArrayList<>(mesh.frame);
+        shapes.addAll(mesh.insulators);
+        return new Built(mesh.solid.toArray(), List.copyOf(mesh.boxes), List.copyOf(shapes), List.copyOf(mesh.insulators), cells(shapes));
     }
 
     // The block cells (from the centre column's base block) the boxes reach into by more than a sliver.
@@ -162,13 +169,13 @@ public final class TowerMesh extends MeshBuilder {
     // ================================================================================================================
 
     // Where the transformer's can stands in its block (px, front north, the pole to the south): the same can the LV pole
-    // used to carry, one block tall, as close to the block's south face as it fits.
-    public static final float CAN_X = 8.0F, CAN_Z = 10.5F, CAN_Y0 = 0.0F, CAN_Y1 = 16.0F;
+    // used to carry, one block tall, hung 1 px off the pole's face (its back reaches into the pole's block).
+    public static final float CAN_X = 8.0F, CAN_Z = 15.4F, CAN_Y0 = 0.0F, CAN_Y1 = 16.0F;
     // The primaries' x (A, B, C, west to east), the secondaries' (L1, N, L2), and their heights.
     public static final float[] PRIMARY_X = { 5.2F, 8.0F, 10.8F }, SECONDARY_X = { 5.0F, 8.0F, 11.0F };
     public static final float PRIMARY_TOP = CAN_Y1 - 0.8F + 3.2F, SECONDARY_Y = 6.0F;
     // The faces the secondaries stand off: the can's north facet, and their tips.
-    public static final float SECONDARY_TIP_Z = 3.0F, NEUTRAL_TIP_Z = 4.0F;
+    public static final float SECONDARY_TIP_Z = 7.9F, NEUTRAL_TIP_Z = 8.9F;
     // Where its pole's surface is when it hangs on an LV pole (the next block south, its 8 facets of 2 px).
     private static final float POLE_FACE_Z = 16.0F + 8.0F - 2.41F;
     private static Built transformer;
@@ -179,7 +186,7 @@ public final class TowerMesh extends MeshBuilder {
         if (transformer == null) {
             TowerMesh mesh = new TowerMesh();
             mesh.buildPoleTransformer();
-            transformer = new Built(mesh.solid.toArray(), List.copyOf(mesh.boxes), cells(mesh.boxes));
+            transformer = new Built(mesh.solid.toArray(), List.copyOf(mesh.boxes), List.copyOf(mesh.boxes), List.of(), cells(mesh.boxes));
         }
         return transformer;
     }
@@ -215,8 +222,12 @@ public final class TowerMesh extends MeshBuilder {
     // The towers
     // ================================================================================================================
 
+    // The LV pole's neutral: its pin insulator's foot, on a standoff off the pole's west face, 2 blocks under the
+    // crossarm (tools/tower_attach_groups_gen.py reads the same numbers).
+    public static final float NEUTRAL_X = 2.2F, NEUTRAL_Y = 100.0F;
+
     // LV Distribution Pole, 10 blocks: a treated pole (8 facets of 2 px), one crossarm with three pin insulators near
-    // the top, a pin insulator on the pole top (the neutral), a ground wire stapled down the east side and a pole tag
+    // the top, the neutral's pin insulator on a standoff bracket below it, a ground wire stapled down the east side and a pole tag
     // facing the line's south end. No transformer: the Pole-Mount Transformer is its own block, hung on a pole where
     // one is wanted.
     private void distributionPole() {
@@ -231,8 +242,12 @@ public final class TowerMesh extends MeshBuilder {
         for (float x : new float[] { -8, 1, 24 }) {
             pinInsulator(x, armY + 4, (armZ0 + armZ1) / 2);
         }
-        // The pole-top pin: a bracket on the pole's top and the insulator on it.
-        pinInsulator(cx, top, cz);
+        // The neutral, as on a real distribution pole: a pin insulator on a galvanized standoff bracket off the pole's
+        // west face, two blocks below the crossarm (to the side, so its wire runs clear of the pole along the line).
+        float ny = NEUTRAL_Y, nx = NEUTRAL_X;
+        swatchBox(nx - 1.2F, ny - 1.4F, cz - 0.7F, cx - 1.0F, ny, cz + 0.7F, GALV0 + 6);
+        swatchBox(cx - 2.41F - 0.4F, ny - 3.4F, cz - 1.0F, cx - 2.41F + 0.2F, ny + 0.6F, cz + 1.0F, GALV0 + 7);
+        pinInsulator(nx, ny, cz);
         // The ground wire down the east face, stapled every 12 px.
         float gx = cx + 2.41F + 0.45F;
         swatchBox(gx - 0.45F, 2, cz - 0.45F, gx + 0.45F, top - 2, cz + 0.45F, COPPER0 + 2);
@@ -378,6 +393,15 @@ public final class TowerMesh extends MeshBuilder {
             }
         }
         shieldPeak(c, 496, c, 14);
+        // The frame (shapes and outline): the footings, then the body one box per bay, stepping in with the legs' batter
+        // and wide enough for the anti-climb guard, the step bolts and the sign, then the peak's members to its post (the
+        // arms add their own, in arm()).
+        frame.add(new float[] { c - 44, 0, c - 44, c + 44, 8, c + 44 });
+        for (int k = 0; k + 1 < levels.length; k++) {
+            float h = legHalf(levels[k]) + 4.5F;
+            frame.add(new float[] { c - h, levels[k], c - h, c + h, levels[k + 1], c + h });
+        }
+        frame.add(new float[] { c - 13.5F, 464, c - 13.5F, c + 13.5F, 496, c + 13.5F });
         antiClimb(c);
         stepBolts();
         // The danger sign on the south face's lowest X, at its crossing.
@@ -459,6 +483,11 @@ public final class TowerMesh extends MeshBuilder {
         member(botN[panels], botS[panels], 2.0F, 2.0F, out, Mat.GALV, true);
         brace(topN[panels], botN[panels], 1.0F, 1.6F, 1.6F, out, true);
         brace(topS[panels], botS[panels], 1.0F, 1.6F, 1.6F, out, true);
+        // The arm's frame: its full depth and width from the body's side to just short of the string hung at its tip,
+        // then the tip itself only as deep as it is there, so the string's own box stays clear to aim at.
+        float neck = tip - side * 4.2F, tipEnd = tip + side * 1.0F;
+        frame.add(new float[] { Math.min(root, neck), y - rootDepth - 0.9F, c - rootHalf - 0.9F, Math.max(root, neck), y + 0.9F, c + rootHalf + 0.9F });
+        frame.add(new float[] { Math.min(neck, tipEnd), y - tipDepth - 0.9F, c - tipHalf - 0.9F, Math.max(neck, tipEnd), y + 0.9F, c + tipHalf + 0.9F });
         return tip - side * 1.0F;
     }
 
@@ -542,6 +571,7 @@ public final class TowerMesh extends MeshBuilder {
         paintPlane(butt, new float[] { cx - r, y0, cz - r }, new float[] { 1, 0, 0 }, new float[] { 0, 0, 1 },
                 List.of(new float[] { 0, size, 0, size, GRAIN_X + off, GRAIN_Y + off }));
         boxes.add(new float[] { cx - r, y0, cz - r, cx + r, y1, cz + r });
+        frame.add(new float[] { cx - r, y0, cz - r, cx + r, y1, cz + r });
     }
 
     private static float[][] ring(float cx, float cz, float r, int sides) {
@@ -557,6 +587,7 @@ public final class TowerMesh extends MeshBuilder {
     private void timber(float x0, float y0, float z0, float x1, float y1, float z1) {
         float[] a = { x0, (y0 + y1) / 2, (z0 + z1) / 2 }, b = { x1, (y0 + y1) / 2, (z0 + z1) / 2 };
         member(a, b, z1 - z0, y1 - y0, UP, Mat.WOOD, true);
+        frame.add(new float[] { x0, y0, z0, x1, y1, z1 });
     }
 
     // A concrete box (a footing step).
@@ -573,6 +604,7 @@ public final class TowerMesh extends MeshBuilder {
         turned(x, z, new float[][] { { b, 1.0F }, { b, 2.7F }, { b + 0.9F, 2.7F }, { b + 2.0F, 1.6F }, { b + 2.6F, 1.6F }, { b + 2.6F, 2.2F },
                 { b + 3.4F, 2.2F }, { b + 4.0F, 1.5F }, { b + 4.2F, 1.2F }, { b + 4.8F, 1.2F }, { b + 4.9F, 1.6F }, { b + 5.6F, 1.5F } }, 8, Ramp.PORCELAIN,
                 true, true);
+        insulators.add(new float[] { x - 2.7F, y, z - 2.7F, x + 2.7F, b + 5.6F, z + 2.7F });
     }
 
     // A porcelain line post insulator standing at (x, y, z), `height` px: a steel base flange, the core with a shed every
@@ -593,6 +625,7 @@ public final class TowerMesh extends MeshBuilder {
         // The clamp: a saddle across the line (along u) on a short stud.
         turned(x, z, new float[][] { { top, 1.6F }, { top + 0.6F, 1.6F } }, 8, Ramp.GALV, true, true);
         swatchBox(x - 1.0F, top + 0.6F, z - 2.2F, x + 1.0F, top + 1.6F, z + 2.2F, GALV0 + 6);
+        insulators.add(new float[] { x - 2.6F, y, z - 2.6F, x + 2.6F, top + 1.6F, z + 2.6F });
     }
 
     // A suspension string hanging from (x, y, z): a steel clevis and socket, `discs` glass discs at a 3 px pitch, and a
@@ -610,6 +643,7 @@ public final class TowerMesh extends MeshBuilder {
         swatchBox(x - 1.0F, t - 2.2F, z - 2.6F, x + 1.0F, t - 0.8F, z + 2.6F, GALV0 + 6);
         swatchBox(x - 0.6F, t - 3.0F, z - 1.4F, x + 0.6F, t - 2.2F, z + 1.4F, GALV0 + 4);
         boxes.add(new float[] { x - 3.1F, t - 3.0F, z - 3.1F, x + 3.1F, y, z + 3.1F });
+        insulators.add(new float[] { x - 3.1F, t - 3.0F, z - 3.1F, x + 3.1F, y, z + 3.1F });
     }
 
     // One cap-and-pin glass disc whose cap top is at y: the steel cap, the glazed top falling from cap to rim (its own
@@ -629,6 +663,7 @@ public final class TowerMesh extends MeshBuilder {
         member(new float[] { x, y + 0.5F, z }, new float[] { x, y + height - 2.0F, z }, 2.0F, 2.0F, new float[] { 1, 0, 0 }, Mat.GALV, true);
         swatchBox(x - 1.2F, y + height - 2.0F, z - 2.0F, x + 1.2F, y + height - 0.6F, z + 2.0F, GALV0 + 6);
         swatchBox(x - 0.6F, y + height - 0.6F, z - 1.2F, x + 0.6F, y + height, z + 1.2F, GALV0 + 7);
+        frame.add(new float[] { x - 2.6F, y, z - 2.6F, x + 2.6F, y + height, z + 2.6F });
     }
 
     // The pole-mounted transformer can from y0 to y1 at (x, z): 8 facets of 4 px with the ramp across each, a seam at

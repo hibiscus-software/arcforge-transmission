@@ -12,10 +12,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-// One grid tick for a whole world: the ports (Port: inductors on a block, a transformer's sides) give their supply and
+// One grid tick for a whole world: the ports (Port: pin insulators on a block, a transformer's sides) give their supply and
 // demand, the flow is solved (FlowSolver), the energy moved, and each wire's ticks over its rating counted; wires over it
 // too long burn out and are removed (GridFaults hears of every overcurrent and burnout). Ports are whatever holds the
-// energy: in game, the blocks the inductors are on and the transformers (absent while their chunk isn't loaded, so they
+// energy: in game, the blocks the pin insulators are on and the transformers (absent while their chunk isn't loaded, so they
 // neither give nor take: the grid holds no energy of its own, so nothing is lost or made at a chunk border).
 public final class GridTicker {
     private GridTicker() {}

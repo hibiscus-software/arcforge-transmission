@@ -1,15 +1,15 @@
-"""The grid's placeable blocks: the four Inductors, the Pole-Mount Transformer, and the creative Source and Sink.
+"""The grid's placeable blocks: the four Pin Insulators, the Pole-Mount Transformer, and the creative Source and Sink.
 
     python tools/grid_block_model_gen.py <addon repo>
 
 Writes:
-    assets/arcforgetransmission/models/block/inductor/<tier>.json and textures/block/inductor/<tier>.png
+    assets/arcforgetransmission/models/block/pin_insulator/<tier>.json and textures/block/pin_insulator/<tier>.png
     assets/arcforgetransmission/models/block/pole_transformer.json (particles only) and textures/item/pole_transformer.png
     assets/arcforgetransmission/models/block/creative_{source,sink}/<tier>.json and their 16x16 textures
-    data/arcforgetransmission/attach_groups/{inductor_<tier>,pole_transformer}.json
+    data/arcforgetransmission/attach_groups/{pin_insulator_<tier>,pole_transformer}.json
 
-An Inductor is one insulator, like the ones on the towers (the same glazed porcelain, glass and galvanizing ramps as
-tools/transmission_tower_texture_gen.py): a wire is one conductor, and an Inductor its one end, mounted on any face of the
+A Pin Insulator is one insulator, like the ones on the towers (the same glazed porcelain, glass and galvanizing ramps as
+tools/transmission_tower_texture_gen.py): a wire is one conductor, and a Pin Insulator its one end, mounted on any face of the
 block it serves (Immersive Engineering style). The model points up (mounted on the block below); the blockstates turn it
 like an end rod. Per tier:
     LV  a porcelain pin insulator: two skirts and a crown with the tie groove, on a galvanized pin
@@ -93,7 +93,7 @@ def discs(y, count, rim, cap=1.2, pitch=3.2):
     return levels, y
 
 
-def inductor(tier):
+def pin_insulator(tier):
     """Returns (parts, attach point px)."""
     if tier == "lv":
         levels = [("pin", 1, 2.5, 1.0, "galv"),
@@ -130,12 +130,12 @@ def inductor(tier):
 def pole_transformer_terminals():
     """The transformer is drawn from TowerMesh.poleTransformer() (the can the LV pole used to carry); its attach points
     are read off the same constants: the primaries' tops on the lid, the secondaries' tips on the front."""
-    can_z, can_y1 = 10.5, 16.0
+    can_z, can_y1 = 15.4, 16.0
     primary_top = can_y1 - 0.8 + 3.2
     t = {}
     for label, x in (("A", 5.2), ("B", 8.0), ("C", 10.8)):
         t[label] = [x, round(primary_top, 4), can_z]
-    for label, x, z in (("L1", 5.0, 3.0), ("N", 8.0, 4.0), ("L2", 11.0, 3.0)):
+    for label, x, z in (("L1", 5.0, 7.9), ("N", 8.0, 8.9), ("L2", 11.0, 7.9)):
         t[label] = [x, 6.0, z]
     return t
 
@@ -346,13 +346,13 @@ def main():
     assets = os.path.join(repo, "src/main/resources/assets", NS)
     data = os.path.join(repo, "src/main/resources/data", NS, "attach_groups")
     for tier in TIERS:
-        parts, point = inductor(tier)
+        parts, point = pin_insulator(tier)
         placed = pack(parts)
-        save(sheet(placed), os.path.join(assets, "textures/block/inductor", tier + ".png"))
-        write_json(os.path.join(assets, "models/block/inductor", tier + ".json"),
-                   model_json(f"{NS}:block/inductor/{tier}", parts, placed, DISPLAY))
-        write_json(os.path.join(data, f"inductor_{tier}.json"),
-                   attach(f"inductor_{tier}", [{"name": "insulator", "circuit": "three_phase",
+        save(sheet(placed), os.path.join(assets, "textures/block/pin_insulator", tier + ".png"))
+        write_json(os.path.join(assets, "models/block/pin_insulator", tier + ".json"),
+                   model_json(f"{NS}:block/pin_insulator/{tier}", parts, placed, DISPLAY))
+        write_json(os.path.join(data, f"pin_insulator_{tier}.json"),
+                   attach(f"pin_insulator_{tier}", [{"name": "insulator", "circuit": "three_phase",
                                                  "terminals": [{"label": "A", "pos": point}]}],
                           "px in the block's up-pointing frame (mounted on the block below); origin the block's minimum corner"))
     terminals = pole_transformer_terminals()
@@ -372,7 +372,7 @@ def main():
             save(creative_texture("out" if kind == "source" else "in", i), os.path.join(assets, f"textures/block/creative_{kind}", tier + ".png"))
             write_json(os.path.join(assets, f"models/block/creative_{kind}", tier + ".json"),
                        {"parent": "minecraft:block/cube_all", "textures": {"all": f"{NS}:block/creative_{kind}/{tier}"}})
-    print("wrote the inductors, the pole-mount transformer's data and the creative blocks")
+    print("wrote the pin insulators, the pole-mount transformer's data and the creative blocks")
 
 
 if __name__ == "__main__":

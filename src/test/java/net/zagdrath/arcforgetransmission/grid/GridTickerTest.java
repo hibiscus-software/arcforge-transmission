@@ -90,9 +90,9 @@ class GridTickerTest {
     }
 
     @Test
-    void anInductorsCurrentLimitPreventsTheBurnout() {
+    void anPinInsulatorsCurrentLimitPreventsTheBurnout() {
         GridGraph graph = GridFixtures.line(VoltageTier.LV, 1, 8);
-        // The source's inductors are set to the wire's 8 A rating.
+        // The source's pin insulators are set to the wire's 8 A rating.
         GridFixtures.Buffers terminals = new GridFixtures.Buffers(VoltageTier.LV).source(1, GridFixtures.at(1), 10_000_000, 4096)
                 .sink(2, GridFixtures.at(3), 2048).limit(1, 8.0);
         for (int tick = 0; tick < SETTINGS.burnoutTicks() * 3; tick++) {

@@ -1,0 +1,30 @@
+{
+  "variants": {
+    "facing=up": {
+      "model": "arcforgetransmission:block/pin_insulator/ev"
+    },
+    "facing=down": {
+      "model": "arcforgetransmission:block/pin_insulator/ev",
+      "x": 180
+    },
+    "facing=north": {
+      "model": "arcforgetransmission:block/pin_insulator/ev",
+      "x": 90
+    },
+    "facing=south": {
+      "model": "arcforgetransmission:block/pin_insulator/ev",
+      "x": 90,
+      "y": 180
+    },
+    "facing=east": {
+      "model": "arcforgetransmission:block/pin_insulator/ev",
+      "x": 90,
+      "y": 90
+    },
+    "facing=west": {
+      "model": "arcforgetransmission:block/pin_insulator/ev",
+      "x": 90,
+      "y": 270
+    }
+  }
+}

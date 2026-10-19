@@ -13,14 +13,14 @@ import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.zagdrath.arcforgetransmission.ArcforgeTransmission;
 import net.zagdrath.arcforgetransmission.grid.block.GridContent;
 
-// The grid's client side: the inductors' wires and the transformer (towers draw their own wires, TowerRenderer).
+// The grid's client side: the pin insulators' wires and the transformer (towers draw their own wires, TowerRenderer).
 @EventBusSubscriber(modid = ArcforgeTransmission.MODID, value = Dist.CLIENT)
 public final class GridClient {
     private GridClient() {}
 
     @SubscribeEvent
     static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
-        event.registerBlockEntityRenderer(GridContent.INDUCTOR_ENTITY.get(), WiresOnlyRenderer::new);
+        event.registerBlockEntityRenderer(GridContent.PIN_INSULATOR_ENTITY.get(), WiresOnlyRenderer::new);
         event.registerBlockEntityRenderer(GridContent.POLE_TRANSFORMER_ENTITY.get(), PoleTransformerRenderer::new);
     }
 }

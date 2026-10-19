@@ -33,10 +33,10 @@ import net.zagdrath.arcforgetransmission.grid.world.Insulator;
 // What Arcforge's Wrench does to anything with insulators (Arcforge's wrench passes on blocks that aren't its own, so
 // they handle it in useItemOn):
 //   Rotate     on a group of three-phase insulators (a tower's, a transformer's primary), swaps B and C (ABC <-> ACB);
-//              on a lone insulator (an inductor), steps its label (A B C, or L1 L2 N)
+//              on a lone insulator (a pin insulator), steps its label (A B C, or L1 L2 N)
 //   Port       switches the nearest insulator between three-phase and single-phase labels (only while it has no wires)
-//   Configure  on an inductor, its mode (sneaking: its current limit); elsewhere, says the labels
-//   Dismantle  (sneaking) on an inductor or transformer, takes it down whole
+//   Configure  on a pin insulator, its mode (sneaking: its current limit); elsewhere, says the labels
+//   Dismantle  (sneaking) on a pin insulator or transformer, takes it down whole
 public final class GridInteractions {
     private GridInteractions() {}
 
@@ -79,6 +79,9 @@ public final class GridInteractions {
                     GridManager.setPhase(server, anchor, node.phase().next());
                 }
                 tell(player, Component.translatable("message." + ArcforgeTransmission.MODID + ".phase.labels", labels(server, endpoint, group)));
+                if (endpoint instanceof PinInsulatorBlockEntity pinInsulator) {
+                    pinInsulator.refreshDisplay(true);
+                }
             }
             case PORT -> {
                 GridNode node = GridManager.node(server, anchor);
@@ -92,20 +95,23 @@ public final class GridInteractions {
                     GridManager.setPhase(server, anchor, phase);
                     tell(player, Component.translatable("message." + ArcforgeTransmission.MODID + ".phase.circuit",
                             Component.translatable("circuit." + ArcforgeTransmission.MODID + "." + phase.circuit().id()), phase.name()));
+                    if (endpoint instanceof PinInsulatorBlockEntity pinInsulator) {
+                        pinInsulator.refreshDisplay(true);
+                    }
                 }
             }
             case CONFIGURE -> {
-                if (endpoint instanceof InductorBlockEntity inductor) {
+                if (endpoint instanceof PinInsulatorBlockEntity pinInsulator) {
                     if (sneaking) {
-                        int next = inductor.limitEighths() % 8 + 1;
-                        inductor.setForPort(inductor.mode(), next);
-                        tell(player, Component.translatable("message." + ArcforgeTransmission.MODID + ".inductor.limit",
-                                format(inductor.limitAmps()), next + "/8"));
+                        int next = pinInsulator.limitEighths() % 8 + 1;
+                        pinInsulator.setForPort(pinInsulator.mode(), next);
+                        tell(player, Component.translatable("message." + ArcforgeTransmission.MODID + ".pin_insulator.limit",
+                                format(pinInsulator.limitAmps()), next + "/8"));
                     } else {
-                        InductorMode next = inductor.mode().next();
-                        inductor.setForPort(next, inductor.limitEighths());
-                        tell(player, Component.translatable("message." + ArcforgeTransmission.MODID + ".inductor.mode",
-                                Component.translatable("inductor_mode." + ArcforgeTransmission.MODID + "." + next.id())));
+                        PinInsulatorMode next = pinInsulator.mode().next();
+                        pinInsulator.setForPort(next, pinInsulator.limitEighths());
+                        tell(player, Component.translatable("message." + ArcforgeTransmission.MODID + ".pin_insulator.mode",
+                                Component.translatable("pin_insulator_mode." + ArcforgeTransmission.MODID + "." + next.id())));
                     }
                 } else {
                     tell(player, Component.translatable("message." + ArcforgeTransmission.MODID + ".phase.labels", labels(server, endpoint, group)));

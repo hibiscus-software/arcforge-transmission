@@ -15,7 +15,7 @@ import net.zagdrath.arcforgetransmission.grid.VoltageTier;
 
 // Every number the grid runs on (arcforgetransmission-common.toml). Read each tick, so a change applies at once.
 public final class GridConfig {
-    // What happens to a foreign FE block (not this addon's) an MV-or-higher inductor serves.
+    // What happens to a foreign FE block (not this addon's) an MV-or-higher pin insulator serves.
     public enum Overvoltage {
         // Broken as if mined: it drops itself.
         BREAK,
@@ -60,7 +60,7 @@ public final class GridConfig {
                 .defineInRange("burnoutTicks", 40, 1, 72_000);
         BURNOUT_FIRE = BUILDER.comment("Whether a wire burning out can set a fire under its middle.").define("burnoutFire", true);
         BURNOUT_FIRE_CHANCE = BUILDER.comment("The chance (0 to 1) that it does.").defineInRange("burnoutFireChance", 0.5, 0.0, 1.0);
-        OVERVOLTAGE = BUILDER.comment("What an MV, HV or EV inductor does to a foreign FE block (one not from this addon) it's mounted on",
+        OVERVOLTAGE = BUILDER.comment("What an MV, HV or EV pin insulator does to a foreign FE block (one not from this addon) it's mounted on",
                 "while switched to input or output: BREAK (drops it), DESTROY, EXPLODE (a small blast that breaks no blocks) or NONE.")
                 .defineEnum("overvoltage", Overvoltage.BREAK);
         BUILDER.pop();

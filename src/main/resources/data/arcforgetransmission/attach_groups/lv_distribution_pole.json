@@ -33,14 +33,14 @@
       ]
     },
     {
-      "name": "pole_top",
+      "name": "neutral",
       "circuit": "single_phase",
       "terminals": [
         {
           "label": "N",
           "pos": [
-            8,
-            157.6,
+            2.2,
+            107.6,
             8
           ]
         }
