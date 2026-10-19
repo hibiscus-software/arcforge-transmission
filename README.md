@@ -79,7 +79,7 @@ audit. Don't edit the generated files by hand.
 | `grid` | The pure-Java core: tiers, phases, the graph, the flow solver, burnout. It is unit tested. |
 | `grid.data` | Attach points, read from the generated JSON. |
 | `grid.world` | The saved grid, the per-dimension tick, the config. |
-| `grid.block` | Pin Insulators, the transformer and the creative blocks. |
+| `grid.block` | Pin Insulators, the transformers, the Wall Bushing and the Surge Arrester. |
 | `grid.item` | Wire coils. |
 | `grid.client` | Wire and transformer rendering. |
 | `tower` | The towers. |

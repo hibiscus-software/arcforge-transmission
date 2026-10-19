@@ -26,7 +26,7 @@ import net.zagdrath.arcforgetransmission.ArcforgeTransmission;
 
 // A short description of what each of the addon's items does, under its name, as Arcforge's items have: "Hold [Shift]
 // for info", and the description while Shift is held. Descriptions live in the lang file as
-// tooltip.arcforgetransmission.info.<item>; tiered items (pin insulators, wire coils, creative blocks) share one without
+// tooltip.arcforgetransmission.info.<item>; tiered items (pin insulators, wire coils) share one without
 // the tier, e.g. tooltip.arcforgetransmission.info.pin_insulator.
 @EventBusSubscriber(modid = ArcforgeTransmission.MODID, value = Dist.CLIENT)
 public final class ItemInfoTooltips {

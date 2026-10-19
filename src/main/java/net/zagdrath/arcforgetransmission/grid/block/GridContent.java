@@ -39,8 +39,8 @@ import net.zagdrath.arcforgetransmission.grid.item.GuyWireItem;
 import net.zagdrath.arcforgetransmission.grid.item.WireCoilItem;
 import net.zagdrath.arcforgetransmission.grid.item.WireCuttersItem;
 
-// Everything the grid registers: per tier a Pin Insulator, a Wire Coil and a Creative Source and Sink; Wire Cutters; the Pole-Mount
-// Transformer; Burnt Wire; their block entity types; the coil's loose-end component; and the creative blocks' FE
+// Everything the grid registers: per tier a Pin Insulator, and a Wire Coil; Wire Cutters; the Pole-Mount
+// Transformer; Burnt Wire; their block entity types; and the coil's loose-end component
 // capability. Call register(modEventBus) from the mod's constructor.
 public final class GridContent {
     private static final String MODID = ArcforgeTransmission.MODID;
@@ -51,8 +51,6 @@ public final class GridContent {
     public static final DeferredRegister.DataComponents DATA_COMPONENTS = DeferredRegister.createDataComponents(Registries.DATA_COMPONENT_TYPE, MODID);
 
     public static final Map<VoltageTier, DeferredBlock<PinInsulatorBlock>> PIN_INSULATORS = new EnumMap<>(VoltageTier.class);
-    public static final Map<VoltageTier, DeferredBlock<CreativeEnergyBlock>> CREATIVE_SOURCES = new EnumMap<>(VoltageTier.class);
-    public static final Map<VoltageTier, DeferredBlock<CreativeEnergyBlock>> CREATIVE_SINKS = new EnumMap<>(VoltageTier.class);
     public static final Map<VoltageTier, DeferredItem<WireCoilItem>> COILS = new EnumMap<>(VoltageTier.class);
     // Rubber-insulated wire (Arcforge's rubber) and underground cable: LV and MV only, safe to touch.
     public static final Map<VoltageTier, DeferredItem<WireCoilItem>> INSULATED_COILS = new EnumMap<>(VoltageTier.class);
@@ -114,16 +112,6 @@ public final class GridContent {
         TAB_ITEMS.add(GUY_WIRE);
         TAB_ITEMS.add(POLE_TRANSFORMER_ITEM);
         TAB_ITEMS.add(BURNT_WIRE);
-        // Creative only: unbreakable outside creative, no recipe.
-        for (boolean source : new boolean[] { true, false }) {
-            for (VoltageTier tier : VoltageTier.values()) {
-                DeferredBlock<CreativeEnergyBlock> block = BLOCKS.registerBlock(tier.id() + (source ? "_creative_source" : "_creative_sink"),
-                        p -> new CreativeEnergyBlock(tier, source, p),
-                        p -> p.mapColor(MapColor.COLOR_MAGENTA).strength(-1.0F, 3_600_000.0F).sound(SoundType.METAL).noLootTable());
-                (source ? CREATIVE_SOURCES : CREATIVE_SINKS).put(tier, block);
-                TAB_ITEMS.add(ITEMS.registerSimpleBlockItem(block));
-            }
-        }
     }
 
     public static final Supplier<BlockEntityType<PinInsulatorBlockEntity>> PIN_INSULATOR_ENTITY = BLOCK_ENTITY_TYPES.register("pin_insulator",
@@ -132,21 +120,12 @@ public final class GridContent {
             () -> new BlockEntityType<>(PoleTransformerBlockEntity::new, POLE_TRANSFORMER.get()));
     public static final Supplier<BlockEntityType<WallBushingBlockEntity>> WALL_BUSHING_ENTITY = BLOCK_ENTITY_TYPES.register("wall_bushing",
             () -> new BlockEntityType<>(WallBushingBlockEntity::new, WALL_BUSHING.get()));
-    public static final Supplier<BlockEntityType<CreativeEnergyBlockEntity>> CREATIVE_ENERGY_ENTITY = BLOCK_ENTITY_TYPES.register("creative_energy",
-            () -> new BlockEntityType<>(CreativeEnergyBlockEntity::new, creativeBlocks()));
 
     // The loose end of a wire coil.
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<LinkTarget>> LINK = DATA_COMPONENTS.registerComponentType("wire_link",
             b -> b.persistent(LinkTarget.CODEC).networkSynchronized(LinkTarget.STREAM_CODEC));
 
     private GridContent() {}
-
-    private static CreativeEnergyBlock[] creativeBlocks() {
-        List<CreativeEnergyBlock> blocks = new ArrayList<>();
-        CREATIVE_SOURCES.values().forEach(b -> blocks.add(b.get()));
-        CREATIVE_SINKS.values().forEach(b -> blocks.add(b.get()));
-        return blocks.toArray(CreativeEnergyBlock[]::new);
-    }
 
     public static Item coil(VoltageTier tier) {
         return COILS.get(tier).get();
@@ -171,7 +150,7 @@ public final class GridContent {
 
     public static void register(IEventBus modEventBus) {
         // EV was renamed EHV: worlds and inventories from before keep their blocks and coils.
-        for (String id : List.of("pin_insulator", "creative_source", "creative_sink", "wire_coil")) {
+        for (String id : List.of("pin_insulator", "wire_coil")) {
             Identifier from = Identifier.fromNamespaceAndPath(MODID, "ev_" + id), to = Identifier.fromNamespaceAndPath(MODID, "ehv_" + id);
             if (!id.equals("wire_coil")) {
                 BLOCKS.addAlias(from, to);
@@ -182,10 +161,5 @@ public final class GridContent {
         ITEMS.register(modEventBus);
         BLOCK_ENTITY_TYPES.register(modEventBus);
         DATA_COMPONENTS.register(modEventBus);
-        modEventBus.addListener(GridContent::registerCapabilities);
-    }
-
-    private static void registerCapabilities(RegisterCapabilitiesEvent event) {
-        event.registerBlockEntity(Capabilities.Energy.BLOCK, CREATIVE_ENERGY_ENTITY.get(), CreativeEnergyBlockEntity::energy);
     }
 }

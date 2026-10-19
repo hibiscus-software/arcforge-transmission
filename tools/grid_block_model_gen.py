@@ -1,12 +1,10 @@
-"""The grid's placeable blocks: the four Pin Insulators, the Pole-Mount Transformer, the creative Source and Sink, and the
-Wall Bushing.
+"""The grid's placeable blocks: the four Pin Insulators, the Pole-Mount Transformer and the Wall Bushing.
 
     python tools/grid_block_model_gen.py <addon repo>
 
 Writes:
     assets/arcforgetransmission/models/block/pin_insulator/<tier>.json and textures/block/pin_insulator/<tier>.png
     assets/arcforgetransmission/models/block/pole_transformer.json (particles only) and textures/item/pole_transformer.png
-    assets/arcforgetransmission/models/block/creative_{source,sink}/<tier>.json and their 16x16 textures
     data/arcforgetransmission/attach_groups/{pin_insulator_<tier>,pole_transformer}.json
     assets/arcforgetransmission/models/block/wall_bushing{,_blank}.json and textures/block/wall_bushing.png
     assets/arcforgetransmission/models/block/surge_arrester.json and textures/block/surge_arrester.png
@@ -21,8 +19,7 @@ like an end rod. Per tier:
     EHV  four larger glass discs
 The Pole-Mount Transformer (LV) is drawn by its block entity from TowerMesh.poleTransformer() (the can the LV pole used to
 carry, hung on the same brackets, with three primaries A B C on the lid and the split-phase secondary L1 N L2 on its
-front); here are only its particles, item sprite and attach points. The creative blocks are plain cubes on Arcforge's Creative (pink) ramp with an FE port (orange out, blue in) and one
-pip per tier.
+front); here are only its particles, item sprite and attach points.
 
 Element models with every face its own rect on a 64x64 sheet at 1 texel per px (never stretched). Round parts carry a
 ramp across each face (lightest just left of centre, a glint on the glazes); their tops fall from the middle to the rim.
@@ -51,10 +48,6 @@ GLASS = [hx(c) for c in ("#3F5B58", "#587A76", "#729590", "#8EB0AA", "#A8C6C0", 
 CAN = [hx(c) for c in ("#4C524E", "#5F6661", "#737A75", "#878E88", "#9AA19B", "#ADB3AD", "#C3C8C2")]
 RAMPS = {"galv": GALV[1:9], "porcelain": PORC[:6], "glass": GLASS[:6], "can": CAN}
 GLINT = {"porcelain": PORC[6], "glass": GLASS[6]}
-# Arcforge's Creative ramp and port colours.
-CREATIVE = dict(deep=hx("#3A0A2E"), dark=hx("#882068"), face_shade=hx("#B42E8C"), face=hx("#D442AA"), mid=hx("#EC70C8"), lit=hx("#FFB8EC"))
-STEEL_LIT, STEEL_DEEP = hx("#727982"), hx("#16181B")
-PORT = {"out": [hx(c) for c in ("#F5B574", "#E8913A", "#9E5A1C")], "in": [hx(c) for c in ("#7FB3F0", "#4A8FE0", "#22497E")]}
 
 TIERS = ("lv", "mv", "hv", "ehv")
 
@@ -297,46 +290,6 @@ DISPLAY = {"gui": {"rotation": [30, 225, 0], "translation": [0, 0, 0], "scale": 
            "firstperson_righthand": {"rotation": [0, 45, 0], "translation": [0, 0, 0], "scale": [0.4, 0.4, 0.4]}}
 
 
-# --- creative cubes -----------------------------------------------------------------------------------------------
-
-def creative_texture(kind, tier_index):
-    """Arcforge's machine casing on the Creative ramp, a centred 8x8 FE port, and one pip per tier in the top left."""
-    img = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
-    px = img.load()
-    r = CREATIVE
-    for y in range(16):
-        for x in range(16):
-            c = r["face"] if x < 10 else r["face_shade"]
-            if y == 0 or x == 0:
-                c = r["lit"]
-            elif y == 1 or x == 1:
-                c = r["mid"]
-            if y == 15 or x == 15:
-                c = r["deep"]
-            elif y == 14 or x == 14:
-                c = r["dark"]
-            if (x, y) in ((0, 15), (15, 0), (1, 14), (14, 1)):
-                c = r["face_shade"]
-            px[x, y] = c
-    colours = PORT[kind]
-    for y in range(8):
-        for x in range(8):
-            edge = min(x, y, 7 - x, 7 - y)
-            if edge == 0:
-                c = STEEL_LIT if (x == 0 or y == 0) else STEEL_DEEP
-            elif edge == 1:
-                c = colours[2] if (x == 6 or y == 6) else colours[0] if (x == 1 or y == 1) else colours[1]
-            elif edge == 2:
-                c = colours[1]
-            else:
-                c = STEEL_DEEP
-            if 3 <= x <= 4 and 3 <= y <= 4:
-                c = colours[0]
-            px[4 + x, 4 + y] = c
-    for i in range(tier_index + 1):
-        px[3 + 2 * i, 2] = r["lit"]
-        px[3 + 2 * i, 3] = r["deep"]
-    return img
 
 
 # --- output -------------------------------------------------------------------------------------------------------
@@ -434,11 +387,6 @@ def main():
                         "terminals": [{"label": l, "pos": terminals[l]} for l in ("L1", "N", "L2")]}],
                       "px in the block's north-facing frame (front north, hung from the block to the south); origin the "
                       "block's minimum corner"))
-    for kind in ("source", "sink"):
-        for i, tier in enumerate(TIERS):
-            save(creative_texture("out" if kind == "source" else "in", i), os.path.join(assets, f"textures/block/creative_{kind}", tier + ".png"))
-            write_json(os.path.join(assets, f"models/block/creative_{kind}", tier + ".json"),
-                       {"parent": "minecraft:block/cube_all", "textures": {"all": f"{NS}:block/creative_{kind}/{tier}"}})
     parts = surge_arrester()
     placed = pack(parts)
     save(sheet(placed), os.path.join(assets, "textures/block/surge_arrester.png"))
@@ -448,7 +396,7 @@ def main():
     # A Wall Bushing under a blank Conduit Facade (WallBushingModel): Arcforge's blank facade texture on a full block.
     write_json(os.path.join(assets, "models/block/wall_bushing_blank.json"),
                {"parent": "minecraft:block/cube_all", "textures": {"all": "arcforge:block/conduit/facade_blank"}})
-    print("wrote the pin insulators, the pole-mount transformer's data, the creative blocks and the wall bushing")
+    print("wrote the pin insulators, the pole-mount transformer's data, the surge arrester and the wall bushing")
 
 
 if __name__ == "__main__":

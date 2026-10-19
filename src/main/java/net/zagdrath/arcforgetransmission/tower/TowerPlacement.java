@@ -38,9 +38,9 @@ import net.zagdrath.arcforgetransmission.tower.model.TowerMesh;
 public final class TowerPlacement {
     private TowerPlacement() {}
 
-    // A model box cut into pieces no longer than this (px) along its longer side before turning by an eighth, so a
-    // diagonal crossarm's cells and shape follow it closely rather than one fat box round it.
-    private static final float PIECE = 4.0F;
+    // A model box cut into pieces no bigger than this (px) across, both ways, before turning by an eighth, so a diagonal
+    // crossarm's or tank's cells and shape follow it closely rather than one fat box round it.
+    private static final float PIECE = 2.0F;
 
     private record Key(TowerTier tier, int eighths) {}
 
@@ -113,12 +113,14 @@ public final class TowerPlacement {
         if (eighths % 2 == 0) {
             pieces.add(b);
         } else {
-            boolean alongX = b[3] - b[0] >= b[5] - b[2];
-            float length = alongX ? b[3] - b[0] : b[5] - b[2];
-            int n = Math.max(1, (int) Math.ceil(length / PIECE - 1.0E-3));
-            for (int i = 0; i < n; i++) {
-                float a0 = (alongX ? b[0] : b[2]) + length * i / n, a1 = (alongX ? b[0] : b[2]) + length * (i + 1) / n;
-                pieces.add(alongX ? new float[] { a0, b[1], b[2], a1, b[4], b[5] } : new float[] { b[0], b[1], a0, b[3], b[4], a1 });
+            float w = b[3] - b[0], d = b[5] - b[2];
+            // (Big boxes, a lattice bay or a tank, in at most 16 x 16 pieces: their edge steps stay small beside them.)
+            float piece = Math.max(PIECE, Math.max(w, d) / 16.0F);
+            int nx = Math.max(1, (int) Math.ceil(w / piece - 1.0E-3)), nz = Math.max(1, (int) Math.ceil(d / piece - 1.0E-3));
+            for (int i = 0; i < nx; i++) {
+                for (int k = 0; k < nz; k++) {
+                    pieces.add(new float[] { b[0] + w * i / nx, b[1], b[2] + d * k / nz, b[0] + w * (i + 1) / nx, b[4], b[2] + d * (k + 1) / nz });
+                }
             }
         }
         List<float[]> out = new ArrayList<>(pieces.size());
@@ -231,15 +233,24 @@ public final class TowerPlacement {
     // Its frame (each pole, crossarm, peak, lattice bay or tank), in pieces where it's turned by an eighth, in the world.
     public static List<AABB> frameBoxes(TowerTier tier, int eighths, BlockPos main) {
         return place(FRAMES.computeIfAbsent(new Key(tier, eighths), key -> {
-            TowerMesh.Built built = TowerMesh.get(tier.design());
             List<float[]> frame = new ArrayList<>();
-            for (float[] b : built.shapes()) {
-                if (!built.insulators().contains(b)) {
-                    frame.addAll(turned(b, eighths));
-                }
+            for (float[] b : modelFrame(tier)) {
+                frame.addAll(turned(b, eighths));
             }
             return List.copyOf(frame);
         }), tier, eighths, main);
+    }
+
+    // Its frame boxes as modelled (px, unturned, from the centre column's base), for outlines drawn turned.
+    public static List<float[]> modelFrame(TowerTier tier) {
+        TowerMesh.Built built = TowerMesh.get(tier.design());
+        List<float[]> frame = new ArrayList<>();
+        for (float[] b : built.shapes()) {
+            if (!built.insulators().contains(b)) {
+                frame.add(b);
+            }
+        }
+        return frame;
     }
 
     private static List<float[]> turnedAll(List<float[]> boxes, int eighths) {

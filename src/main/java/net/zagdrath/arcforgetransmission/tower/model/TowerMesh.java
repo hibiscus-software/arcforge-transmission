@@ -734,14 +734,16 @@ public final class TowerMesh extends MeshBuilder {
     // Protection, line hardware and the service drop
     // ================================================================================================================
 
-    // A Fuse Cutout (LV or MV), one conductor's fuse, hung on the pole north of it: a steel bracket out from the pole, a
-    // porcelain body with sheds, a contact arm top (line) and bottom (load), and the fuse tube between them; blown, the
-    // tube has dropped open on its bottom hinge. Its terminals are the contacts' outer faces.
-    public static final float FUSE_TOP = 15.2F, FUSE_BOTTOM = 4.8F;
+    // A Fuse Cutout (LV or MV), one conductor's fuse, hung on the pole north of it: a steel bracket from inside the pole
+    // (its middle a block north) to a porcelain body with sheds close by, a contact arm top (line) and bottom (load), and
+    // the fuse tube between them; blown, the tube has dropped open on its bottom hinge. Its terminals are the contacts'
+    // outer faces; its two insulators the body's upper (line) and lower (load) halves, contacts and all.
+    public static final float FUSE_TOP = 15.2F, FUSE_BOTTOM = 4.8F, FUSE_Z = 3.5F;
 
     private void fuse(int tier, boolean blown) {
-        float c = 8, y0 = 6, y1 = 14, r = tier == 0 ? 1.3F : 1.6F, shed = tier == 0 ? 2.2F : 2.7F;
-        plateBox(c - 1.5F, 9, 0, c + 1.5F, 11, c - r, Mat.GALV);
+        float c = 8, z = FUSE_Z, y0 = 6, y1 = 14, r = tier == 0 ? 1.3F : 1.6F, shed = tier == 0 ? 2.2F : 2.7F;
+        // To z -6.5: past the face of the thickest pole it hangs on (MV, 3.9 px round, centred at z -8).
+        plateBox(c - 1.5F, 9, -6.5F, c + 1.5F, 11, z - r, Mat.GALV);
         List<float[]> profile = new ArrayList<>();
         profile.add(new float[] { y0, r });
         for (float y = y0 + 1; y < y1 - 1; y += 2) {
@@ -751,19 +753,20 @@ public final class TowerMesh extends MeshBuilder {
             profile.add(new float[] { y + 1.2F, r });
         }
         profile.add(new float[] { y1, r });
-        turned(c, c, profile.toArray(new float[0][]), 8, Ramp.PORCELAIN, false, false);
-        swatchBox(c - 1.2F, y1, c - 1.2F, c + 4.2F, FUSE_TOP, c + 1.2F, GALV0 + 7);
-        swatchBox(c - 1.2F, FUSE_BOTTOM, c - 1.2F, c + 4.2F, y0, c + 1.2F, GALV0 + 7);
+        turned(c, z, profile.toArray(new float[0][]), 8, Ramp.PORCELAIN, false, false);
+        swatchBox(c - 1.2F, y1, z - 1.2F, c + 4.2F, FUSE_TOP, z + 1.2F, GALV0 + 7);
+        swatchBox(c - 1.2F, FUSE_BOTTOM, z - 1.2F, c + 4.2F, y0, z + 1.2F, GALV0 + 7);
         float tx = c + 3.4F;
         if (blown) {
-            member(new float[] { tx, y0, c }, new float[] { tx + 3.0F, 0.6F, c }, 1.6F, 1.6F, new float[] { 0, 0, 1 }, Mat.WOOD, true);
+            member(new float[] { tx, y0, z }, new float[] { tx + 3.0F, 0.6F, z }, 1.6F, 1.6F, new float[] { 0, 0, 1 }, Mat.WOOD, true);
         } else {
-            member(new float[] { tx, y0, c }, new float[] { tx, y1, c }, 1.6F, 1.6F, new float[] { 0, 0, 1 }, Mat.WOOD, true);
+            member(new float[] { tx, y0, z }, new float[] { tx, y1, z }, 1.6F, 1.6F, new float[] { 0, 0, 1 }, Mat.WOOD, true);
         }
-        frame.add(new float[] { c - 1.5F, 9, 0, c + 1.5F, 11, c - r });
-        frame.add(new float[] { c - shed, y0, c - shed, c + 4.4F, y1, c + shed });
-        insulators.add(new float[] { c - 1.5F, y1, c - 1.5F, c + 4.2F, FUSE_TOP, c + 1.5F });
-        insulators.add(new float[] { c - 1.5F, FUSE_BOTTOM, c - 1.5F, c + 4.2F, y0, c + 1.5F });
+        // The bracket's shape stops at the block's edge (the pole's block is the pole's).
+        frame.add(new float[] { c - 1.5F, 9, 0, c + 1.5F, 11, z - r });
+        float mid = (y0 + y1) / 2;
+        insulators.add(new float[] { c - shed, mid, z - shed, c + 4.4F, FUSE_TOP, z + shed });
+        insulators.add(new float[] { c - shed, FUSE_BOTTOM, z - shed, c + 4.4F, mid, z + shed });
     }
 
     // A recloser (LV, MV) or circuit breaker (HV, EHV): a galvanized tank on feet, its control cabinet on the east side

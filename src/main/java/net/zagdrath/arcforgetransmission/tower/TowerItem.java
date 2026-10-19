@@ -51,13 +51,17 @@ public class TowerItem extends BlockItem {
         if (tier.servesBlock()) {
             eighths = TowerPlacement.turns(context.getHorizontalDirection()) * 2;
         }
+        // A fuse cutout hangs on what it was put against: facing it, square on.
+        if (tier.kind() == TowerTier.Kind.FUSE && context.getClickedFace().getAxis().isHorizontal()) {
+            eighths = TowerPlacement.turns(context.getClickedFace().getOpposite()) * 2;
+        }
         List<BlockPos> positions = TowerPlacement.positions(tier, eighths, centre);
         for (BlockPos pos : positions) {
             if (!level.getBlockState(pos).canBeReplaced(context) || !level.getWorldBorder().isWithinBounds(pos) || level.isOutsideBuildHeight(pos)) {
                 Player player = context.getPlayer();
                 if (player != null && !level.isClientSide()) {
-                    player.sendOverlayMessage(Component.translatable("message.arcforgetransmission.tower.no_room").append(" ")
-                            .append(Component.translatable("message.arcforgetransmission.tower.no_room_at", pos.toShortString())));
+                    player.sendOverlayMessage(Component.translatable("message.arcforgetransmission.tower.no_room", getBlock().getName(),
+                            pos.toShortString()));
                 }
                 return InteractionResult.FAIL;
             }

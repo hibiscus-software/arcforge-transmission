@@ -30,8 +30,16 @@
   per tier and orientation, outlines per tier. The HUD refreshes every 5 ticks, a grid with no ports skips its solve, and
   storms draw once per grid instead of once per span.
 - Towers no longer cast a shadow on the ground under them (light passes through their blocks).
+- Outlines follow a turned structure's real shape (each part's own edges at 45 degrees), and diagonal hitboxes fit closer.
+- Fuse Cutouts hang close against the pole they're put on, their bracket into it, facing it; looking anywhere on one shows
+  its HUD (the upper half its line, the lower its load).
+- A structure without room names itself ("The HV Disconnect Switch needs its whole space clear"), not "the tower".
+
+### Removed
+- The Creative Sources and Sinks. Worlds that had them lose those blocks.
 
 ### Fixed
+- A freeze looking at a tower placed at 45 degrees (its outline was built as one huge shape), the EHV lattice worst.
 - An out-of-memory crash when zero-length links (wall bushings, jumpers) formed a loop: routing could build a cycle.
 
 ## Unreleased: Phase 2, a usable grid

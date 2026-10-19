@@ -154,9 +154,9 @@ def abc(points):
 
 
 def fuse():
-    """TowerMesh.fuse: the top contact's top (line) and the bottom contact's bottom (load), on the body's axis."""
-    return lambda: {"groups": [{"name": "line", "circuit": "three_phase", "terminals": [{"label": "A", "pos": p(8, 15.2, 8)}]},
-                               {"name": "load", "circuit": "three_phase", "terminals": [{"label": "A", "pos": p(8, 4.8, 8)}]}],
+    """TowerMesh.fuse: the top contact's top (line) and the bottom contact's bottom (load), on the body's axis (z FUSE_Z)."""
+    return lambda: {"groups": [{"name": "line", "circuit": "three_phase", "terminals": [{"label": "A", "pos": p(8, 15.2, 3.5)}]},
+                               {"name": "load", "circuit": "three_phase", "terminals": [{"label": "A", "pos": p(8, 4.8, 3.5)}]}],
                     "reserved": []}
 
 
