@@ -25,6 +25,9 @@
   `Catenary.jumperSag`, `TowerMesh.glassStrainEnd`) for the dead-end and transposition towers to take up.
 - `./gradlew renderPreviews -Pdesigns=NAME#3` renders a model from the front, the side and 45 degrees, with its
   jumpers.
+- **Station Fence** has three rails instead of two, evenly spaced (2 px apart and off the ground), in the same section
+  and chain-link as before, joining runs and corners as they did. Its side and item models are generated
+  (`grid_block_model_gen.py`); collision is unchanged. `tools/block_model_preview.py` renders block models for review.
 
 ## Unreleased: Phase 4, substations, line hardware and the voltage model
 

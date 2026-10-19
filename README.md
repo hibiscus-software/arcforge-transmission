@@ -128,6 +128,7 @@ game or the server console, as with Arcforge's `/arcforge config reset`:
 ./gradlew runGameTestServer   # the game tests (src/gametest, never in the jar): real blocks in a running world, with Arcforge's own
 ./gradlew renderPreviews      # renders every structure's model to build/previews (-Pdesigns=NAME,NAME~ALT,NAME@lo:hi,NAME#3)
 python tools/audit.py    # the art: rebuilds every generator and checks the output
+python tools/block_model_preview.py . build/previews fence_run   # renders block models (front, side, 45 degrees) for review
 ```
 
 Generated files come from the generators in `tools/`. Change a generator, run it, then run the audit. Don't edit them
@@ -137,7 +138,7 @@ by hand:
 |---|---|
 | `transmission_tower_texture_gen.py` | `textures/block/transmission_tower/` (the towers' model sheet and particles), the tower item sprites |
 | `tower_attach_groups_gen.py` | `data/.../attach_groups/` for every tower, transformer and device |
-| `grid_block_model_gen.py` | the Pin Insulators', Pole-Mount Transformer's, Wall Bushing's and Surge Arrester's models, textures and attach groups |
+| `grid_block_model_gen.py` | the Pin Insulators', Pole-Mount Transformer's, Wall Bushing's and Surge Arrester's models, textures and attach groups; the Station Fence's models |
 | `wire_texture_gen.py` | `textures/block/wire/`, the coil and cable sprites, the Wire Cutters, Burnt Wire |
 | `material_texture_gen.py` | the bauxite and aluminium textures (recoloured from Arcforge's nickel) |
 

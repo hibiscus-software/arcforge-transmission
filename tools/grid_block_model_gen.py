@@ -27,6 +27,7 @@ Hidden faces (under a wider part, on top of a narrower one) aren't emitted, so n
 randomness, so the build is byte-identical every run.
 """
 import json
+import math
 import os
 import sys
 
@@ -339,6 +340,59 @@ def station_fence_texture():
     return img
 
 
+# The Station Fence's rails (px, bottom and top), each vanilla's rail section (2 px wide, 3 tall) and textured the same:
+# its sides show the chain-link at the rail's own height (texture rows 16 - top to 16 - bottom). Three of them, evenly
+# spaced: 2 px under each (the ground too), the top rail where vanilla's is.
+FENCE_RAILS = [(12, 15), (7, 10), (2, 5)]
+
+
+def fence_rail(y0, y1, z0, z1, u0, ends):
+    """One rail from z0 to z1 (px) along the side, its sides cropped from the chain-link at its height from texture column
+    u0 (1 texel a px); `ends` the faces (north, south) it shows an end on. Where it sits on another rail or one sits on it
+    the touching faces are left out (they'd show through the mesh, one on the other)."""
+    length = z1 - z0
+    faces = {"west": {"uv": [u0, 16 - y1, u0 + length, 16 - y0], "texture": "#texture"},
+             "east": {"uv": [u0, 16 - y1, u0 + length, 16 - y0], "texture": "#texture"}}
+    if not any(top == y0 for _, top in FENCE_RAILS):
+        faces["down"] = {"uv": [7, u0, 9, u0 + length], "texture": "#texture"}
+    if not any(bottom == y1 for bottom, _ in FENCE_RAILS):
+        faces["up"] = {"uv": [7, u0, 9, u0 + length], "texture": "#texture"}
+    for end in ends:
+        faces[end] = {"uv": [7, 16 - y1, 9, 16 - y0], "texture": "#texture"}
+        if end == "north" and z0 == 0:
+            faces[end]["cullface"] = "north"
+    return {"from": [7, y0, z0], "to": [9, y1, z1], "faces": faces}
+
+
+def station_fence_side():
+    """A side of the Station Fence (vanilla's fence_side with FENCE_RAILS): the rails from the north edge to the post."""
+    return {"textures": {"particle": f"{NS}:block/station_fence", "texture": f"{NS}:block/station_fence"}, "render_type": "minecraft:cutout",
+            "elements": [fence_rail(y0, y1, 0, 9, 0, ["north"]) for y0, y1 in FENCE_RAILS]}
+
+
+def station_fence_inventory():
+    """The Station Fence as an item: vanilla's fence_inventory (two posts, the rails through and past them) with FENCE_RAILS."""
+    posts = []
+    for z0, z1 in ((0, 4), (12, 16)):
+        posts.append({"from": [6, 0, z0], "to": [10, 16, z1], "faces": {
+            "down": {"uv": [6, z0, 10, z1], "texture": "#texture", "cullface": "down"}, "up": {"uv": [6, z0, 10, z1], "texture": "#texture"},
+            "north": {"uv": [6, 0, 10, 16], "texture": "#texture"}, "south": {"uv": [6, 0, 10, 16], "texture": "#texture"},
+            "west": {"uv": [z0, 0, z1, 16], "texture": "#texture"}, "east": {"uv": [z0, 0, z1, 16], "texture": "#texture"}}})
+    rails = []
+    for y0, y1 in FENCE_RAILS:
+        # Through the posts, and a stub out past each (vanilla's Topbarleft / Topbarright).
+        rails += [fence_rail(y0, y1, 0, 16, 0, []), fence_rail(y0, y1, -2, 0, 14, ["north"]), fence_rail(y0, y1, 16, 18, 0, ["south"])]
+    return {"parent": "minecraft:block/block", "display": load_vanilla_display(), "render_type": "minecraft:cutout",
+            "textures": {"particle": f"{NS}:block/station_fence", "texture": f"{NS}:block/station_fence"}, "elements": posts + rails}
+
+
+def load_vanilla_display():
+    """vanilla fence_inventory's display transforms."""
+    return {"gui": {"rotation": [30, 135, 0], "translation": [0, 0, 0], "scale": [0.625, 0.625, 0.625]},
+            "fixed": {"rotation": [0, 90, 0], "translation": [0, 0, 0], "scale": [0.5, 0.5, 0.5]},
+            "on_shelf": {"rotation": [0, 90, 0], "translation": [0, 0, 0], "scale": [1, 1, 1]}}
+
+
 def ground_grid_texture():
     """Ground Grid: bare copper conductors in a square mesh with clamped crossings, on the ground's dark between."""
     copper = [hx(c) for c in ("#5C2E17", "#8A4A26", "#B5663A", "#D9895A")]
@@ -434,12 +488,12 @@ def main():
     save(wall_bushing_texture(), os.path.join(assets, "textures/block/wall_bushing.png"))
     save(station_fence_texture(), os.path.join(assets, "textures/block/station_fence.png"))
     save(ground_grid_texture(), os.path.join(assets, "textures/block/ground_grid.png"))
-    # The fence on vanilla's fence models; the grid on the carpet's (its texture key "wool").
-    for part in ("post", "side"):
-        write_json(os.path.join(assets, f"models/block/station_fence_{part}.json"),
-                   {"parent": f"minecraft:block/fence_{part}", "textures": {"texture": f"{NS}:block/station_fence"}, "render_type": "minecraft:cutout"})
-    write_json(os.path.join(assets, "models/block/station_fence_inventory.json"),
-               {"parent": "minecraft:block/fence_inventory", "textures": {"texture": f"{NS}:block/station_fence"}, "render_type": "minecraft:cutout"})
+    # The fence's post on vanilla's fence model, its sides and item with FENCE_RAILS; the grid on the carpet's (its texture
+    # key "wool").
+    write_json(os.path.join(assets, "models/block/station_fence_post.json"),
+               {"parent": "minecraft:block/fence_post", "textures": {"texture": f"{NS}:block/station_fence"}, "render_type": "minecraft:cutout"})
+    write_json(os.path.join(assets, "models/block/station_fence_side.json"), station_fence_side())
+    write_json(os.path.join(assets, "models/block/station_fence_inventory.json"), station_fence_inventory())
     write_json(os.path.join(assets, "models/block/ground_grid.json"),
                {"parent": "minecraft:block/carpet", "textures": {"wool": f"{NS}:block/ground_grid"}, "render_type": "minecraft:cutout"})
     write_json(os.path.join(assets, "models/block/wall_bushing.json"), {"parent": "minecraft:block/cube_all", "textures": {"all": f"{NS}:block/wall_bushing"}})
