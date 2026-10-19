@@ -1,0 +1,67 @@
+{
+  "model": "pole_transformer",
+  "units": "px in the block's north-facing frame (front north, hung from the block to the south); origin the block's minimum corner",
+  "groups": [
+    {
+      "name": "primary",
+      "circuit": "three_phase",
+      "terminals": [
+        {
+          "label": "A",
+          "pos": [
+            4.5,
+            15.75,
+            8.0
+          ]
+        },
+        {
+          "label": "B",
+          "pos": [
+            8.0,
+            15.75,
+            8.0
+          ]
+        },
+        {
+          "label": "C",
+          "pos": [
+            11.5,
+            15.75,
+            8.0
+          ]
+        }
+      ]
+    },
+    {
+      "name": "secondary",
+      "circuit": "single_phase",
+      "terminals": [
+        {
+          "label": "L1",
+          "pos": [
+            4.5,
+            6.0,
+            0.5
+          ]
+        },
+        {
+          "label": "N",
+          "pos": [
+            8.0,
+            6.0,
+            1.5
+          ]
+        },
+        {
+          "label": "L2",
+          "pos": [
+            11.5,
+            6.0,
+            0.5
+          ]
+        }
+      ]
+    }
+  ],
+  "reserved": []
+}

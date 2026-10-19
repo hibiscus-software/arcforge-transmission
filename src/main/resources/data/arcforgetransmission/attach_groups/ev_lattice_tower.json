@@ -1,0 +1,77 @@
+{
+  "model": "ev_lattice_tower",
+  "units": "px in the model's north-facing frame: x across the line, y up from the base block's bottom, z along the line; origin the centre column's base block's minimum corner",
+  "groups": [
+    {
+      "name": "west",
+      "circuit": "three_phase",
+      "terminals": [
+        {
+          "label": "A",
+          "pos": [
+            -47.0,
+            383.8,
+            8.0
+          ]
+        },
+        {
+          "label": "B",
+          "pos": [
+            -71.0,
+            319.8,
+            8.0
+          ]
+        },
+        {
+          "label": "C",
+          "pos": [
+            -55.0,
+            255.8,
+            8.0
+          ]
+        }
+      ]
+    },
+    {
+      "name": "east",
+      "circuit": "three_phase",
+      "terminals": [
+        {
+          "label": "A",
+          "pos": [
+            63.0,
+            383.8,
+            8.0
+          ]
+        },
+        {
+          "label": "B",
+          "pos": [
+            87.0,
+            319.8,
+            8.0
+          ]
+        },
+        {
+          "label": "C",
+          "pos": [
+            71.0,
+            255.8,
+            8.0
+          ]
+        }
+      ]
+    }
+  ],
+  "reserved": [
+    {
+      "name": "shield",
+      "use": "the shield wire (later)",
+      "pos": [
+        8,
+        510,
+        8
+      ]
+    }
+  ]
+}

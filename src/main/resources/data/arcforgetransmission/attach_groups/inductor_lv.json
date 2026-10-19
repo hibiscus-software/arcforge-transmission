@@ -1,0 +1,21 @@
+{
+  "model": "inductor_lv",
+  "units": "px in the block's up-pointing frame (mounted on the block below); origin the block's minimum corner",
+  "groups": [
+    {
+      "name": "insulator",
+      "circuit": "three_phase",
+      "terminals": [
+        {
+          "label": "A",
+          "pos": [
+            8.0,
+            11.5,
+            8.0
+          ]
+        }
+      ]
+    }
+  ],
+  "reserved": []
+}

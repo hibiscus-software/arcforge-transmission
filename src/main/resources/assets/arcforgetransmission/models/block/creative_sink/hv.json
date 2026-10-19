@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:block/cube_all",
+  "textures": {
+    "all": "arcforgetransmission:block/creative_sink/hv"
+  }
+}

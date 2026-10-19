@@ -1,0 +1,56 @@
+{
+  "model": "hv_h_frame_tower",
+  "units": "px in the model's north-facing frame: x across the line, y up from the base block's bottom, z along the line; origin the centre column's base block's minimum corner",
+  "groups": [
+    {
+      "name": "circuit",
+      "circuit": "three_phase",
+      "terminals": [
+        {
+          "label": "A",
+          "pos": [
+            -42,
+            252.8,
+            15.35
+          ]
+        },
+        {
+          "label": "B",
+          "pos": [
+            8,
+            252.8,
+            15.35
+          ]
+        },
+        {
+          "label": "C",
+          "pos": [
+            58,
+            252.8,
+            15.35
+          ]
+        }
+      ]
+    }
+  ],
+  "reserved": [
+    {
+      "name": "shield_west",
+      "use": "the shield wire (later)",
+      "pos": [
+        -24,
+        334,
+        8
+      ]
+    },
+    {
+      "name": "shield_east",
+      "use": "the shield wire (later)",
+      "pos": [
+        40,
+        334,
+        8
+      ]
+    }
+  ]
+}

@@ -1,0 +1,51 @@
+{
+  "model": "lv_distribution_pole",
+  "units": "px in the model's north-facing frame: x across the line, y up from the base block's bottom, z along the line; origin the centre column's base block's minimum corner",
+  "groups": [
+    {
+      "name": "circuit",
+      "circuit": "three_phase",
+      "terminals": [
+        {
+          "label": "A",
+          "pos": [
+            -8,
+            143.6,
+            11.5
+          ]
+        },
+        {
+          "label": "B",
+          "pos": [
+            1,
+            143.6,
+            11.5
+          ]
+        },
+        {
+          "label": "C",
+          "pos": [
+            24,
+            143.6,
+            11.5
+          ]
+        }
+      ]
+    },
+    {
+      "name": "pole_top",
+      "circuit": "single_phase",
+      "terminals": [
+        {
+          "label": "N",
+          "pos": [
+            8,
+            157.6,
+            8
+          ]
+        }
+      ]
+    }
+  ],
+  "reserved": []
+}

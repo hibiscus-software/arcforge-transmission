@@ -26,7 +26,7 @@ import java.util.Set;
 // window of a big non-repeating grain field (galvanized spangle, treated timber, concrete), picked from where the face
 // is; seams only where parts really join (a lattice member ends at its panel point, a can's lid at its flange). The
 // wood poles carry their own unrolled skin (the ramp across, the grain, checks and bands up it, the bands meeting round
-// the pole); insulators, the transformer can and the discs carry stepped ramps round them, the discs a ramp from rim to
+// the pole); insulators and the discs carry stepped ramps round them, the discs a ramp from rim to
 // cap as well. No two faces facing the same way share a plane where both show (no z-fighting), and every part is
 // closed where it can be seen.
 //
@@ -99,7 +99,7 @@ public final class TowerMesh extends MeshBuilder {
     static final int SKIN_LV_X = 0, SKIN_LV_W = 16, SKIN_MV_X = 16, SKIN_MV_W = 30, SKIN_H = 512;
     // Disc tops, cap (top row) to rim, 8 x 8.
     static final int DISC_PORCELAIN_X = 176, DISC_GLASS_X = 184, DISC_Y = 32;
-    // Modules: the danger sign, the end grain, the pole tag and the transformer lid.
+    // Modules: the danger sign, the end grain, the pole tag and the transformer lid (unused since the can left the LV pole; kept so the sheet stays as it is).
     static final int SIGN_X = 176, SIGN_Y = 40, GRAIN_X = 192, GRAIN_Y = 40, TAG_X = 208, TAG_Y = 40, LID_X = 212, LID_Y = 40;
 
     // Flat swatches (4x4 from (64, 224), 32 a row), in the generator's order.
@@ -162,8 +162,9 @@ public final class TowerMesh extends MeshBuilder {
     // ================================================================================================================
 
     // LV Distribution Pole, 10 blocks: a treated pole (8 facets of 2 px), one crossarm with three pin insulators near
-    // the top, a pin insulator on the pole top, a ground wire stapled down the east side, a transformer can on the north
-    // side and a pole tag facing the line's south end.
+    // the top, a pin insulator on the pole top (the neutral), a ground wire stapled down the east side and a pole tag
+    // facing the line's south end. No transformer: the Pole-Mount Transformer is its own block, hung on a pole where
+    // one is wanted.
     private void distributionPole() {
         float cx = 8, cz = 8, top = 150;
         pole(cx, cz, 0, top, 8, 2.0F, false, 140);
@@ -184,12 +185,6 @@ public final class TowerMesh extends MeshBuilder {
         for (float y = 8; y < top - 4; y += 12) {
             swatchBox(gx - 0.2F, y, cz - 1.4F, gx + 0.8F, y + 0.6F, cz + 1.4F, GALV0 + 7);
         }
-        // The transformer can on the north face: two hanger brackets, the can, its lid and two bushings.
-        float tz = cz - 2.41F - 5.6F;
-        for (float y : new float[] { 101, 109 }) {
-            member(new float[] { cx, y, cz - 2.0F }, new float[] { cx, y, tz + 4.0F }, 3.0F, 1.0F, UP, Mat.GALV, true);
-        }
-        can(cx, tz, 96, 112);
         // The pole tag, on the south face at eye height in a ground-level view.
         tag(cx, 40, cz + 2.41F, true);
     }
@@ -580,34 +575,6 @@ public final class TowerMesh extends MeshBuilder {
         member(new float[] { x, y + 0.5F, z }, new float[] { x, y + height - 2.0F, z }, 2.0F, 2.0F, new float[] { 1, 0, 0 }, Mat.GALV, true);
         swatchBox(x - 1.2F, y + height - 2.0F, z - 2.0F, x + 1.2F, y + height - 0.6F, z + 2.0F, GALV0 + 6);
         swatchBox(x - 0.6F, y + height - 0.6F, z - 1.2F, x + 0.6F, y + height, z + 1.2F, GALV0 + 7);
-    }
-
-    // The pole-mounted transformer can from y0 to y1 at (x, z): 8 facets of 4 px with the ramp across each, a seam at
-    // the lid's flange, the lid's rings on top, and two bushings.
-    private void can(float x, float z, float y0, float y1) {
-        float r = (float) (4.0 / (2.0 * Math.sin(Math.PI / 8)));
-        turned(x, z, new float[][] { { y0, r - 0.6F }, { y0 + 0.8F, r }, { y1 - 1.6F, r } }, 8, Ramp.CAN, false, false);
-        lid(x, y0, z, r - 0.6F, false);
-        turned(x, z, new float[][] { { y1 - 1.6F, r + 0.5F }, { y1 - 0.8F, r + 0.5F }, { y1 - 0.8F, r - 0.2F } }, 8, Ramp.CAN, false, true);
-        lid(x, y1 - 0.8F, z, r - 0.2F, true);
-        for (float dx : new float[] { -2.2F, 2.2F }) {
-            turned(x + dx, z, new float[][] { { y1 - 0.8F, 0.9F }, { y1 + 0.4F, 0.9F }, { y1 + 0.4F, 1.3F }, { y1 + 1.0F, 1.3F }, { y1 + 1.0F, 0.9F },
-                    { y1 + 1.8F, 0.9F }, { y1 + 1.8F, 1.2F }, { y1 + 2.4F, 1.2F } }, 6, Ramp.PORCELAIN, true, false);
-        }
-        boxes.add(new float[] { x - r, y0, z - r, x + r, y1, z + r });
-    }
-
-    // A round flat end in the lid's rings (8 facets of radius r at y), looking up or down.
-    private void lid(float x, float y, float z, float r, boolean up) {
-        float[][] rim = ring(x, z, r, 8);
-        List<float[]> st = new ArrayList<>();
-        float size = 2 * r, off = (12 - size) / 2.0F;
-        for (float[] p : rim) {
-            st.add(new float[] { p[0] - (x - r), up ? (z + r) - p[2] : p[2] - (z - r) });
-        }
-        float[] base = up ? new float[] { x - r, y, z + r } : new float[] { x - r, y, z - r };
-        paintPlane(st, base, new float[] { 1, 0, 0 }, up ? new float[] { 0, 0, -1 } : new float[] { 0, 0, 1 },
-                List.of(new float[] { 0, size, 0, size, LID_X + off, LID_Y + off }));
     }
 
     // A flat steel V brace: two straps from one bolt at (x, y0, z0) on a pole's face up and out `spread` px each way
