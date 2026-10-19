@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "key": {
+    "L": "arcforge:treated_log",
+    "P": "#c:plates/steel",
+    "H": "#c:ingots/hardened_alloy"
+  },
+  "pattern": [
+    "LPL",
+    "LHL",
+    "L L"
+  ],
+  "result": {
+    "id": "arcforgetransmission:hv_h_frame_tower"
+  }
+}

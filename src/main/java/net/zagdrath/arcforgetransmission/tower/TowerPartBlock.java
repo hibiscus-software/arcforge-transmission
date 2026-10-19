@@ -58,6 +58,23 @@ public class TowerPartBlock extends BaseEntityBlock {
         return new TowerPartBlockEntity(pos, state);
     }
 
+    // An open structure: light passes through it, and it casts no ambient-occlusion shade on the ground under it (its
+    // shape is only for hits and walking into).
+    @Override
+    protected boolean propagatesSkylightDown(BlockState state) {
+        return true;
+    }
+
+    @Override
+    protected int getLightDampening(BlockState state) {
+        return 0;
+    }
+
+    @Override
+    protected float getShadeBrightness(BlockState state, BlockGetter level, BlockPos pos) {
+        return 1.0F;
+    }
+
     @Override
     protected RenderShape getRenderShape(BlockState state) {
         return RenderShape.INVISIBLE;

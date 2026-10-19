@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "key": {
+    "P": "arcforge:treated_planks",
+    "R": "#c:rods/steel",
+    "L": "arcforge:treated_log"
+  },
+  "pattern": [
+    "PRP",
+    " L ",
+    " L "
+  ],
+  "result": {
+    "id": "arcforgetransmission:lv_distribution_pole"
+  }
+}

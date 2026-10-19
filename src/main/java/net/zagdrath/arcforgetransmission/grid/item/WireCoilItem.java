@@ -27,6 +27,7 @@ import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.zagdrath.arcforgetransmission.ArcforgeTransmission;
 import net.zagdrath.arcforgetransmission.grid.ConnectionRules;
+import net.zagdrath.arcforgetransmission.grid.GridEdge;
 import net.zagdrath.arcforgetransmission.grid.GridNode;
 import net.zagdrath.arcforgetransmission.grid.VoltageTier;
 import net.zagdrath.arcforgetransmission.grid.block.GridContent;
@@ -37,20 +38,27 @@ import net.zagdrath.arcforgetransmission.grid.world.GridManager;
 import net.zagdrath.arcforgetransmission.tower.TowerBlock;
 import net.zagdrath.arcforgetransmission.tower.TowerPartBlock;
 
-// A coil of one tier's wire (one conductor). Used on an insulator it ties on one end (the insulator nearest where it's
+// A coil of one tier's wire (one conductor), bare or (LV and MV) rubber-insulated. Used on an insulator it ties on one end (the insulator nearest where it's
 // clicked); used on another, it strings the wire between them (one coil a wire), or says why it can't (another tier,
 // the other circuit type, too far, already joined). Sneak-use in the air drops the loose end. A tower's parts count as
 // the tower.
 public class WireCoilItem extends Item {
     private final VoltageTier tier;
+    private final boolean insulated;
 
-    public WireCoilItem(VoltageTier tier, Item.Properties properties) {
+    public WireCoilItem(VoltageTier tier, boolean insulated, Item.Properties properties) {
         super(properties);
         this.tier = tier;
+        this.insulated = insulated;
     }
 
     public VoltageTier tier() {
         return tier;
+    }
+
+    // Rubber-insulated (LV and MV): safe to touch, drawn black.
+    public boolean insulated() {
+        return insulated;
     }
 
     // The endpoint a click on pos means: the block's own, or for a tower part its tower's.
@@ -100,7 +108,8 @@ public class WireCoilItem extends Item {
             level.playSound(null, here.pos(), SoundEvents.UI_BUTTON_CLICK.value(), SoundSource.BLOCKS, 0.3F, 1.2F);
             return InteractionResult.SUCCESS;
         }
-        ConnectionRules.Refusal refusal = GridManager.connect(server, new GridData.Anchor(pending.pos(), pending.index()), here, tier);
+        ConnectionRules.Refusal refusal = GridManager.connect(server, new GridData.Anchor(pending.pos(), pending.index()), here, tier,
+                insulated ? GridEdge.Kind.INSULATED : GridEdge.Kind.BARE);
         if (refusal != null) {
             Component message = refusal == ConnectionRules.Refusal.TOO_LONG
                     ? Component.translatable("message." + m + ".wire.too_long", (int) GridConfig.SETTINGS.maxSpan(tier))
@@ -141,6 +150,9 @@ public class WireCoilItem extends Item {
                 Component.translatable("conductor." + m + "." + tier.conductor())).withStyle(ChatFormatting.GRAY));
         builder.accept(Component.translatable("tooltip." + m + ".wire.rating", amps(GridConfig.SETTINGS.ratedAmps(tier)),
                 (int) GridConfig.SETTINGS.maxSpan(tier)).withStyle(ChatFormatting.GRAY));
+        if (insulated) {
+            builder.accept(Component.translatable("tooltip." + m + ".wire.insulated").withStyle(ChatFormatting.DARK_AQUA));
+        }
         LinkTarget link = stack.get(GridContent.LINK.get());
         if (link != null) {
             builder.accept(Component.translatable("tooltip." + m + ".wire.tied", link.pos().toShortString()).withStyle(ChatFormatting.AQUA));

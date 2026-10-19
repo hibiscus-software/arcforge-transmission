@@ -14,8 +14,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.jspecify.annotations.Nullable;
+
 import net.zagdrath.arcforgetransmission.grid.CircuitType;
 import net.zagdrath.arcforgetransmission.grid.Phase;
+import net.zagdrath.arcforgetransmission.grid.VoltageTier;
 
 // Where wires attach on a model, read from its file in data/arcforgetransmission/attach_groups/<model>.json (one per
 // model, derived from the model's geometry: each terminal is an insulator's tip, a suspension string's clamp, or a
@@ -33,7 +36,8 @@ public final class AttachGroups {
         }
     }
 
-    public record Group(String name, CircuitType circuit, List<Terminal> terminals) {
+    // A group's tier is the model's own unless it names one (a substation transformer's two sides).
+    public record Group(String name, CircuitType circuit, List<Terminal> terminals, @Nullable VoltageTier tier) {
         // The group's middle, px.
         public double[] centre() {
             double[] c = new double[3];
@@ -51,6 +55,11 @@ public final class AttachGroups {
     public record Model(String model, List<Group> groups, List<Reserved> reserved) {}
 
     private AttachGroups() {}
+
+    // Reads these models' attach groups now (at startup), so none is read from the jar later, mid-game.
+    public static void preload(Iterable<String> models) {
+        models.forEach(AttachGroups::get);
+    }
 
     // The model's attach groups (read once).
     public static Model get(String model) {
@@ -79,7 +88,9 @@ public final class AttachGroups {
                 Map<String, Object> terminal = (Map<String, Object>) t;
                 terminals.add(new Terminal((String) terminal.get("label"), vector(terminal.get("pos"))));
             }
-            groups.add(new Group((String) group.get("name"), CircuitType.byId((String) group.get("circuit")), List.copyOf(terminals)));
+            Object tier = group.get("tier");
+            groups.add(new Group((String) group.get("name"), CircuitType.byId((String) group.get("circuit")), List.copyOf(terminals),
+                    tier == null ? null : VoltageTier.byId((String) tier)));
         }
         List<Reserved> reserved = new ArrayList<>();
         for (Object r : (List<Object>) root.getOrDefault("reserved", List.of())) {

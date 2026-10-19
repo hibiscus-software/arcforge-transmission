@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "key": {
+    "P": "arcforge:treated_planks",
+    "T": "#c:ingots/tempered_alloy",
+    "L": "arcforge:treated_log"
+  },
+  "pattern": [
+    "PTP",
+    "PLP",
+    " L "
+  ],
+  "result": {
+    "id": "arcforgetransmission:mv_sub_transmission_pole"
+  }
+}

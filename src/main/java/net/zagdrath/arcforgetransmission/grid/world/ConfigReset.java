@@ -17,8 +17,8 @@ import com.electronwill.nightconfig.core.UnmodifiableConfig;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
 // Puts arcforgetransmission-common.toml's settings back to their defaults (see TransmissionCommands' /arcforgetransmission
-// config reset), as Arcforge's ConfigReset does for its own file. A path is a setting's dotted path ("wires.ev.maxSpan")
-// or a section's ("wires.ev"); "" is everything. Changes are written to the file at once and apply straight away (the
+// config reset), as Arcforge's ConfigReset does for its own file. A path is a setting's dotted path ("wires.ehv.maxSpan")
+// or a section's ("wires.ehv"); "" is everything. Changes are written to the file at once and apply straight away (the
 // grid reads its settings every time it uses them).
 public final class ConfigReset {
     private ConfigReset() {}

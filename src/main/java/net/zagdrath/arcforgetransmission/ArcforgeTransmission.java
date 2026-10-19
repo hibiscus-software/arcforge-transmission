@@ -6,6 +6,9 @@
 
 package net.zagdrath.arcforgetransmission;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.slf4j.Logger;
 
 import com.mojang.logging.LogUtils;
@@ -14,8 +17,13 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
+import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.zagdrath.arcforgetransmission.grid.VoltageTier;
+import net.zagdrath.arcforgetransmission.grid.data.AttachGroups;
+import net.zagdrath.arcforgetransmission.tower.TowerTier;
 import net.zagdrath.arcforgetransmission.grid.block.GridContent;
 import net.zagdrath.arcforgetransmission.grid.world.GridConfig;
+import net.zagdrath.arcforgetransmission.material.MaterialContent;
 import net.zagdrath.arcforgetransmission.tower.TowerContent;
 
 @Mod(ArcforgeTransmission.MODID)
@@ -26,7 +34,21 @@ public class ArcforgeTransmission {
     public ArcforgeTransmission(IEventBus modEventBus, ModContainer modContainer) {
         TowerContent.register(modEventBus);
         GridContent.register(modEventBus);
+        MaterialContent.register(modEventBus);
         modContainer.registerConfig(localConfigType(), GridConfig.SPEC, MODID + "-common.toml");
+        modEventBus.addListener(ArcforgeTransmission::commonSetup);
+    }
+
+    // Every attach file read up front, so a block never reads one from the jar mid-game.
+    private static void commonSetup(FMLCommonSetupEvent event) {
+        List<String> models = new ArrayList<>(List.of("pole_transformer"));
+        for (TowerTier tier : TowerTier.values()) {
+            models.add(tier.id());
+        }
+        for (VoltageTier tier : VoltageTier.values()) {
+            models.add("pin_insulator_" + tier.id());
+        }
+        AttachGroups.preload(models);
     }
 
     // FML 12.0.8 (NeoForge 26.3.0.37-beta) renamed ModConfig.Type.COMMON to LOCAL (as Arcforge finds it): looked up by

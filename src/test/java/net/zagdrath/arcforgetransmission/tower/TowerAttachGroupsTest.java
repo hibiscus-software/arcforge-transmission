@@ -21,13 +21,13 @@ import net.zagdrath.arcforgetransmission.tower.model.TowerMesh;
 // The towers' attach groups (data/arcforgetransmission/attach_groups) match their models: every terminal and reserved
 // point lies on the model's surface (an insulator's tip, a clamp's face), and each tower has the circuits Phase 1 uses.
 class TowerAttachGroupsTest {
-    private static final String[] MODELS = { "lv_distribution_pole", "mv_sub_transmission_pole", "hv_h_frame_tower", "ev_lattice_tower" };
+    private static final String[] MODELS = { "lv_distribution_pole", "mv_sub_transmission_pole", "hv_h_frame_tower", "ehv_lattice_tower" };
 
     @Test
     void everyTerminalIsOnTheModel() {
-        for (TowerMesh.Design design : TowerMesh.Design.values()) {
-            String model = MODELS[design.ordinal()];
-            float[] quads = TowerMesh.get(design).solid();
+        for (TowerTier tier : TowerTier.values()) {
+            String model = tier.id();
+            float[] quads = TowerMesh.get(tier.design()).solid();
             AttachGroups.Model groups = AttachGroups.get(model);
             for (AttachGroups.Group group : groups.groups()) {
                 for (AttachGroups.Terminal terminal : group.terminals()) {
@@ -63,7 +63,7 @@ class TowerAttachGroupsTest {
         assertEquals(2, AttachGroups.get("lv_distribution_pole").groups().size(), "LV groups");
         assertEquals(1, AttachGroups.get("mv_sub_transmission_pole").groups().size(), "MV circuits");
         assertEquals(1, AttachGroups.get("hv_h_frame_tower").groups().size(), "HV circuits");
-        assertEquals(2, AttachGroups.get("ev_lattice_tower").groups().size(), "EV circuits");
+        assertEquals(2, AttachGroups.get("ehv_lattice_tower").groups().size(), "EHV circuits");
         for (String model : MODELS) {
             for (AttachGroups.Group group : AttachGroups.get(model).groups()) {
                 if (group.name().equals("neutral")) {

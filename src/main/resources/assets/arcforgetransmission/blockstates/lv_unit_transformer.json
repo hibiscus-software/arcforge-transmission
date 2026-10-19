@@ -1,0 +1,16 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "arcforgetransmission:block/transmission_tower/steel"
+    },
+    "facing=east": {
+      "model": "arcforgetransmission:block/transmission_tower/steel"
+    },
+    "facing=south": {
+      "model": "arcforgetransmission:block/transmission_tower/steel"
+    },
+    "facing=west": {
+      "model": "arcforgetransmission:block/transmission_tower/steel"
+    }
+  }
+}

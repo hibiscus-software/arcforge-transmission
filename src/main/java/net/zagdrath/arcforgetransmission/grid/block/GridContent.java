@@ -14,8 +14,10 @@ import java.util.function.Supplier;
 
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.material.MapColor;
@@ -28,6 +30,7 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.zagdrath.arcforgetransmission.ArcforgeTransmission;
+import net.zagdrath.arcforgetransmission.grid.GridEdge;
 import net.zagdrath.arcforgetransmission.grid.VoltageTier;
 import net.zagdrath.arcforgetransmission.grid.item.LinkTarget;
 import net.zagdrath.arcforgetransmission.grid.item.WireCoilItem;
@@ -48,12 +51,14 @@ public final class GridContent {
     public static final Map<VoltageTier, DeferredBlock<CreativeEnergyBlock>> CREATIVE_SOURCES = new EnumMap<>(VoltageTier.class);
     public static final Map<VoltageTier, DeferredBlock<CreativeEnergyBlock>> CREATIVE_SINKS = new EnumMap<>(VoltageTier.class);
     public static final Map<VoltageTier, DeferredItem<WireCoilItem>> COILS = new EnumMap<>(VoltageTier.class);
+    // Rubber-insulated wire (Arcforge's rubber): LV and MV only, safe to touch.
+    public static final Map<VoltageTier, DeferredItem<WireCoilItem>> INSULATED_COILS = new EnumMap<>(VoltageTier.class);
     private static final List<DeferredItem<? extends Item>> TAB_ITEMS = new ArrayList<>();
 
     static {
         for (VoltageTier tier : VoltageTier.values()) {
-            // Porcelain (LV, MV) or glass (HV, EV) on galvanized steel.
-            boolean glass = tier == VoltageTier.HV || tier == VoltageTier.EV;
+            // Porcelain (LV, MV) or glass (HV, EHV) on galvanized steel.
+            boolean glass = tier == VoltageTier.HV || tier == VoltageTier.EHV;
             DeferredBlock<PinInsulatorBlock> pinInsulator = BLOCKS.registerBlock(tier.id() + "_pin_insulator", p -> new PinInsulatorBlock(tier, p),
                     p -> p.mapColor(glass ? MapColor.COLOR_LIGHT_GRAY : MapColor.TERRACOTTA_BROWN).strength(1.5F, 6.0F)
                             .sound(glass ? SoundType.GLASS : SoundType.STONE).noOcclusion().pushReaction(PushReaction.POPPED));
@@ -61,8 +66,13 @@ public final class GridContent {
             TAB_ITEMS.add(ITEMS.registerSimpleBlockItem(pinInsulator));
         }
         for (VoltageTier tier : VoltageTier.values()) {
-            COILS.put(tier, ITEMS.registerItem(tier.id() + "_wire_coil", p -> new WireCoilItem(tier, p), p -> p.stacksTo(64)));
+            COILS.put(tier, ITEMS.registerItem(tier.id() + "_wire_coil", p -> new WireCoilItem(tier, false, p), p -> p.stacksTo(64)));
             TAB_ITEMS.add(COILS.get(tier));
+            if (tier.insulatable()) {
+                INSULATED_COILS.put(tier, ITEMS.registerItem(tier.id() + "_insulated_wire_coil", p -> new WireCoilItem(tier, true, p),
+                        p -> p.stacksTo(64)));
+                TAB_ITEMS.add(INSULATED_COILS.get(tier));
+            }
         }
     }
 
@@ -70,10 +80,15 @@ public final class GridContent {
             p -> p.mapColor(MapColor.METAL).strength(3.0F, 6.0F).sound(SoundType.METAL).noOcclusion().pushReaction(PushReaction.POPPED));
     public static final DeferredItem<BlockItem> POLE_TRANSFORMER_ITEM = ITEMS.registerSimpleBlockItem(POLE_TRANSFORMER);
     public static final DeferredItem<Item> BURNT_WIRE = ITEMS.registerSimpleItem("burnt_wire");
+    // Passes wires through a wall: Pin Insulators on its faces, joined through it by label.
+    public static final DeferredBlock<WallBushingBlock> WALL_BUSHING = BLOCKS.registerBlock("wall_bushing", WallBushingBlock::new,
+            p -> p.mapColor(MapColor.METAL).strength(4.0F, 6.0F).sound(SoundType.METAL).requiresCorrectToolForDrops());
+    public static final DeferredItem<BlockItem> WALL_BUSHING_ITEM = ITEMS.registerSimpleBlockItem(WALL_BUSHING);
     public static final DeferredItem<WireCuttersItem> WIRE_CUTTERS = ITEMS.registerItem("wire_cutters", WireCuttersItem::new, p -> p.durability(238));
 
     static {
         TAB_ITEMS.add(WIRE_CUTTERS);
+        TAB_ITEMS.add(WALL_BUSHING_ITEM);
         TAB_ITEMS.add(POLE_TRANSFORMER_ITEM);
         TAB_ITEMS.add(BURNT_WIRE);
         // Creative only: unbreakable outside creative, no recipe.
@@ -92,6 +107,8 @@ public final class GridContent {
             () -> new BlockEntityType<>(PinInsulatorBlockEntity::new, PIN_INSULATORS.values().stream().map(DeferredBlock::get).toArray(PinInsulatorBlock[]::new)));
     public static final Supplier<BlockEntityType<PoleTransformerBlockEntity>> POLE_TRANSFORMER_ENTITY = BLOCK_ENTITY_TYPES.register("pole_transformer",
             () -> new BlockEntityType<>(PoleTransformerBlockEntity::new, POLE_TRANSFORMER.get()));
+    public static final Supplier<BlockEntityType<WallBushingBlockEntity>> WALL_BUSHING_ENTITY = BLOCK_ENTITY_TYPES.register("wall_bushing",
+            () -> new BlockEntityType<>(WallBushingBlockEntity::new, WALL_BUSHING.get()));
     public static final Supplier<BlockEntityType<CreativeEnergyBlockEntity>> CREATIVE_ENERGY_ENTITY = BLOCK_ENTITY_TYPES.register("creative_energy",
             () -> new BlockEntityType<>(CreativeEnergyBlockEntity::new, creativeBlocks()));
 
@@ -112,12 +129,30 @@ public final class GridContent {
         return COILS.get(tier).get();
     }
 
+    // What a wire gives back when it comes down whole (cut, or an end broken): its coil, bare or insulated; a Wall
+    // Bushing's jumper gives nothing.
+    public static ItemStack coilFor(GridEdge edge) {
+        return switch (edge.kind()) {
+            case BARE -> new ItemStack(coil(edge.tier()));
+            case INSULATED -> new ItemStack(INSULATED_COILS.containsKey(edge.tier()) ? INSULATED_COILS.get(edge.tier()).get() : coil(edge.tier()));
+            case JUMPER -> ItemStack.EMPTY;
+        };
+    }
+
     // Everything for the addon's creative tab, after the towers.
     public static List<DeferredItem<? extends Item>> tabItems() {
         return TAB_ITEMS;
     }
 
     public static void register(IEventBus modEventBus) {
+        // EV was renamed EHV: worlds and inventories from before keep their blocks and coils.
+        for (String id : List.of("pin_insulator", "creative_source", "creative_sink", "wire_coil")) {
+            Identifier from = Identifier.fromNamespaceAndPath(MODID, "ev_" + id), to = Identifier.fromNamespaceAndPath(MODID, "ehv_" + id);
+            if (!id.equals("wire_coil")) {
+                BLOCKS.addAlias(from, to);
+            }
+            ITEMS.addAlias(from, to);
+        }
         BLOCKS.register(modEventBus);
         ITEMS.register(modEventBus);
         BLOCK_ENTITY_TYPES.register(modEventBus);

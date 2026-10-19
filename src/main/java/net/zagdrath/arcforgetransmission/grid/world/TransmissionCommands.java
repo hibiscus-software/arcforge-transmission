@@ -28,7 +28,7 @@ import net.zagdrath.arcforgetransmission.ArcforgeTransmission;
 // console, for admins (permission level 3) who'd rather not edit the file, like Arcforge's /arcforge config reset.
 //  - reset all            lists the settings that differ from their defaults (nothing changes)
 //  - reset all confirm    resets every one of them
-//  - reset <path>         resets one setting ("wires.ev.maxSpan"), or every setting in a section ("wires.ev"), at once
+//  - reset <path>         resets one setting ("wires.ehv.maxSpan"), or every setting in a section ("wires.ehv"), at once
 // The file is saved straight away and the new values apply at once (see ConfigReset).
 @EventBusSubscriber(modid = ArcforgeTransmission.MODID)
 public final class TransmissionCommands {

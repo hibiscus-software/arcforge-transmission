@@ -18,9 +18,9 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
@@ -33,7 +33,6 @@ import net.zagdrath.arcforgetransmission.ArcforgeTransmission;
 import net.zagdrath.arcforgetransmission.grid.FaultEvent;
 import net.zagdrath.arcforgetransmission.grid.FlowSolver;
 import net.zagdrath.arcforgetransmission.grid.GridFaults;
-import net.zagdrath.arcforgetransmission.grid.GridNode;
 import net.zagdrath.arcforgetransmission.grid.Phase;
 import net.zagdrath.arcforgetransmission.grid.Port;
 import net.zagdrath.arcforgetransmission.grid.VoltageTier;
@@ -42,15 +41,16 @@ import net.zagdrath.arcforgetransmission.grid.world.GridConfig;
 import net.zagdrath.arcforgetransmission.grid.world.GridData;
 import net.zagdrath.arcforgetransmission.grid.world.GridManager;
 import net.zagdrath.arcforgetransmission.grid.world.Insulator;
+import net.zagdrath.arcforgetransmission.grid.world.VoltageRatings;
 
 // A Pin Insulator: one insulator, one conductor's end, mounted on a face of the block it serves. Every pin insulator on one block
 // makes one port (a whole circuit: A, B and C, or a line and N); the block's FE goes in or out through it, at up to the
 // tier's voltage times the current limit. Mode and limit are the port's: setting them on one pin insulator sets every
 // pin insulator on that block.
 //
-// Foreign blocks (any mod's but this one) may feed or be fed only at LV. An MV, HV or EV pin insulator switched on against
+// Foreign blocks (any mod's but this one) may feed or be fed only at LV. An MV, HV or EHV pin insulator switched on against
 // one is an overvoltage: the block is broken, destroyed or blown up (GridConfig.OVERVOLTAGE).
-public class PinInsulatorBlockEntity extends GridEndpointBlockEntity implements GridManager.PortSource {
+public class PinInsulatorBlockEntity extends GridEndpointBlockEntity implements GridManager.PortSource, PortHud {
     private PinInsulatorMode mode = PinInsulatorMode.OFF;
     // The current limit in eighths of the tier's rating (1 to 8).
     private int limitEighths = 8;
@@ -59,12 +59,11 @@ public class PinInsulatorBlockEntity extends GridEndpointBlockEntity implements 
     private double lastFlow;
     // Just placed (nothing loaded from a save): takes its port's settings from the pin insulators already there.
     private boolean fresh = true;
-    // Its phase label as the client knows it (the grid's record is GridData's), for the HUD (PinInsulatorHud).
-    private Phase phase = Phase.A;
-    // What the client was last sent (server side), and when, so the HUD's live numbers go out at most twice a second.
-    private @Nullable Phase sentPhase;
+    // The HUD's port state last sent to the client (server side).
     private FlowSolver.@Nullable PortStatus sentStatus;
-    private long sentFlow = -1, sentAt;
+    private @Nullable PinInsulatorMode sentMode;
+    private int sentLimit = -1;
+    private long sentFlow = -1;
 
     public PinInsulatorBlockEntity(BlockPos pos, BlockState state) {
         super(GridContent.PIN_INSULATOR_ENTITY.get(), pos, state);
@@ -111,52 +110,60 @@ public class PinInsulatorBlockEntity extends GridEndpointBlockEntity implements 
         return GridConfig.SETTINGS.ratedAmps(tier()) * limitEighths / 8.0;
     }
 
+    @Override
     public FlowSolver.PortStatus status() {
         return status;
     }
 
+    @Override
     public double lastFlow() {
         return lastFlow;
     }
 
+    // Its port's mode and current limit (on a Wall Bushing, that it passes wires through).
+    @Override
+    public Component hudMode() {
+        String m = ArcforgeTransmission.MODID;
+        if (onWallBushing()) {
+            return Component.translatable("hud." + m + ".pin_insulator.bushing");
+        }
+        double amps = limitAmps();
+        String limit = amps == Math.rint(amps) ? Long.toString((long) amps) : String.format(java.util.Locale.ROOT, "%.1f", amps);
+        return Component.translatable("hud." + m + ".pin_insulator.mode", Component.translatable("pin_insulator_mode." + m + "." + mode.id()), limit,
+                limitEighths);
+    }
+
     // Its phase label (on the client, as last sent).
     public Phase phase() {
-        return phase;
+        Phase phase = hudPhase(0);
+        return phase != null ? phase : Phase.A;
     }
 
     void set(PinInsulatorMode mode, int limitEighths) {
         this.mode = mode;
         this.limitEighths = Math.max(1, Math.min(8, limitEighths));
         setChanged();
-        sync();
-    }
-
-    // Server: reads its label from the grid and tells the client what the HUD shows when any of it has changed (the flow
-    // at most twice a second, unless forced).
-    public void refreshDisplay(boolean force) {
-        if (!(level instanceof ServerLevel server)) {
-            return;
-        }
-        GridNode node = GridManager.node(server, new GridData.Anchor(worldPosition, 0));
-        if (node != null) {
-            phase = node.phase();
-        }
-        long flow = Math.round(lastFlow);
-        boolean changed = phase != sentPhase || status != sentStatus;
-        boolean flowChanged = flow != sentFlow && server.getGameTime() - sentAt >= 10;
-        if (force || changed || flowChanged) {
-            sync();
+        if (level instanceof ServerLevel server) {
+            GridManager.display(server, this, true);
         }
     }
 
-    private void sync() {
-        if (level != null && !level.isClientSide()) {
-            sentPhase = phase;
-            sentStatus = status;
-            sentFlow = Math.round(lastFlow);
-            sentAt = level.getGameTime();
-            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS);
-        }
+    @Override
+    protected boolean hudStateChanged() {
+        return status != sentStatus || mode != sentMode || limitEighths != sentLimit;
+    }
+
+    @Override
+    protected boolean hudLiveChanged() {
+        return Math.round(lastFlow) != sentFlow;
+    }
+
+    @Override
+    protected void hudSent() {
+        sentStatus = status;
+        sentMode = mode;
+        sentLimit = limitEighths;
+        sentFlow = Math.round(lastFlow);
     }
 
     // Every loaded pin insulator on the same block as this one (this one included), in a fixed order.
@@ -200,6 +207,23 @@ public class PinInsulatorBlockEntity extends GridEndpointBlockEntity implements 
         }
         fresh = false;
         super.onLoad();
+        if (level instanceof ServerLevel server) {
+            GridManager.rejoin(server, mountPos());
+        }
+    }
+
+    // Off a Wall Bushing, the ones left on it are joined again without it.
+    @Override
+    public void preRemoveSideEffects(BlockPos pos, BlockState state) {
+        super.preRemoveSideEffects(pos, state);
+        if (level instanceof ServerLevel server) {
+            GridManager.rejoin(server, mountPos());
+        }
+    }
+
+    // On a Wall Bushing it only passes wires through (GridManager.rejoin): no FE of its own.
+    public boolean onWallBushing() {
+        return level != null && level.getBlockState(mountPos()).getBlock() instanceof WallBushingBlock;
     }
 
     // --- The port ---------------------------------------------------------------------------------------------------
@@ -207,8 +231,8 @@ public class PinInsulatorBlockEntity extends GridEndpointBlockEntity implements 
     @Override
     public void ports(ServerLevel level, GridData.Dimension dimension, List<GridManager.PortHandler> out) {
         List<PinInsulatorBlockEntity> siblings = siblings();
-        // One port per block: made by its first pin insulator.
-        if (siblings.get(0) != this) {
+        // One port per block: made by its first pin insulator. None on a Wall Bushing.
+        if (siblings.get(0) != this || onWallBushing()) {
             return;
         }
         List<Long> nodes = new ArrayList<>();
@@ -227,17 +251,12 @@ public class PinInsulatorBlockEntity extends GridEndpointBlockEntity implements 
         VoltageTier tier = tier();
         // Overvoltage once it's live: switched on, against a foreign block, with a wire on any of its conductors.
         boolean wired = nodes.stream().anyMatch(id -> dimension.graph().networkOf(id) != null);
-        if (mode != PinInsulatorMode.OFF && wired && handler != null && tier != VoltageTier.LV && !isNative(level, mount)
+        if (mode != PinInsulatorMode.OFF && wired && handler != null && !VoltageRatings.accepts(level, mount, tier)
                 && GridConfig.OVERVOLTAGE.get() != GridConfig.Overvoltage.NONE) {
             overvoltage(level, mount, nodes.get(0), tier);
             return;
         }
         out.add(new PinInsulatorPort(siblings, tier, nodes, handler, mode, limitAmps()));
-    }
-
-    // This addon's own blocks take any tier.
-    private static boolean isNative(Level level, BlockPos pos) {
-        return BuiltInRegistries.BLOCK.getKey(level.getBlockState(pos).getBlock()).getNamespace().equals(ArcforgeTransmission.MODID);
     }
 
     private static void overvoltage(ServerLevel level, BlockPos pos, long node, VoltageTier tier) {
@@ -322,7 +341,6 @@ public class PinInsulatorBlockEntity extends GridEndpointBlockEntity implements 
             for (PinInsulatorBlockEntity pinInsulator : pinInsulators) {
                 pinInsulator.status = status;
                 pinInsulator.lastFlow = drawn > 0 ? drawn : delivered;
-                pinInsulator.refreshDisplay(false);
             }
         }
     }
@@ -343,16 +361,14 @@ public class PinInsulatorBlockEntity extends GridEndpointBlockEntity implements 
         mode = input.read("mode", PinInsulatorMode.CODEC).orElse(PinInsulatorMode.OFF);
         limitEighths = Math.max(1, Math.min(8, input.read("limit_eighths", Codec.INT).orElse(8)));
         // The HUD's numbers, sent to the client only (getUpdateTag).
-        input.read("hud_phase", Codec.STRING).ifPresent(id -> phase = Phase.byId(id));
         input.read("hud_status", Codec.STRING).ifPresent(name -> status = FlowSolver.PortStatus.valueOf(name));
         input.read("hud_flow", Codec.LONG).ifPresent(flow -> lastFlow = flow);
     }
 
-    // What the client gets: the saved settings, and the HUD's label, status and flow.
+    // What the client gets: the saved settings, the insulator's HUD numbers, and its port's status and flow.
     @Override
     public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
         CompoundTag tag = super.getUpdateTag(registries);
-        tag.putString("hud_phase", phase.id());
         tag.putString("hud_status", status.name());
         tag.putLong("hud_flow", Math.round(lastFlow));
         return tag;

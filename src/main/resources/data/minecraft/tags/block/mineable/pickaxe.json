@@ -1,10 +1,22 @@
 {
   "values": [
-    "arcforgetransmission:ev_lattice_tower",
+    "arcforgetransmission:ehv_lattice_tower",
     "arcforgetransmission:lv_pin_insulator",
     "arcforgetransmission:mv_pin_insulator",
     "arcforgetransmission:hv_pin_insulator",
-    "arcforgetransmission:ev_pin_insulator",
-    "arcforgetransmission:pole_transformer"
+    "arcforgetransmission:ehv_pin_insulator",
+    "arcforgetransmission:pole_transformer",
+    "arcforgetransmission:bauxite_ore",
+    "arcforgetransmission:deepslate_bauxite_ore",
+    "arcforgetransmission:raw_bauxite_block",
+    "arcforgetransmission:aluminium_block",
+    "arcforgetransmission:wall_bushing",
+    "arcforgetransmission:mv_substation_transformer",
+    "arcforgetransmission:hv_substation_transformer",
+    "arcforgetransmission:ehv_substation_transformer",
+    "arcforgetransmission:lv_unit_transformer",
+    "arcforgetransmission:mv_unit_transformer",
+    "arcforgetransmission:hv_unit_transformer",
+    "arcforgetransmission:ehv_unit_transformer"
   ]
 }

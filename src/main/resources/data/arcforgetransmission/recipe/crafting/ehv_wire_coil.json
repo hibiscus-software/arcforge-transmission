@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "A": "#c:ingots/arcforged_alloy",
+    "G": "#c:gems/arcite",
+    "C": "#c:rods/copper"
+  },
+  "pattern": [
+    "AGA",
+    "GCG",
+    "AGA"
+  ],
+  "result": {
+    "count": 8,
+    "id": "arcforgetransmission:ehv_wire_coil"
+  }
+}

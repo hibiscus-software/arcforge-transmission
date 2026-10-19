@@ -1,0 +1,20 @@
+{
+  "values": [
+    {
+      "id": "arcforge:hardened_energy_cell",
+      "required": false
+    },
+    {
+      "id": "arcforge:hardened_energy_conduit",
+      "required": false
+    },
+    {
+      "id": "arcforge:hardened_lithium_cell",
+      "required": false
+    },
+    {
+      "id": "arcforge:hardened_power_regulator",
+      "required": false
+    }
+  ]
+}

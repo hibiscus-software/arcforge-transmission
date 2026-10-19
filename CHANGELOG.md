@@ -1,5 +1,47 @@
 # Changelog
 
+## Unreleased: Phase 2, a usable grid
+
+### Added
+- **Substation Transformers** (MV: LV to MV, HV: MV to HV, EHV: HV to EHV). Multi-block, on a concrete pad: a tank with
+  radiator banks and a conservator, three primary bushings (its own tier) along the north edge and three secondary
+  bushings (a tier down) along the south. FE passes through a buffer, so energy is never made. The Wrench on Configure
+  switches it between stepping down and stepping up.
+- **Unit Transformers** (LV, MV, HV, EHV). One block with three bushings and a cable box that faces the FE block it
+  serves. Input puts a generator's FE onto the line (generator step-up). Output feeds a machine from the line at any
+  voltage, with no overvoltage.
+- **Wall Bushing.** Mount Pin Insulators on its faces: those of one tier and phase are joined through it, so wires pass
+  through a wall. It takes an Arcforge Conduit Facade, and a block used on the facade dresses it in that block's look.
+- **Insulated wire** (LV and MV): Arcforge rubber round eight coils. It's safe to touch and drawn in black rubber.
+- **Shocks.** Live bare wire hurts whatever touches it, more the higher the voltage: LV 1.5 hearts, MV a quarter of your
+  health, HV half, EHV kills. Damage goes through armour, with a zap and sparks. Configurable per tier (`shockDamage`,
+  `shockFraction`).
+- **Aluminium**, from Bauxite Ore (stone and deepslate, Y -16 to 112): Raw Bauxite, its block, Aluminium Dust, Ingot and
+  Block. Smelting, blasting, and Arc Crusher recipes; `c:` tags (`ingots/aluminum` and so on). MV wire is aluminium.
+- **Recipes** for everything, from Arcforge materials: treated wood and steel for the towers, each tier's alloy
+  (tempered, hardened, arcforged) for its tier, terracotta porcelain and glass insulators, and arcite for the EHV
+  superconductor.
+- **Voltage ratings.** A block in `arcforgetransmission:rated/<tier>` takes that tier and below off a Pin Insulator
+  without an overvoltage. Arcforge's tempered blocks are MV, hardened HV, arcforged EHV.
+- **HUD on every insulator:** on towers (when looking at an insulator) and on transformer bushings. It shows the label,
+  the wires, and the current against the rating (yellow over 80%, red over), plus a port's mode and FE/t.
+
+- **Turning transformers.** The Wrench on Rotate turns a substation or unit transformer a quarter turn (sneaking: the
+  other way), like an Arcforge machine, if it has room. Its wires stay on and re-hang to the bushings' new places.
+
+### Changed
+- **EV is now EHV** (Extra High Voltage), everywhere: ids (`ehv_lattice_tower`, `ehv_wire_coil`, ...), config (`wires.ehv`),
+  tags and names. Worlds and inventories from before keep their EV blocks and items, as EHV (registry aliases), and
+  saved grids still read `ev`.
+- Transformer bushings are their tier's own insulator, as on its towers: LV the porcelain pin, MV the porcelain post, HV
+  and EHV upright glass disc stacks (a substation's two sides each in their own tier's).
+- Unit Transformers grow with their tier, from about a block (LV) to three across and three tall (EHV).
+- Wire coils drop the kind they were: bare or insulated. A Wall Bushing's internal links drop nothing.
+
+### Fixed
+- Attach files are read at startup, so a block never reads one from the jar mid-game.
+- Towers no longer block skylight or shade the ground under them (the EHV lattice's dark patch).
+
 ## Unreleased: Phase 1, the power grid
 
 ### Added
@@ -8,7 +50,7 @@
     - LV 128 V, copper, 8 A
     - MV 512 V, aluminium, 16 A
     - HV 2,048 V, silver alloy, 32 A
-    - EV 8,192 V, superconductor, 64 A
+    - EHV 8,192 V, superconductor, 64 A
   - **Circuits.** No DC: every circuit is AC, either single-phase (L1 or L2, plus N) or three-phase (A, B, C).
     - One wire is one conductor. Every insulator is its own connection point and has a phase label.
     - Power flows only in complete circuits: A + B + C, or a line + N.
@@ -24,14 +66,14 @@
   - **Overcurrent.**
     - A wire over its rating for 40 ticks burns out. It drops Burnt Wire and can start a fire beneath its middle.
     - The fault event carries the edge id, the cause and the magnitude.
-  - **Overvoltage.** An MV, HV or EV pin insulator that is switched on against another mod's FE block breaks, destroys or blows up that block (configurable).
+  - **Overvoltage.** An MV, HV or EHV pin insulator that is switched on against another mod's FE block breaks, destroys or blows up that block (configurable).
   - **Saving.** The grid is saved per dimension and survives saving and chunk unloading. Unloaded ports neither give nor take.
-- **Wire Coils** (LV, MV, HV, EV).
+- **Wire Coils** (LV, MV, HV, EHV).
   - Use one on an insulator, then another, to string a wire. Sneak-use in the air drops the loose end.
-  - The sag is 0.05 × span. Each wire is a solid square tube 1 / 1.25 / 1.5 / 2 px across in one flat colour (no texture to shimmer at a distance, nothing finer than a pixel), and the EV wire glows.
+  - The sag is 0.05 × span. Each wire is a solid square tube 1 / 1.25 / 1.5 / 2 px across in one flat colour (no texture to shimmer at a distance, nothing finer than a pixel), and the EHV wire glows.
   - The coil's sprite is a black plastic spool wound with the tier's conductor.
   - Breaking either end drops the coil; a burnt-out wire drops nothing.
-- **Pin Insulators** (LV, MV, HV, EV).
+- **Pin Insulators** (LV, MV, HV, EHV).
   - Each is one insulator mounted on any face of a block, like Immersive Engineering's connectors. The pin insulators on one block make one port.
   - The Wrench:
     - Configure sets the mode: off, input or output.
@@ -50,7 +92,7 @@
   - Each insulator is a connection point.
   - The Wrench on Rotate swaps B and C across a circuit (ABC ↔ ACB).
   - The LV pole's neutral, N, is a pin insulator on a standoff bracket two blocks below the crossarm, as on a real distribution pole.
-  - **Hitboxes.** Each wood pole, crossarm and peak is one uniform box, and each insulator has its own. Looking at a tower outlines its whole frame as one shape; looking at an insulator outlines only that insulator. The EV lattice's body is a uniform box per bay, stepping in with its legs, with a box per crossarm.
+  - **Hitboxes.** Each wood pole, crossarm and peak is one uniform box, and each insulator has its own. Looking at a tower outlines its whole frame as one shape; looking at an insulator outlines only that insulator. The EHV lattice's body is a uniform box per bay, stepping in with its legs, with a box per crossarm.
 - **Config:** `arcforgetransmission-common.toml`, holding every number above.
   - `/arcforgetransmission config reset` (admins) puts it back to its defaults, as Arcforge's `/arcforge config reset` does: `all` lists what differs, `all confirm` resets everything, and a path resets one section or setting. The new values apply at once.
 - **tools:**

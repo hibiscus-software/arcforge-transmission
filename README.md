@@ -7,9 +7,11 @@ Engineering style.
 ## Playing
 
 1. **Put up towers or pin insulators.**
-   - Place a tower (LV pole, MV pole, HV H-frame, EV lattice).
+   - Place a tower (LV pole, MV pole, HV H-frame, EHV lattice).
    - Or mount **Pin Insulators** on the faces of a block. Every pin insulator on one block makes that block's port.
 2. **String wires.** Use a **Wire Coil** of the right tier on one insulator, then on another. One wire is one conductor.
+   Bare wire shocks anything touching it while live (EHV kills); LV and MV also come rubber-insulated, safe to touch.
+   A **Wall Bushing** passes a run through a wall: pin insulators on its faces join through it by tier and phase.
 3. **Wire whole circuits.** FE moves only when a port is complete:
    - **three-phase:** A, B and C, each on its own wire run;
    - **single-phase:** L1 (or L2) and N.
@@ -28,6 +30,10 @@ Engineering style.
 The **Pole-Mount Transformer** hangs on a pole. It takes three phases in on its lid and gives US split phase (L1, N, L2)
 out on its front.
 
+**Changing voltage.** A **Unit Transformer** links a generator or machine (the block its cable box faces) to a line of its
+tier. A **Substation Transformer** joins one tier's line to the next tier down, stepping down or (Wrench on Configure)
+up, so a power plant can send EHV across the map and step it back down at the other end.
+
 **Wire Cutters** cut the wire you look at, or every wire on the insulator you use them on; the coil drops.
 
 ## Config
@@ -38,7 +44,7 @@ game or the server console, as with Arcforge's `/arcforge config reset`:
 ```
 /arcforgetransmission config reset all            # lists the settings that differ from their defaults
 /arcforgetransmission config reset all confirm    # resets every one of them
-/arcforgetransmission config reset wires.ev       # one section (or one setting: wires.ev.maxSpan)
+/arcforgetransmission config reset wires.ehv      # one section (or one setting: wires.ehv.maxSpan)
 ```
 
 ## Building

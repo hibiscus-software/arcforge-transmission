@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "key": {
+    "P": "#c:plates/steel",
+    "T": "minecraft:terracotta",
+    "R": "#c:rods/copper"
+  },
+  "pattern": [
+    "PTP",
+    "TRT",
+    "PTP"
+  ],
+  "result": {
+    "count": 2,
+    "id": "arcforgetransmission:wall_bushing"
+  }
+}

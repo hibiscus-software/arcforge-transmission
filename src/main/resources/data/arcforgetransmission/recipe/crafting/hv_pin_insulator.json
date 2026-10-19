@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "G": "#c:glass_blocks",
+    "H": "#c:ingots/hardened_alloy",
+    "R": "#c:rods/steel"
+  },
+  "pattern": [
+    "GHG",
+    " R "
+  ],
+  "result": {
+    "count": 4,
+    "id": "arcforgetransmission:hv_pin_insulator"
+  }
+}

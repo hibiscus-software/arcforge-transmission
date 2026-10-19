@@ -1,0 +1,20 @@
+{
+  "values": [
+    {
+      "id": "arcforge:tempered_energy_cell",
+      "required": false
+    },
+    {
+      "id": "arcforge:tempered_energy_conduit",
+      "required": false
+    },
+    {
+      "id": "arcforge:tempered_lithium_cell",
+      "required": false
+    },
+    {
+      "id": "arcforge:tempered_power_regulator",
+      "required": false
+    }
+  ]
+}

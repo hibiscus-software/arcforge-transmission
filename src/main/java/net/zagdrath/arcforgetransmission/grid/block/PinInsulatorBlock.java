@@ -59,7 +59,7 @@ public class PinInsulatorBlock extends BaseEntityBlock {
             case LV -> 3.5;
             case MV -> 3.75;
             case HV -> 4.0;
-            case EV -> 5.0;
+            case EHV -> 5.0;
         };
         double height = PinInsulatorBlockEntity.height(tier);
         for (Direction facing : Direction.values()) {

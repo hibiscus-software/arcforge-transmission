@@ -31,7 +31,7 @@ import net.zagdrath.arcforgetransmission.ArcforgeTransmission;
 @EventBusSubscriber(modid = ArcforgeTransmission.MODID, value = Dist.CLIENT)
 public final class ItemInfoTooltips {
     private static final String PREFIX = "tooltip." + ArcforgeTransmission.MODID + ".info.";
-    private static final String[] TIERS = { "lv_", "mv_", "hv_", "ev_" };
+    private static final String[] TIERS = { "lv_", "mv_", "hv_", "ehv_" };
     // Descriptions wrap at this width (the vanilla tooltip font is 9 px tall; ~40 characters a line).
     private static final int WRAP_WIDTH = 200;
 

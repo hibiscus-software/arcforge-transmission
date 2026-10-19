@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "I": "arcforgetransmission:hv_pin_insulator",
+    "P": "#c:plates/steel",
+    "W": "arcforgetransmission:hv_wire_coil",
+    "C": "#c:rods/copper"
+  },
+  "pattern": [
+    "III",
+    "PWP",
+    "PCP"
+  ],
+  "result": {
+    "id": "arcforgetransmission:hv_unit_transformer"
+  }
+}

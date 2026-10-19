@@ -1,0 +1,15 @@
+{
+  "type": "arcforge:crushing",
+  "ingredient": "#c:storage_blocks/raw_bauxite",
+  "result": {
+    "count": 9,
+    "id": "arcforgetransmission:aluminium_dust"
+  },
+  "bonus": {
+    "count": 1,
+    "id": "arcforgetransmission:aluminium_dust"
+  },
+  "bonus_chance": 0.25,
+  "time": 200,
+  "ore": true
+}

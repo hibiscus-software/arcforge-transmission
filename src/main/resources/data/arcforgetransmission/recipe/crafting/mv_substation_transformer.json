@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "H": "arcforgetransmission:mv_pin_insulator",
+    "L": "arcforgetransmission:lv_pin_insulator",
+    "P": "#c:plates/steel",
+    "A": "#c:ingots/tempered_alloy"
+  },
+  "pattern": [
+    "HHH",
+    "PAP",
+    "LLL"
+  ],
+  "result": {
+    "id": "arcforgetransmission:mv_substation_transformer"
+  }
+}

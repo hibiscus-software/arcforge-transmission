@@ -11,6 +11,7 @@ import java.util.function.Supplier;
 
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -25,6 +26,7 @@ import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.zagdrath.arcforgetransmission.ArcforgeTransmission;
 import net.zagdrath.arcforgetransmission.grid.block.GridContent;
+import net.zagdrath.arcforgetransmission.material.MaterialContent;
 
 // Everything the transmission towers register: the four tower blocks and their items, the invisible part block, the two
 // block entity types and a creative tab (which also shows the grid's items, GridContent). Call register(modEventBus) from
@@ -42,7 +44,15 @@ public final class TowerContent {
     public static final DeferredBlock<TowerBlock> LV_DISTRIBUTION_POLE = tower(TowerTier.LV, false);
     public static final DeferredBlock<TowerBlock> MV_SUB_TRANSMISSION_POLE = tower(TowerTier.MV, false);
     public static final DeferredBlock<TowerBlock> HV_H_FRAME_TOWER = tower(TowerTier.HV, false);
-    public static final DeferredBlock<TowerBlock> EV_LATTICE_TOWER = tower(TowerTier.EV, true);
+    public static final DeferredBlock<TowerBlock> EHV_LATTICE_TOWER = tower(TowerTier.EHV, true);
+    // The transformers: three substations (LV/MV, MV/HV, HV/EHV) and a unit transformer per tier, galvanized steel.
+    public static final DeferredBlock<TowerBlock> MV_SUBSTATION_TRANSFORMER = tower(TowerTier.MV_SUBSTATION, true);
+    public static final DeferredBlock<TowerBlock> HV_SUBSTATION_TRANSFORMER = tower(TowerTier.HV_SUBSTATION, true);
+    public static final DeferredBlock<TowerBlock> EHV_SUBSTATION_TRANSFORMER = tower(TowerTier.EHV_SUBSTATION, true);
+    public static final DeferredBlock<TowerBlock> LV_UNIT_TRANSFORMER = tower(TowerTier.LV_UNIT, true);
+    public static final DeferredBlock<TowerBlock> MV_UNIT_TRANSFORMER = tower(TowerTier.MV_UNIT, true);
+    public static final DeferredBlock<TowerBlock> HV_UNIT_TRANSFORMER = tower(TowerTier.HV_UNIT, true);
+    public static final DeferredBlock<TowerBlock> EHV_UNIT_TRANSFORMER = tower(TowerTier.EHV_UNIT, true);
     // The invisible blocks round a tower's main block, shaped like the tower in them. No item, no drops.
     public static final DeferredBlock<TowerPartBlock> TOWER_PART = BLOCKS.registerBlock("transmission_tower_part", TowerPartBlock::new,
             p -> p.mapColor(MapColor.COLOR_BROWN).strength(2.5F, 6.0F).sound(SoundType.WOOD).noOcclusion().noLootTable()
@@ -53,28 +63,39 @@ public final class TowerContent {
     public static final DeferredItem<TowerItem> LV_DISTRIBUTION_POLE_ITEM = item(LV_DISTRIBUTION_POLE, TowerTier.LV);
     public static final DeferredItem<TowerItem> MV_SUB_TRANSMISSION_POLE_ITEM = item(MV_SUB_TRANSMISSION_POLE, TowerTier.MV);
     public static final DeferredItem<TowerItem> HV_H_FRAME_TOWER_ITEM = item(HV_H_FRAME_TOWER, TowerTier.HV);
-    public static final DeferredItem<TowerItem> EV_LATTICE_TOWER_ITEM = item(EV_LATTICE_TOWER, TowerTier.EV);
+    public static final DeferredItem<TowerItem> EHV_LATTICE_TOWER_ITEM = item(EHV_LATTICE_TOWER, TowerTier.EHV);
+    public static final DeferredItem<TowerItem> MV_SUBSTATION_TRANSFORMER_ITEM = item(MV_SUBSTATION_TRANSFORMER, TowerTier.MV_SUBSTATION);
+    public static final DeferredItem<TowerItem> HV_SUBSTATION_TRANSFORMER_ITEM = item(HV_SUBSTATION_TRANSFORMER, TowerTier.HV_SUBSTATION);
+    public static final DeferredItem<TowerItem> EHV_SUBSTATION_TRANSFORMER_ITEM = item(EHV_SUBSTATION_TRANSFORMER, TowerTier.EHV_SUBSTATION);
+    public static final DeferredItem<TowerItem> LV_UNIT_TRANSFORMER_ITEM = item(LV_UNIT_TRANSFORMER, TowerTier.LV_UNIT);
+    public static final DeferredItem<TowerItem> MV_UNIT_TRANSFORMER_ITEM = item(MV_UNIT_TRANSFORMER, TowerTier.MV_UNIT);
+    public static final DeferredItem<TowerItem> HV_UNIT_TRANSFORMER_ITEM = item(HV_UNIT_TRANSFORMER, TowerTier.HV_UNIT);
+    public static final DeferredItem<TowerItem> EHV_UNIT_TRANSFORMER_ITEM = item(EHV_UNIT_TRANSFORMER, TowerTier.EHV_UNIT);
 
     public static final Supplier<BlockEntityType<TowerBlockEntity>> TOWER_ENTITY = BLOCK_ENTITY_TYPES.register("transmission_tower",
             () -> new BlockEntityType<>(TowerBlockEntity::new, LV_DISTRIBUTION_POLE.get(), MV_SUB_TRANSMISSION_POLE.get(), HV_H_FRAME_TOWER.get(),
-                    EV_LATTICE_TOWER.get()));
+                    EHV_LATTICE_TOWER.get(), MV_SUBSTATION_TRANSFORMER.get(), HV_SUBSTATION_TRANSFORMER.get(), EHV_SUBSTATION_TRANSFORMER.get(),
+                    LV_UNIT_TRANSFORMER.get(), MV_UNIT_TRANSFORMER.get(), HV_UNIT_TRANSFORMER.get(), EHV_UNIT_TRANSFORMER.get()));
     public static final Supplier<BlockEntityType<TowerPartBlockEntity>> TOWER_PART_ENTITY = BLOCK_ENTITY_TYPES.register("transmission_tower_part",
             () -> new BlockEntityType<>(TowerPartBlockEntity::new, TOWER_PART.get()));
 
     // The addon's creative tab.
     public static final DeferredHolder<CreativeModeTab, CreativeModeTab> TAB = CREATIVE_MODE_TABS.register("transmission", () -> CreativeModeTab.builder()
             .title(Component.translatable("itemGroup." + MODID + ".transmission"))
-            .icon(() -> EV_LATTICE_TOWER_ITEM.get().getDefaultInstance())
+            .icon(() -> EHV_LATTICE_TOWER_ITEM.get().getDefaultInstance())
             .displayItems((parameters, output) -> {
                 towerItems().forEach(item -> output.accept(item.get()));
                 GridContent.tabItems().forEach(item -> output.accept(item.get()));
+                MaterialContent.tabItems().forEach(item -> output.accept(item.get()));
             })
             .build());
 
     private TowerContent() {}
 
     public static List<DeferredItem<TowerItem>> towerItems() {
-        return List.of(LV_DISTRIBUTION_POLE_ITEM, MV_SUB_TRANSMISSION_POLE_ITEM, HV_H_FRAME_TOWER_ITEM, EV_LATTICE_TOWER_ITEM);
+        return List.of(LV_DISTRIBUTION_POLE_ITEM, MV_SUB_TRANSMISSION_POLE_ITEM, HV_H_FRAME_TOWER_ITEM, EHV_LATTICE_TOWER_ITEM,
+                MV_SUBSTATION_TRANSFORMER_ITEM, HV_SUBSTATION_TRANSFORMER_ITEM, EHV_SUBSTATION_TRANSFORMER_ITEM, LV_UNIT_TRANSFORMER_ITEM,
+                MV_UNIT_TRANSFORMER_ITEM, HV_UNIT_TRANSFORMER_ITEM, EHV_UNIT_TRANSFORMER_ITEM);
     }
 
     private static DeferredBlock<TowerBlock> tower(TowerTier tier, boolean steel) {
@@ -93,6 +114,12 @@ public final class TowerContent {
     }
 
     public static void register(IEventBus modEventBus) {
+        // EV was renamed EHV: worlds and inventories from before keep their towers and transformers.
+        for (String id : List.of("lattice_tower", "substation_transformer", "unit_transformer")) {
+            Identifier from = Identifier.fromNamespaceAndPath(MODID, "ev_" + id), to = Identifier.fromNamespaceAndPath(MODID, "ehv_" + id);
+            BLOCKS.addAlias(from, to);
+            ITEMS.addAlias(from, to);
+        }
         BLOCKS.register(modEventBus);
         ITEMS.register(modEventBus);
         BLOCK_ENTITY_TYPES.register(modEventBus);

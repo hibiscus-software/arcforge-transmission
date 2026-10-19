@@ -52,6 +52,9 @@ public final class GridTicker {
         // Overcurrent: a wire over its rating for burnoutTicks in a row burns out.
         List<GridEdge> burning = new ArrayList<>();
         for (GridEdge edge : graph.edges()) {
+            if (edge.isJumper()) {
+                continue;
+            }
             double amps = result.amps(edge.id());
             if (amps > settings.ratedAmps(edge.tier()) + 1.0E-9) {
                 edge.overTicks++;

@@ -51,14 +51,16 @@ public class GridData extends SavedData {
                 Codec.INT.optionalFieldOf("group", 0).forGetter(NodeRecord::group)).apply(i, NodeRecord::new));
     }
 
-    // A wire as saved.
-    record EdgeRecord(long id, long a, long b, VoltageTier tier, double length) {
+    // A wire as saved (wires saved before insulation load as bare).
+    record EdgeRecord(long id, long a, long b, VoltageTier tier, double length, GridEdge.Kind kind) {
         static final Codec<EdgeRecord> CODEC = RecordCodecBuilder.create(i -> i.group(
                 Codec.LONG.fieldOf("id").forGetter(EdgeRecord::id),
                 Codec.LONG.fieldOf("a").forGetter(EdgeRecord::a),
                 Codec.LONG.fieldOf("b").forGetter(EdgeRecord::b),
                 WireView.TIER.fieldOf("tier").forGetter(EdgeRecord::tier),
-                Codec.DOUBLE.fieldOf("length").forGetter(EdgeRecord::length)).apply(i, EdgeRecord::new));
+                Codec.DOUBLE.fieldOf("length").forGetter(EdgeRecord::length),
+                Codec.STRING.xmap(GridEdge.Kind::byId, GridEdge.Kind::id).optionalFieldOf("kind", GridEdge.Kind.BARE).forGetter(EdgeRecord::kind))
+                .apply(i, EdgeRecord::new));
     }
 
     record DimensionRecord(String dimension, long nextId, List<NodeRecord> nodes, List<EdgeRecord> edges) {
@@ -148,7 +150,7 @@ public class GridData extends SavedData {
             }
             List<EdgeRecord> edgeList = new ArrayList<>();
             for (GridEdge edge : graph.edges()) {
-                edgeList.add(new EdgeRecord(edge.id(), edge.a(), edge.b(), edge.tier(), edge.length()));
+                edgeList.add(new EdgeRecord(edge.id(), edge.a(), edge.b(), edge.tier(), edge.length(), edge.kind()));
             }
             return new DimensionRecord(dimension, nextId, nodeList, edgeList);
         }
@@ -168,7 +170,7 @@ public class GridData extends SavedData {
             for (EdgeRecord edge : record.edges()) {
                 if (dimension.graph.node(edge.a()) != null && dimension.graph.node(edge.b()) != null) {
                     GridNode a = dimension.graph.node(edge.a());
-                    dimension.graph.addEdge(new GridEdge(edge.id(), edge.a(), edge.b(), edge.tier(), a.circuit(), edge.length()));
+                    dimension.graph.addEdge(new GridEdge(edge.id(), edge.a(), edge.b(), edge.tier(), a.circuit(), edge.length(), edge.kind()));
                 }
             }
             dimensions.put(record.dimension(), dimension);

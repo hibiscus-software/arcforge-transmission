@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "R": "#c:rods/silver",
+    "H": "#c:ingots/hardened_alloy"
+  },
+  "pattern": [
+    "RRR",
+    "RHR",
+    "RRR"
+  ],
+  "result": {
+    "count": 8,
+    "id": "arcforgetransmission:hv_wire_coil"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "A": "#c:ingots/aluminum",
+    "S": "minecraft:stick"
+  },
+  "pattern": [
+    "AAA",
+    "ASA",
+    "AAA"
+  ],
+  "result": {
+    "count": 8,
+    "id": "arcforgetransmission:mv_wire_coil"
+  }
+}

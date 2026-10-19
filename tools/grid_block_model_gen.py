@@ -1,4 +1,5 @@
-"""The grid's placeable blocks: the four Pin Insulators, the Pole-Mount Transformer, and the creative Source and Sink.
+"""The grid's placeable blocks: the four Pin Insulators, the Pole-Mount Transformer, the creative Source and Sink, and the
+Wall Bushing.
 
     python tools/grid_block_model_gen.py <addon repo>
 
@@ -7,6 +8,7 @@ Writes:
     assets/arcforgetransmission/models/block/pole_transformer.json (particles only) and textures/item/pole_transformer.png
     assets/arcforgetransmission/models/block/creative_{source,sink}/<tier>.json and their 16x16 textures
     data/arcforgetransmission/attach_groups/{pin_insulator_<tier>,pole_transformer}.json
+    assets/arcforgetransmission/models/block/wall_bushing{,_blank}.json and textures/block/wall_bushing.png
 
 A Pin Insulator is one insulator, like the ones on the towers (the same glazed porcelain, glass and galvanizing ramps as
 tools/transmission_tower_texture_gen.py): a wire is one conductor, and a Pin Insulator its one end, mounted on any face of the
@@ -15,7 +17,7 @@ like an end rod. Per tier:
     LV  a porcelain pin insulator: two skirts and a crown with the tie groove, on a galvanized pin
     MV  a porcelain line post: a flange, a core with three sheds and a line clamp
     HV  three glass cap-and-pin discs on a clevis
-    EV  four larger glass discs
+    EHV  four larger glass discs
 The Pole-Mount Transformer (LV) is drawn by its block entity from TowerMesh.poleTransformer() (the can the LV pole used to
 carry, hung on the same brackets, with three primaries A B C on the lid and the split-phase secondary L1 N L2 on its
 front); here are only its particles, item sprite and attach points. The creative blocks are plain cubes on Arcforge's Creative (pink) ramp with an FE port (orange out, blue in) and one
@@ -53,7 +55,7 @@ CREATIVE = dict(deep=hx("#3A0A2E"), dark=hx("#882068"), face_shade=hx("#B42E8C")
 STEEL_LIT, STEEL_DEEP = hx("#727982"), hx("#16181B")
 PORT = {"out": [hx(c) for c in ("#F5B574", "#E8913A", "#9E5A1C")], "in": [hx(c) for c in ("#7FB3F0", "#4A8FE0", "#22497E")]}
 
-TIERS = ("lv", "mv", "hv", "ev")
+TIERS = ("lv", "mv", "hv", "ehv")
 
 
 # --- parts ---------------------------------------------------------------------------------------------------------
@@ -341,6 +343,57 @@ def attach(model, groups, units):
     return {"model": model, "units": units, "groups": groups, "reserved": []}
 
 
+# Arcforge's machine steel ramp (docs/TEXTURE_STYLE.md, "Machine steel ramp").
+STEEL = dict(deepest=hx("#16181B"), dark=hx("#2B2F34"), shade=hx("#383C42"), face_shade=hx("#40454C"), face=hx("#474C53"),
+             mid=hx("#575D65"), lit=hx("#727982"), rivet=hx("#959DA6"))
+
+
+def wall_bushing_texture():
+    """The Wall Bushing's faces: a single-block machine casing (split face, 1 px bevels, four rivets) with a round porcelain
+    bushing set in a recess in the middle, its bore dark: where a wire passes through the wall."""
+    img = Image.new("RGBA", (16, 16), STEEL["face"])
+    px = img.load()
+    for y in range(16):
+        for x in range(16):
+            c = STEEL["face"] if x < 10 else STEEL["face_shade"]
+            if x == 0 or y == 0:
+                c = STEEL["lit"]
+            elif x == 1 or y == 1:
+                c = STEEL["mid"]
+            if x == 15 or y == 15:
+                c = STEEL["deepest"]
+            elif x == 14 or y == 14:
+                c = STEEL["dark"] if x > 0 and y > 0 else c
+            px[x, y] = c
+    for x, y in ((0, 15), (15, 0), (1, 14), (14, 1)):
+        px[x, y] = STEEL["shade"]
+    for x, y, sx, sy in ((2, 2, 1, 1), (13, 2, -1, 1), (2, 13, 1, -1), (13, 13, -1, -1)):
+        px[x, y] = STEEL["rivet"]
+        px[x + sx, y + sy] = STEEL["dark"]
+    # The recess round the bushing (4..11): lips inverted, then the porcelain in rings, lit top-left, with its bore.
+    for i in range(4, 12):
+        px[i, 4] = STEEL["deepest"]
+        px[4, i] = STEEL["deepest"]
+        px[i, 11] = STEEL["lit"]
+        px[11, i] = STEEL["lit"]
+    px[11, 4] = STEEL["shade"]
+    px[4, 11] = STEEL["shade"]
+    for y in range(5, 11):
+        for x in range(5, 11):
+            d = ((x - 7.5) ** 2 + (y - 7.5) ** 2) ** 0.5
+            lit = (x - 7.5) + (y - 7.5) < 0
+            if d > 3.2:
+                c = STEEL["dark"]
+            elif d > 2.2:
+                c = PORC[4] if lit else PORC[2]
+            elif d > 1.2:
+                c = PORC[5] if lit else PORC[3]
+            else:
+                c = STEEL["deepest"]
+            px[x, y] = c
+    return img
+
+
 def main():
     repo = sys.argv[1] if len(sys.argv) > 1 else "."
     assets = os.path.join(repo, "src/main/resources/assets", NS)
@@ -372,7 +425,12 @@ def main():
             save(creative_texture("out" if kind == "source" else "in", i), os.path.join(assets, f"textures/block/creative_{kind}", tier + ".png"))
             write_json(os.path.join(assets, f"models/block/creative_{kind}", tier + ".json"),
                        {"parent": "minecraft:block/cube_all", "textures": {"all": f"{NS}:block/creative_{kind}/{tier}"}})
-    print("wrote the pin insulators, the pole-mount transformer's data and the creative blocks")
+    save(wall_bushing_texture(), os.path.join(assets, "textures/block/wall_bushing.png"))
+    write_json(os.path.join(assets, "models/block/wall_bushing.json"), {"parent": "minecraft:block/cube_all", "textures": {"all": f"{NS}:block/wall_bushing"}})
+    # A Wall Bushing under a blank Conduit Facade (WallBushingModel): Arcforge's blank facade texture on a full block.
+    write_json(os.path.join(assets, "models/block/wall_bushing_blank.json"),
+               {"parent": "minecraft:block/cube_all", "textures": {"all": "arcforge:block/conduit/facade_blank"}})
+    print("wrote the pin insulators, the pole-mount transformer's data, the creative blocks and the wall bushing")
 
 
 if __name__ == "__main__":

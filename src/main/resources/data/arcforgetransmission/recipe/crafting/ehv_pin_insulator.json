@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "G": "arcforge:pressure_glass",
+    "A": "#c:ingots/arcforged_alloy",
+    "R": "#c:rods/steel"
+  },
+  "pattern": [
+    "GAG",
+    "GRG"
+  ],
+  "result": {
+    "count": 4,
+    "id": "arcforgetransmission:ehv_pin_insulator"
+  }
+}

@@ -26,8 +26,10 @@ from PIL import Image
 
 NS = "arcforgetransmission"
 GENERATORS = ["tools/transmission_tower_texture_gen.py", "tools/tower_attach_groups_gen.py", "tools/grid_block_model_gen.py",
-              "tools/wire_texture_gen.py"]
+              "tools/wire_texture_gen.py", "tools/material_texture_gen.py"]
 SHEET_SIZES = {"block/transmission_tower/towers.png": (256, 512)}
+# Isolated pixels that are deliberate details, by texture: the rivet shadows of Arcforge's machine casing.
+INTENTIONAL = {"block/wall_bushing.png": {(3, 3), (12, 3), (3, 12), (12, 12)}}
 
 problems = []
 
@@ -119,7 +121,8 @@ def check_textures(repo, written):
                     c = px[x, y]
                     n = [px[x - 1, y], px[x + 1, y], px[x, y - 1], px[x, y + 1]]
                     if c[3] and all(m[3] for m in n) and all(m == n[0] for m in n) and c != n[0]:
-                        problem(f"speckle: textures/{rel} has an isolated pixel at ({x}, {y})")
+                        if (x, y) not in INTENTIONAL.get(rel, ()):
+                            problem(f"speckle: textures/{rel} has an isolated pixel at ({x}, {y})")
 
 
 FACE_AXES = {"north": ("z", 0), "south": ("z", 1), "west": ("x", 0), "east": ("x", 1), "down": ("y", 0), "up": ("y", 1)}
@@ -189,7 +192,7 @@ def check_models(repo):
 
 def check_attach(repo):
     data = os.path.join(repo, "src/main/resources/data", NS, "attach_groups")
-    for tier in ("lv", "mv", "hv", "ev"):
+    for tier in ("lv", "mv", "hv", "ehv"):
         point = json.load(open(os.path.join(data, f"pin_insulator_{tier}.json")))["groups"][0]["terminals"][0]["pos"]
         model = json.load(open(os.path.join(repo, "src/main/resources/assets", NS, "models/block/pin_insulator", tier + ".json")))
         top = max(e["to"][1] for e in model["elements"])

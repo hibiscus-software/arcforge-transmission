@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "T": "minecraft:terracotta",
+    "P": "#c:plates/steel",
+    "C": "#c:rods/copper"
+  },
+  "pattern": [
+    "TTT",
+    "PCP",
+    "PPP"
+  ],
+  "result": {
+    "id": "arcforgetransmission:pole_transformer"
+  }
+}

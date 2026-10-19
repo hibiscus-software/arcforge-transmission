@@ -1,0 +1,24 @@
+{
+  "values": [
+    {
+      "id": "arcforge:arcforged_energy_cell",
+      "required": false
+    },
+    {
+      "id": "arcforge:arcforged_energy_conduit",
+      "required": false
+    },
+    {
+      "id": "arcforge:arcforged_lithium_cell",
+      "required": false
+    },
+    {
+      "id": "arcforge:arcforged_power_regulator",
+      "required": false
+    },
+    {
+      "id": "arcforge:creative_energy_cell",
+      "required": false
+    }
+  ]
+}

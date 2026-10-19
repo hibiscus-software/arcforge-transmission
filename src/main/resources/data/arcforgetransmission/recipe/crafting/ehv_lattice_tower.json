@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "key": {
+    "R": "#c:rods/steel",
+    "A": "#c:ingots/arcforged_alloy",
+    "P": "#c:plates/steel"
+  },
+  "pattern": [
+    "RAR",
+    "PRP",
+    "R R"
+  ],
+  "result": {
+    "id": "arcforgetransmission:ehv_lattice_tower"
+  }
+}

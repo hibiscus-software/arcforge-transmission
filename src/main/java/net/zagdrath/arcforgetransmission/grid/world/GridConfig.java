@@ -32,6 +32,10 @@ public final class GridConfig {
     private static final Map<VoltageTier, ModConfigSpec.DoubleValue> RESISTANCE = new EnumMap<>(VoltageTier.class);
     private static final Map<VoltageTier, ModConfigSpec.DoubleValue> RATED_AMPS = new EnumMap<>(VoltageTier.class);
     private static final Map<VoltageTier, ModConfigSpec.IntValue> MAX_SPAN = new EnumMap<>(VoltageTier.class);
+    // What a live bare wire of each tier does to whatever touches it (WireShock): flat half-hearts plus a share of its max
+    // health. Both 0 is harmless.
+    public static final Map<VoltageTier, ModConfigSpec.DoubleValue> SHOCK_DAMAGE = new EnumMap<>(VoltageTier.class);
+    public static final Map<VoltageTier, ModConfigSpec.DoubleValue> SHOCK_FRACTION = new EnumMap<>(VoltageTier.class);
 
     static {
         BUILDER.comment("Wires, one section per tier. Each wire is one conductor; I = P / V in each conductor of a circuit,",
@@ -43,6 +47,10 @@ public final class GridConfig {
                     .defineInRange("ratedAmps", (double) tier.defaultRatedAmps(), 0.001, 1_000_000.0));
             MAX_SPAN.put(tier, BUILDER.comment("The longest span (straight distance between insulators), in blocks.")
                     .defineInRange("maxSpan", tier.defaultMaxSpan(), 1, 256));
+            SHOCK_DAMAGE.put(tier, BUILDER.comment("Flat damage (half-hearts) a live bare wire does to anything touching it, every half",
+                    "second, through armour. Insulated LV and MV wire never shocks.").defineInRange("shockDamage", tier.defaultShockDamage(), 0.0, 1000.0));
+            SHOCK_FRACTION.put(tier, BUILDER.comment("Plus this share of the victim's max health (1 kills outright).")
+                    .defineInRange("shockFraction", tier.defaultShockFraction(), 0.0, 1.0));
             BUILDER.pop();
         }
         BUILDER.pop();
@@ -60,7 +68,7 @@ public final class GridConfig {
                 .defineInRange("burnoutTicks", 40, 1, 72_000);
         BURNOUT_FIRE = BUILDER.comment("Whether a wire burning out can set a fire under its middle.").define("burnoutFire", true);
         BURNOUT_FIRE_CHANCE = BUILDER.comment("The chance (0 to 1) that it does.").defineInRange("burnoutFireChance", 0.5, 0.0, 1.0);
-        OVERVOLTAGE = BUILDER.comment("What an MV, HV or EV pin insulator does to a foreign FE block (one not from this addon) it's mounted on",
+        OVERVOLTAGE = BUILDER.comment("What an MV, HV or EHV pin insulator does to a foreign FE block (one not from this addon) it's mounted on",
                 "while switched to input or output: BREAK (drops it), DESTROY, EXPLODE (a small blast that breaks no blocks) or NONE.")
                 .defineEnum("overvoltage", Overvoltage.BREAK);
         BUILDER.pop();

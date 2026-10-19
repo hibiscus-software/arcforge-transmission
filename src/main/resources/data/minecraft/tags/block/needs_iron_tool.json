@@ -1,5 +1,12 @@
 {
   "values": [
-    "arcforgetransmission:ev_lattice_tower"
+    "arcforgetransmission:ehv_lattice_tower",
+    "arcforgetransmission:mv_substation_transformer",
+    "arcforgetransmission:hv_substation_transformer",
+    "arcforgetransmission:ehv_substation_transformer",
+    "arcforgetransmission:lv_unit_transformer",
+    "arcforgetransmission:mv_unit_transformer",
+    "arcforgetransmission:hv_unit_transformer",
+    "arcforgetransmission:ehv_unit_transformer"
   ]
 }

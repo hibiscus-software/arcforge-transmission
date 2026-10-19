@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "T": "minecraft:terracotta",
+    "A": "#c:ingots/tempered_alloy",
+    "R": "#c:rods/steel"
+  },
+  "pattern": [
+    "TAT",
+    " R "
+  ],
+  "result": {
+    "count": 4,
+    "id": "arcforgetransmission:mv_pin_insulator"
+  }
+}

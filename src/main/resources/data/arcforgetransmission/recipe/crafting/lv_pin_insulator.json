@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "T": "minecraft:terracotta",
+    "R": "#c:rods/steel"
+  },
+  "pattern": [
+    "T",
+    "R"
+  ],
+  "result": {
+    "count": 4,
+    "id": "arcforgetransmission:lv_pin_insulator"
+  }
+}

@@ -29,10 +29,12 @@ import net.zagdrath.arcforgetransmission.grid.Phase;
 import net.zagdrath.arcforgetransmission.grid.world.GridData;
 import net.zagdrath.arcforgetransmission.grid.world.GridManager;
 import net.zagdrath.arcforgetransmission.grid.world.Insulator;
+import net.zagdrath.arcforgetransmission.tower.TowerBlockEntity;
 
 // What Arcforge's Wrench does to anything with insulators (Arcforge's wrench passes on blocks that aren't its own, so
 // they handle it in useItemOn):
-//   Rotate     on a group of three-phase insulators (a tower's, a transformer's primary), swaps B and C (ABC <-> ACB);
+//   Rotate     on a transformer (substation or unit), turns it a quarter turn (sneaking: the other way), its wires kept;
+//              on a tower's group of three-phase insulators, swaps B and C (ABC <-> ACB);
 //              on a lone insulator (a pin insulator), steps its label (A B C, or L1 L2 N)
 //   Port       switches the nearest insulator between three-phase and single-phase labels (only while it has no wires)
 //   Configure  on a pin insulator, its mode (sneaking: its current limit); elsewhere, says the labels
@@ -65,6 +67,15 @@ public final class GridInteractions {
         boolean sneaking = player.isSecondaryUseActive();
         switch (mode) {
             case ROTATE -> {
+                // A transformer turns, like an Arcforge machine (sneaking: the other way).
+                if (endpoint instanceof TowerBlockEntity tower && tower.tier().isTransformer()) {
+                    boolean turned = tower.rotate(!sneaking);
+                    tell(player, Component.translatable("message." + ArcforgeTransmission.MODID + ".transformer." + (turned ? "rotated" : "no_room")));
+                    if (turned) {
+                        level.playSound(null, pos, SoundEvents.UI_BUTTON_CLICK.value(), SoundSource.BLOCKS, 0.3F, 1.4F);
+                    }
+                    return InteractionResult.SUCCESS;
+                }
                 long inGroup = insulators.stream().filter(i -> i.group() == group).count();
                 GridNode node = GridManager.node(server, anchor);
                 if (node == null) {
@@ -80,8 +91,9 @@ public final class GridInteractions {
                 }
                 tell(player, Component.translatable("message." + ArcforgeTransmission.MODID + ".phase.labels", labels(server, endpoint, group)));
                 if (endpoint instanceof PinInsulatorBlockEntity pinInsulator) {
-                    pinInsulator.refreshDisplay(true);
+                    GridManager.rejoin(server, pinInsulator.mountPos());
                 }
+                GridManager.display(server, endpoint, true);
             }
             case PORT -> {
                 GridNode node = GridManager.node(server, anchor);
@@ -96,8 +108,9 @@ public final class GridInteractions {
                     tell(player, Component.translatable("message." + ArcforgeTransmission.MODID + ".phase.circuit",
                             Component.translatable("circuit." + ArcforgeTransmission.MODID + "." + phase.circuit().id()), phase.name()));
                     if (endpoint instanceof PinInsulatorBlockEntity pinInsulator) {
-                        pinInsulator.refreshDisplay(true);
+                        GridManager.rejoin(server, pinInsulator.mountPos());
                     }
+                    GridManager.display(server, endpoint, true);
                 }
             }
             case CONFIGURE -> {
@@ -113,6 +126,8 @@ public final class GridInteractions {
                         tell(player, Component.translatable("message." + ArcforgeTransmission.MODID + ".pin_insulator.mode",
                                 Component.translatable("pin_insulator_mode." + ArcforgeTransmission.MODID + "." + next.id())));
                     }
+                } else if (endpoint instanceof TowerBlockEntity tower && tower.tier().isTransformer()) {
+                    tell(player, tower.configure());
                 } else {
                     tell(player, Component.translatable("message." + ArcforgeTransmission.MODID + ".phase.labels", labels(server, endpoint, group)));
                 }

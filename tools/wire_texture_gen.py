@@ -1,15 +1,16 @@
-"""The wires' textures: the conductor sprites, the EV glow, the coil items and Burnt Wire.
+"""The wires' textures: the conductor sprites, the EHV glow, the coil items and Burnt Wire.
 
     python tools/wire_texture_gen.py <addon repo>
 
 Writes (assets/arcforgetransmission/textures/):
-    block/wire/{lv,mv,hv,ev}.png   16x16, one flat tone: the conductor (the EV superconductor's dark sheath)
-    block/wire/ev_wire_glow.png    the EV core's glow, one flat tone, drawn full-bright over the wire
+    block/wire/{lv,mv,hv,ehv}.png   16x16, one flat tone: the conductor (the EHV superconductor's dark sheath)
+    block/wire/ehv_wire_glow.png    the EHV core's glow, one flat tone, drawn full-bright over the wire
     item/{tier}_wire_coil.png      a black plastic spool wound with the tier's conductor
-    item/wire_cutters.png          red-handled cable cutters
+    block/wire/{lv,mv}_insulated.png, item/{lv,mv}_insulated_wire_coil.png   insulated wire: black rubber, flat; its spool
+    item/wire_cutters.png          the Wire Cutters, from the addon's pixel art, in Arcforge's palette
     item/burnt_wire.png            a charred, broken length of wire
 
-The conductors: LV copper (Tempered copper), MV aluminium, HV silver alloy, EV superconductor. Flat tones, no noise:
+The conductors: LV copper (Tempered copper), MV aluminium, HV silver alloy, EHV superconductor. Flat tones, no noise:
 everything is a pure function of position, so the build is byte-identical every run.
 """
 import os
@@ -30,11 +31,11 @@ RAMPS = {
     "lv": [hx(c) for c in ("#3C1C0C", "#8A4822", "#AE6632", "#C98244", "#E0A062")],
     "mv": [hx(c) for c in ("#4A5056", "#7E868D", "#A3AAB0", "#C3C8CC", "#DDE1E4")],
     "hv": [hx(c) for c in ("#55575C", "#8C8F96", "#B3B6BC", "#D3D5DA", "#EEEFF2")],
-    "ev": [hx(c) for c in ("#101418", "#1E262C", "#2C363E", "#3C4852", "#4E5C66")],
+    "ehv": [hx(c) for c in ("#101418", "#1E262C", "#2C363E", "#3C4852", "#4E5C66")],
 }
-EV_CORE = [hx(c) for c in ("#2E96B6", "#6AD2EE", "#B4F2FF")]
-# The strung EV wire's glow (added full-bright over its sheath): a dim cyan, so it reads as a cable that glows, not a neon tube.
-EV_GLOW = hx("#0F4A58")
+EHV_CORE = [hx(c) for c in ("#2E96B6", "#6AD2EE", "#B4F2FF")]
+# The strung EHV wire's glow (added full-bright over its sheath): a dim cyan, so it reads as a cable that glows, not a neon tube.
+EHV_GLOW = hx("#0F4A58")
 WOOD = [hx(c) for c in ("#3A2616", "#553A22", "#725033", "#8E6A44")]
 CHAR = [hx(c) for c in ("#0E0C0B", "#1F1A17", "#2F2824", "#463B34")]
 CLEAR = (0, 0, 0, 0)
@@ -46,7 +47,11 @@ PROFILE = [0, 1, 1, 2, 2, 3, 4, 4, 3, 3, 2, 2, 1, 1, 1, 0]
 # The strung conductors' tones: dark and weathered, as real line wire reads against the sky (a bright tone makes a thin
 # wire look like a glowing rod): copper gone brown, dull aluminium, darker silver alloy, the superconductor's black
 # sheath.
-WIRE = {"lv": hx("#5E3219"), "mv": hx("#575D63"), "hv": hx("#4B4F55"), "ev": hx("#1A2126")}
+WIRE = {"lv": hx("#5E3219"), "mv": hx("#575D63"), "hv": hx("#4B4F55"), "ehv": hx("#1A2126")}
+# The rubber sheath of insulated LV and MV wire (Arcforge's rubber, vulcanized black), and its ramp on the coil.
+RUBBER = hx("#25272A")
+RUBBER_RAMP = [hx(c) for c in ("#24272B", "#34383D", "#454A50", "#585E65", "#6D747B")]
+INSULATED = ("lv", "mv")
 
 
 def wire(tier):
@@ -56,21 +61,22 @@ def wire(tier):
 
 
 def glow():
-    """The EV core's glow: one flat tone (drawn full-bright over the whole 2 px wire, additively, so the dark sheath shows
+    """The EHV core's glow: one flat tone (drawn full-bright over the whole 2 px wire, additively, so the dark sheath shows
     through as a cyan glow; a core narrower than the wire would be finer than a pixel)."""
-    return Image.new("RGBA", (16, 16), EV_GLOW)
+    return Image.new("RGBA", (16, 16), EHV_GLOW)
 
 
 # The spool's black plastic (dark to light).
 PLASTIC = [hx(c) for c in ("#0E0F10", "#1C1E20", "#2B2E31", "#3D4145", "#53585D")]
 
 
-def coil(tier):
+def coil(tier, insulated=False):
     """A spool of the tier's conductor seen a little from above: two black plastic flanges (discs wider than the winding,
-    the top one with its hub hole) and the wire wound between them in turns, lit left of the middle."""
+    the top one with its hub hole) and the wire wound between them in turns, lit left of the middle. Insulated wire is
+    wound in its black rubber, the bare conductor showing at the loose end's tip."""
     img = Image.new("RGBA", (16, 16), CLEAR)
     px = img.load()
-    ramp = RAMPS[tier]
+    ramp = RUBBER_RAMP if insulated else RAMPS[tier]
     cx, rx, ry = 7.5, 7.0, 2.0
     top, bottom, body_rx = 3.5, 12.5, 4.8
 
@@ -101,13 +107,13 @@ def coil(tier):
                 if y % 2 == 1:
                     t = max(0, t - 1)
                 c = ramp[t]
-                if tier == "ev" and y % 2 == 0 and abs(d) < 0.7:
-                    c = EV_CORE[1]
+                if tier == "ehv" and y % 2 == 0 and abs(d) < 0.7:
+                    c = EHV_CORE[1]
                 px[x, y] = c
     disc(top, True)
-    # The loose end: off the winding's right side and out past the flanges.
+    # The loose end: off the winding's right side and out past the flanges (insulated: its tip stripped bare).
     for i, (x, y) in enumerate(((13, 8), (14, 8), (15, 7))):
-        px[x, y] = ramp[3] if i else ramp[2]
+        px[x, y] = RAMPS[tier][3] if insulated and i == 2 else ramp[3] if i else ramp[2]
     return outline(img)
 
 
@@ -123,43 +129,55 @@ def outline(img):
 
 
 OUTLINE = hx("#0C0D0F")
-RED = [hx(c) for c in ("#5E1612", "#9E2A20", "#D23A2C", "#F06A58")]
-STEEL = [hx(c) for c in ("#16181B", "#2A2E33", "#43484F", "#646B74", "#8C949D")]
 
 
-# The head, neck and pivot (L lit, S mid and D dark steel, K the black neck, P the bolt); the handles are drawn after.
-CUTTER_HEAD = [
-    ".............L..",
-    "...........LLSD.",
-    "..........LS.SD.",
-    ".........LS..D..",
-    ".........SSSD...",
-    "........KSD.....",
-    ".......KPK......",
-    "......KKK.......",
+# The Wire Cutters, from the addon's pixel art (one letter a pixel), in Arcforge's palette: the steel tools' outline and
+# steel-ingot ramp for the jaws and pivot, the FE red accent for the dipped grips, the Input blue for their bands.
+CUTTERS = [
+    "...oo...........",
+    "..o23o..........",
+    ".o5o43o.........",
+    ".o33o21oooo.....",
+    ".o1344411Rroo...",
+    "..oo444ooRRbbo..",
+    "....o1o..oorrBo.",
+    "....o1o....oRnn.",
+    "....oHRo....oRbo",
+    "....o1Ro.....oHo",
+    ".....o1ro.....o.",
+    ".....onrRo......",
+    "......oBBHo.....",
+    ".......oo1Ho....",
+    ".........oo.....",
+    "................",
 ]
+CUTTER_TONES = {
+    "o": hx("#16181B"),
+    # Steel-ingot ramp, dark to light (#3C3F45 to #C4C9CF).
+    "1": hx("#3C3F45"), "2": hx("#5B6067"), "3": hx("#7E848B"), "4": hx("#A1A7AE"), "5": hx("#C4C9CF"),
+    # FE red: highlight, body, shade.
+    "H": hx("#FF8577"), "R": hx("#E5483C"), "r": hx("#8E231C"),
+    # Input blue: light, mid, dark.
+    "B": hx("#4A8FE0"), "b": hx("#3A76C0"), "n": hx("#22497E"),
+}
 
 
 def cutters():
-    """Cable cutters laid like a vanilla tool (head up-right, handles down-left): the polished steel head, its hooked
-    jaws round the open cutting eye, the blackened neck with the pivot bolt, and the two red-dipped handles splaying
-    apart from it in a V (as a cutter's do), each 2 px thick, lit on its upper edge, its rounded end a step darker."""
+    """The Wire Cutters: red-dipped handles with blue grip bands, the steel jaws and pivot up-left, outlined like
+    Arcforge's steel tools (a clear pixel touching the sprite with no outline gets one)."""
     img = Image.new("RGBA", (16, 16), CLEAR)
     px = img.load()
-    tones = {"D": STEEL[2], "S": STEEL[3], "L": STEEL[4], "K": STEEL[1], "P": STEEL[3]}
-    for y, row in enumerate(CUTTER_HEAD):
+    for y, row in enumerate(CUTTERS):
         for x, ch in enumerate(row):
-            if ch in tones:
-                px[x, y] = tones[ch]
-    # The handles' centre lines, from the neck: one down the diagonal, one steeper, so they open apart.
-    for (x0, y0), (x1, y1) in (((6, 8), (1, 11)), ((7, 8), (4, 14))):
-        n = max(abs(x1 - x0), abs(y1 - y0))
-        for k in range(n + 1):
-            x, y = round(x0 + (x1 - x0) * k / n), round(y0 + (y1 - y0) * k / n)
-            end = k == n
-            px[x, y] = RED[1] if end else RED[3]
-            px[x + 1, y] = RED[1] if end else RED[2]
-    return outline(img)
+            if ch in CUTTER_TONES:
+                px[x, y] = CUTTER_TONES[ch]
+    edge = CUTTER_TONES["o"]
+    body = {(x, y) for x in range(16) for y in range(16) if px[x, y][3] and px[x, y] != edge}
+    for x in range(16):
+        for y in range(16):
+            if px[x, y][3] == 0 and any((x + dx, y + dy) in body for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1))):
+                px[x, y] = edge
+    return img
 
 
 def burnt():
@@ -189,7 +207,10 @@ def main():
     for tier in RAMPS:
         save(wire(tier), os.path.join(tex, "block/wire", tier + ".png"))
         save(coil(tier), os.path.join(tex, "item", tier + "_wire_coil.png"))
-    save(glow(), os.path.join(tex, "block/wire/ev_wire_glow.png"))
+    for tier in INSULATED:
+        save(Image.new("RGBA", (16, 16), RUBBER), os.path.join(tex, "block/wire", tier + "_insulated.png"))
+        save(coil(tier, True), os.path.join(tex, "item", tier + "_insulated_wire_coil.png"))
+    save(glow(), os.path.join(tex, "block/wire/ehv_wire_glow.png"))
     save(cutters(), os.path.join(tex, "item/wire_cutters.png"))
     save(burnt(), os.path.join(tex, "item/burnt_wire.png"))
     print("wrote the wire textures")

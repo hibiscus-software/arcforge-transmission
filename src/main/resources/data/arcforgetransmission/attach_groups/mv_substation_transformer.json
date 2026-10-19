@@ -1,0 +1,69 @@
+{
+  "model": "mv_substation_transformer",
+  "units": "px in the model's north-facing frame: x across the line, y up from the base block's bottom, z along the line; origin the centre column's base block's minimum corner",
+  "groups": [
+    {
+      "name": "primary",
+      "circuit": "three_phase",
+      "tier": "mv",
+      "terminals": [
+        {
+          "label": "A",
+          "pos": [
+            -1,
+            46,
+            2
+          ]
+        },
+        {
+          "label": "B",
+          "pos": [
+            8,
+            46,
+            2
+          ]
+        },
+        {
+          "label": "C",
+          "pos": [
+            17,
+            46,
+            2
+          ]
+        }
+      ]
+    },
+    {
+      "name": "secondary",
+      "circuit": "three_phase",
+      "tier": "lv",
+      "terminals": [
+        {
+          "label": "A",
+          "pos": [
+            -1,
+            39.6,
+            14
+          ]
+        },
+        {
+          "label": "B",
+          "pos": [
+            8,
+            39.6,
+            14
+          ]
+        },
+        {
+          "label": "C",
+          "pos": [
+            17,
+            39.6,
+            14
+          ]
+        }
+      ]
+    }
+  ],
+  "reserved": []
+}

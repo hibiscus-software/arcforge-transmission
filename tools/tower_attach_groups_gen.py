@@ -1,4 +1,4 @@
-"""Writes the transmission towers' attach groups: data/arcforgetransmission/attach_groups/<tower>.json.
+"""Writes the transmission towers' and transformers' attach groups: data/arcforgetransmission/attach_groups/<tower>.json.
 
     python tools/tower_attach_groups_gen.py <addon repo>
 
@@ -14,8 +14,11 @@ no DC.
                             the pole-mount transformer gives
   MV Sub-Transmission Pole  one circuit: the upper post (A) and the lower arm's two (B, C); the shield peak reserved
   HV H-Frame Tower          one circuit: the three strings; both shield peaks reserved
-  EV Lattice Tower          two circuits (double circuit): west A/B/C top to bottom, east likewise; the shield peak
+  EHV Lattice Tower          two circuits (double circuit): west A/B/C top to bottom, east likewise; the shield peak
                             reserved
+  Substation Transformers   the primary (A B C, its own tier, along the north edge) and the secondary (A B C, a tier
+                            down, along the south): each group names its tier
+  Unit Transformers         one circuit: the three bushings on the lid, A B C west to east
 """
 import json
 import os
@@ -78,7 +81,7 @@ def hv():
     }
 
 
-def ev():
+def ehv():
     # arm(side, level, reach) returns tip - side * 1; suspension(tipX, level - 4, 8, 13).
     c = 8.0
     levels = {"A": (432.0, 56.0), "B": (368.0, 80.0), "C": (304.0, 64.0)}
@@ -93,7 +96,56 @@ def ev():
     return {"groups": groups, "reserved": [{"name": "shield", "use": "the shield wire (later)", "pos": p(8, 496 + 14, 8)}]}
 
 
-MODELS = {"lv_distribution_pole": lv, "mv_sub_transmission_pole": mv, "hv_h_frame_tower": hv, "ev_lattice_tower": ev}
+def bushing_top(tier, y, unit):
+    """TowerMesh.bushing: 0 LV the pin insulator (crown top at y + 7.6), 1 MV the post (y + 14, a unit's 10), 2 HV and
+    3 EHV a glass stack (clevis 1, a disc every 3, the clamp 1: HV 4 discs, a unit's 3; EHV 6, a unit's 4)."""
+    if tier == 0:
+        return y + 7.6
+    if tier == 1:
+        return y + (10 if unit else 14)
+    discs = (3 if unit else 4) if tier == 2 else (4 if unit else 6)
+    return y + 1 + 3 * discs + 1
+
+
+# TowerMesh.Substation: (halfX, halfZ, height, high tier, spacing), the pad 4 and the lid 2 px.
+SUBSTATIONS = {"mv": ((13, 10, 26, 1, 9), "mv", "lv"), "hv": ((17, 13, 34, 2, 11), "hv", "mv"),
+               "ehv": ((21, 16, 42, 3, 13), "ehv", "hv")}
+
+
+def substation(key):
+    """bushing(tier, 8 + i * spacing, top, z) along the north (primary, its tier) and south (secondary, a tier down)
+    edges."""
+    (half_x, half_z, height, high, spacing), high_id, low_id = SUBSTATIONS[key]
+    top = 4 + height + 2
+
+    def row(z, tier):
+        return [{"label": label, "pos": p(8 + i * spacing, bushing_top(tier, top, False), z)} for i, label in zip((-1, 0, 1), "ABC")]
+
+    return lambda: {
+        "groups": [{"name": "primary", "circuit": "three_phase", "tier": high_id, "terminals": row(8 - half_z + 4, high)},
+                   {"name": "secondary", "circuit": "three_phase", "tier": low_id, "terminals": row(8 + half_z - 4, high - 1)}],
+        "reserved": [],
+    }
+
+
+def unit(tier):
+    """TowerMesh.Unit: tier 0 (LV) to 3 (EHV); the tank's half-depth 4.5 + 1.5 tier behind the 2.5 px cable box, its
+    height 9 + 3 tier, the lid 1 more; bushings across it at x 8 + i * spacing."""
+    half_z, height = 4.5 + 1.5 * tier, 9 + 3 * tier
+    spacing = (5.6, 6.0, 6.5, 7.5)[tier]
+    top = height + 1
+    return lambda: {
+        "groups": [{"name": "line", "circuit": "three_phase",
+                    "terminals": [{"label": label, "pos": p(8 + i * spacing, bushing_top(tier, top, True), 2.5 + half_z)}
+                                  for i, label in zip((-1, 0, 1), "ABC")]}],
+        "reserved": [],
+    }
+
+
+MODELS = {"lv_distribution_pole": lv, "mv_sub_transmission_pole": mv, "hv_h_frame_tower": hv, "ehv_lattice_tower": ehv,
+          "mv_substation_transformer": substation("mv"), "hv_substation_transformer": substation("hv"),
+          "ehv_substation_transformer": substation("ehv"), "lv_unit_transformer": unit(0), "mv_unit_transformer": unit(1),
+          "hv_unit_transformer": unit(2), "ehv_unit_transformer": unit(3)}
 
 
 def main():

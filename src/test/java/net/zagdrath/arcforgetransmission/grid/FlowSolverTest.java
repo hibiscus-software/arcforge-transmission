@@ -103,9 +103,9 @@ class FlowSolverTest {
 
     @Test
     void superconductorLosesAlmostNothing() {
-        FlowSolver.Result result = line(VoltageTier.EV, 3, 32, 600_000, 524_288);
+        FlowSolver.Result result = line(VoltageTier.EHV, 3, 32, 600_000, 524_288);
         assertEquals(524_288.0, result.delivered(2), 1.0E-6);
-        assertTrue(result.totalLoss() < 0.01 * 524_288, "EV lost " + result.totalLoss());
+        assertTrue(result.totalLoss() < 0.01 * 524_288, "EHV lost " + result.totalLoss());
     }
 
     @Test

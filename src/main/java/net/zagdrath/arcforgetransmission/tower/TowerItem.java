@@ -62,7 +62,7 @@ public class TowerItem extends BlockItem {
             BlockState state = getBlock().defaultBlockState().setValue(TowerBlock.FACING, facing);
             level.setBlock(main, state, Block.UPDATE_ALL);
             BlockState part = TowerContent.TOWER_PART.get().defaultBlockState()
-                    .setValue(TowerPartBlock.STEEL, tier == TowerTier.EV);
+                    .setValue(TowerPartBlock.STEEL, tier.steel());
             for (BlockPos pos : positions) {
                 if (pos.equals(main)) {
                     continue;
@@ -80,8 +80,13 @@ public class TowerItem extends BlockItem {
 
     @Override
     public void appendHoverText(ItemStack stack, Item.TooltipContext context, TooltipDisplay display, Consumer<Component> builder, TooltipFlag flag) {
-        builder.accept(Component.translatable("tooltip.arcforgetransmission.tower.tier", tier.label(), String.format("%,d", tier.volts()))
-                .withStyle(ChatFormatting.GRAY));
+        if (tier.kind() == TowerTier.Kind.SUBSTATION) {
+            builder.accept(Component.translatable("tooltip.arcforgetransmission.tower.substation", tier.secondary().name(),
+                    String.format("%,d", tier.secondary().volts()), tier.label(), String.format("%,d", tier.volts())).withStyle(ChatFormatting.GRAY));
+        } else {
+            builder.accept(Component.translatable("tooltip.arcforgetransmission.tower." + (tier.kind() == TowerTier.Kind.UNIT ? "unit" : "tier"),
+                    tier.label(), String.format("%,d", tier.volts())).withStyle(ChatFormatting.GRAY));
+        }
         builder.accept(Component.translatable("tooltip.arcforgetransmission.tower.height", tier.height()).withStyle(ChatFormatting.GRAY));
         super.appendHoverText(stack, context, display, builder, flag);
     }

@@ -38,6 +38,8 @@ import net.zagdrath.arcforgetransmission.grid.Port;
 import net.zagdrath.arcforgetransmission.grid.VoltageTier;
 import net.zagdrath.arcforgetransmission.grid.block.GridContent;
 import net.zagdrath.arcforgetransmission.grid.block.GridEndpointBlockEntity;
+import net.zagdrath.arcforgetransmission.grid.block.PinInsulatorBlockEntity;
+import net.zagdrath.arcforgetransmission.grid.block.WallBushingBlock;
 
 // The grid in the world: keeps GridData's insulators in step with the blocks that have them, strings and removes wires,
 // and runs each dimension's tick (GridTicker over the loaded ports), burning wires out with their drops and fires.
@@ -63,6 +65,8 @@ public final class GridManager {
     }
 
     private static final Map<ServerLevel, Set<GridEndpointBlockEntity>> LOADED = new WeakHashMap<>();
+    // The last tick's current on every wire, per level (for the HUD between ticks).
+    private static final Map<ServerLevel, Map<Long, Double>> LAST_AMPS = new WeakHashMap<>();
 
     private GridManager() {}
 
@@ -81,6 +85,12 @@ public final class GridManager {
 
     public static void forget(ServerLevel level) {
         LOADED.remove(level);
+        LAST_AMPS.remove(level);
+    }
+
+    // Tells a block's client what its insulators' HUD shows (GridEndpointBlockEntity.refreshDisplay).
+    public static void display(ServerLevel level, GridEndpointBlockEntity endpoint, boolean force) {
+        endpoint.refreshDisplay(level, LAST_AMPS.getOrDefault(level, Map.of()), force);
     }
 
     public static Collection<GridEndpointBlockEntity> loadedIn(ServerLevel level) {
@@ -129,6 +139,35 @@ public final class GridManager {
         }
     }
 
+    // A block's insulators have moved (a transformer turned): the grid takes their new places, each wire on them is
+    // re-hung (its length, so its loss, worked out again) and both ends redraw it.
+    public static void moved(ServerLevel level, BlockPos pos, GridEndpointBlockEntity endpoint) {
+        GridData.Dimension dimension = GridData.of(level);
+        attach(level, pos, endpoint.insulators(), endpoint);
+        Set<BlockPos> ends = new LinkedHashSet<>();
+        ends.add(pos);
+        for (long id : new ArrayList<>(dimension.nodesAt(pos))) {
+            if (id < 0) {
+                continue;
+            }
+            for (GridEdge edge : new ArrayList<>(dimension.graph().edgesOf(id))) {
+                GridData.NodeRecord a = dimension.node(edge.a()), b = dimension.node(edge.b());
+                if (a == null || b == null) {
+                    continue;
+                }
+                ends.add(a.pos());
+                ends.add(b.pos());
+                double length = edge.isJumper() ? 0.0 : Catenary.length(array(a.at()), array(b.at()));
+                if (Math.abs(length - edge.length()) > 1.0E-6) {
+                    dimension.graph().removeEdge(edge.id());
+                    dimension.graph().addEdge(new GridEdge(edge.id(), edge.a(), edge.b(), edge.tier(), edge.circuit(), length, edge.kind()));
+                }
+            }
+        }
+        dimension.markDirty();
+        ends.forEach(end -> refresh(level, dimension, end));
+    }
+
     // Takes a node out of the graph, its wires dropping their coils at pos and the far ends told.
     private static void dropWires(ServerLevel level, GridData.Dimension dimension, BlockPos pos, long id) {
         Set<BlockPos> others = new LinkedHashSet<>();
@@ -139,7 +178,7 @@ public final class GridManager {
             }
         }
         for (GridEdge edge : dimension.graph().removeNode(id)) {
-            Block.popResource(level, pos, new ItemStack(GridContent.coil(edge.tier())));
+            Block.popResource(level, pos, GridContent.coilFor(edge));
         }
         dimension.markDirty();
         others.forEach(other -> refresh(level, dimension, other));
@@ -162,7 +201,7 @@ public final class GridManager {
         List<GridEdge> removed = dimension.removeAt(pos);
         if (drop) {
             for (GridEdge edge : removed) {
-                Block.popResource(level, pos, new ItemStack(GridContent.coil(edge.tier())));
+                Block.popResource(level, pos, GridContent.coilFor(edge));
             }
         }
         new LinkedHashSet<>(others.values()).forEach(other -> refresh(level, dimension, other));
@@ -175,21 +214,72 @@ public final class GridManager {
         return id == null ? null : dimension.graph().node(id);
     }
 
+    // Whether an insulator has a wire (a Wall Bushing's jumpers don't count).
     public static boolean isWired(ServerLevel level, GridData.Anchor anchor) {
         GridData.Dimension dimension = GridData.of(level);
         Long id = dimension.nodeAt(anchor);
-        return id != null && !dimension.graph().edgesOf(id).isEmpty();
+        return id != null && dimension.graph().edgesOf(id).stream().anyMatch(edge -> !edge.isJumper());
     }
 
-    // Relabels an insulator (to the other circuit type only while it has no wires). False when it can't.
+    // Relabels an insulator (to the other circuit type only while it has no wires; its jumpers through a Wall Bushing
+    // come off first, and the bushing's rejoin puts back what still matches). False when it can't.
     public static boolean setPhase(ServerLevel level, GridData.Anchor anchor, Phase phase) {
         GridData.Dimension dimension = GridData.of(level);
         Long id = dimension.nodeAt(anchor);
-        if (id == null || !dimension.graph().setPhase(id, phase)) {
+        if (id == null) {
+            return false;
+        }
+        GridNode node = dimension.graph().node(id);
+        if (node != null && node.circuit() != phase.circuit() && !isWired(level, anchor)) {
+            for (GridEdge edge : new ArrayList<>(dimension.graph().edgesOf(id))) {
+                dimension.graph().removeEdge(edge.id());
+            }
+        }
+        if (!dimension.graph().setPhase(id, phase)) {
             return false;
         }
         dimension.markDirty();
         return true;
+    }
+
+    // Joins the Pin Insulators on a Wall Bushing through it: those of one tier and one label each get a jumper to the
+    // first of them (no length, never drawn or dropped). Run whenever one is mounted, comes off or is relabelled.
+    public static void rejoin(ServerLevel level, BlockPos bushing) {
+        GridData.Dimension dimension = GridData.of(level);
+        List<Long> nodes = new ArrayList<>();
+        if (level.getBlockState(bushing).getBlock() instanceof WallBushingBlock) {
+            for (Direction side : Direction.values()) {
+                BlockPos at = bushing.relative(side);
+                if (level.isLoaded(at) && level.getBlockEntity(at) instanceof PinInsulatorBlockEntity insulator && !insulator.isRemoved()
+                        && insulator.mountPos().equals(bushing)) {
+                    Long id = dimension.nodeAt(new GridData.Anchor(at, 0));
+                    if (id != null && id >= 0 && dimension.graph().node(id) != null) {
+                        nodes.add(id);
+                    }
+                }
+            }
+        }
+        boolean changed = false;
+        for (long id : nodes) {
+            for (GridEdge edge : new ArrayList<>(dimension.graph().edgesOf(id))) {
+                if (edge.isJumper()) {
+                    dimension.graph().removeEdge(edge.id());
+                    changed = true;
+                }
+            }
+        }
+        Map<String, Long> first = new HashMap<>();
+        for (long id : nodes) {
+            GridNode node = dimension.graph().node(id);
+            Long head = first.putIfAbsent(node.tier().id() + ":" + node.phase().id(), id);
+            if (head != null) {
+                dimension.graph().addEdge(new GridEdge(dimension.newId(), head, id, node.tier(), node.circuit(), 0.0, GridEdge.Kind.JUMPER));
+                changed = true;
+            }
+        }
+        if (changed) {
+            dimension.markDirty();
+        }
     }
 
     // Swaps B and C across a block's group of three-phase insulators (ABC <-> ACB). False if the group has none.
@@ -215,8 +305,14 @@ public final class GridManager {
 
     // --- Wires ------------------------------------------------------------------------------------------------------
 
-    // Strings a wire of a tier between two insulators, or says why not.
+    // Strings a bare wire of a tier between two insulators, or says why not.
     public static ConnectionRules.@Nullable Refusal connect(ServerLevel level, GridData.Anchor from, GridData.Anchor to, VoltageTier wire) {
+        return connect(level, from, to, wire, GridEdge.Kind.BARE);
+    }
+
+    // Strings a wire of a tier and kind (bare or insulated) between two insulators, or says why not.
+    public static ConnectionRules.@Nullable Refusal connect(ServerLevel level, GridData.Anchor from, GridData.Anchor to, VoltageTier wire,
+            GridEdge.Kind kind) {
         GridData.Dimension dimension = GridData.of(level);
         Long a = dimension.nodeAt(from), b = dimension.nodeAt(to);
         if (a == null || b == null) {
@@ -229,7 +325,7 @@ public final class GridManager {
             return refusal;
         }
         double length = Catenary.length(array(ra.at()), array(rb.at()));
-        dimension.graph().addEdge(new GridEdge(dimension.newId(), a, b, wire, GridData.circuitOf(dimension.graph(), a), length));
+        dimension.graph().addEdge(new GridEdge(dimension.newId(), a, b, wire, GridData.circuitOf(dimension.graph(), a), length, kind));
         dimension.markDirty();
         refresh(level, dimension, ra.pos());
         refresh(level, dimension, rb.pos());
@@ -242,11 +338,12 @@ public final class GridManager {
     // Cuts one wire (the Wire Cutters): off the graph, its coil dropped at `drop`, both ends told. False if it's gone.
     public static boolean cut(ServerLevel level, long edgeId, Vec3 drop) {
         GridData.Dimension dimension = GridData.of(level);
-        GridEdge edge = dimension.graph().removeEdge(edgeId);
-        if (edge == null) {
+        GridEdge existing = dimension.graph().edge(edgeId);
+        if (existing == null || existing.isJumper()) {
             return false;
         }
-        Block.popResource(level, BlockPos.containing(drop), new ItemStack(GridContent.coil(edge.tier())));
+        GridEdge edge = dimension.graph().removeEdge(edgeId);
+        Block.popResource(level, BlockPos.containing(drop), GridContent.coilFor(edge));
         dimension.markDirty();
         for (long node : new long[] { edge.a(), edge.b() }) {
             GridData.NodeRecord record = dimension.node(node);
@@ -263,7 +360,7 @@ public final class GridManager {
         Long id = dimension.nodeAt(anchor);
         List<Long> out = new ArrayList<>();
         if (id != null) {
-            dimension.graph().edgesOf(id).forEach(edge -> out.add(edge.id()));
+            dimension.graph().edgesOf(id).stream().filter(edge -> !edge.isJumper()).forEach(edge -> out.add(edge.id()));
         }
         return out;
     }
@@ -276,6 +373,9 @@ public final class GridManager {
         double bestDistance = radius;
         double[] o = array(from), d = array(dir.scale(reach));
         for (GridEdge edge : dimension.graph().edges()) {
+            if (edge.isJumper()) {
+                continue;
+            }
             GridData.NodeRecord a = dimension.node(edge.a()), b = dimension.node(edge.b());
             if (a == null || b == null || a.at().distanceTo(from) > reach + edge.length() && b.at().distanceTo(from) > reach + edge.length()) {
                 continue;
@@ -328,12 +428,12 @@ public final class GridManager {
                 continue;
             }
             for (GridEdge edge : dimension.graph().edgesOf(id)) {
-                if (edge.a() != id) {
+                if (edge.a() != id || edge.isJumper()) {
                     continue;
                 }
                 GridData.NodeRecord a = dimension.node(edge.a()), b = dimension.node(edge.b());
                 if (a != null && b != null) {
-                    wires.add(new WireView(edge.id(), a.at(), b.at(), edge.tier()));
+                    wires.add(new WireView(edge.id(), a.at(), b.at(), edge.tier(), edge.kind() == GridEdge.Kind.INSULATED));
                 }
             }
         }
@@ -345,6 +445,7 @@ public final class GridManager {
     static void refresh(ServerLevel level, GridData.Dimension dimension, BlockPos pos) {
         if (level.isLoaded(pos) && level.getBlockEntity(pos) instanceof GridEndpointBlockEntity endpoint) {
             endpoint.setWires(wiresOf(dimension, pos), true);
+            display(level, endpoint, true);
         }
     }
 
@@ -402,6 +503,13 @@ public final class GridManager {
         }, GridConfig.SETTINGS);
         FlowSolver.Result result = report.result();
         byId.forEach((id, handler) -> handler.report(result.status(id), result.drawn(id), result.delivered(id)));
+        WireShock.tick(level, dimension, ports, result);
+        LAST_AMPS.put(level, result.edgeAmps());
+        for (GridEndpointBlockEntity endpoint : new ArrayList<>(loadedIn(level))) {
+            if (!endpoint.isRemoved()) {
+                display(level, endpoint, false);
+            }
+        }
         if (!report.burnt().isEmpty()) {
             burn(level, dimension, report.burnt());
         }

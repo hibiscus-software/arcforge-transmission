@@ -31,20 +31,21 @@ import net.zagdrath.arcforgetransmission.grid.VoltageTier;
 import net.zagdrath.arcforgetransmission.grid.world.WireView;
 
 // Draws wires: each a single conductor hanging in its curve (Catenary: 0.05 x span of sag at mid-span) from one
-// insulator to the other. A wire is a solid square tube the tier's width across (LV 1 x 1 px), in segments of at most
+// insulator to the other. A wire is a solid square tube the tier's width across (LV 1 x 1 px; an insulated one half a
+// pixel more, in its black rubber), in segments of at most
 // half a block, its four sides lit by their own normals and coloured from the tier's flat sprite (block/wire/<tier>), so
-// nothing on it shimmers at a distance. The EV superconductor glows full-bright over its dark sheath
-// (block/wire/ev_wire_glow).
+// nothing on it shimmers at a distance. The EHV superconductor glows full-bright over its dark sheath
+// (block/wire/ehv_wire_glow).
 public final class WireRenderer {
-    public static final Identifier GLOW = Identifier.fromNamespaceAndPath(ArcforgeTransmission.MODID, "block/wire/ev_wire_glow");
+    public static final Identifier GLOW = Identifier.fromNamespaceAndPath(ArcforgeTransmission.MODID, "block/wire/ehv_wire_glow");
 
-    // A wire ready to draw: its ends relative to the block drawing it, its tier and light.
-    public record Prepared(float[] from, float[] to, VoltageTier tier, int light) {}
+    // A wire ready to draw: its ends relative to the block drawing it, its tier, whether it's insulated, and its light.
+    public record Prepared(float[] from, float[] to, VoltageTier tier, boolean insulated, int light) {}
 
     private WireRenderer() {}
 
-    public static Identifier sprite(VoltageTier tier) {
-        return Identifier.fromNamespaceAndPath(ArcforgeTransmission.MODID, "block/wire/" + tier.id());
+    public static Identifier sprite(VoltageTier tier, boolean insulated) {
+        return Identifier.fromNamespaceAndPath(ArcforgeTransmission.MODID, "block/wire/" + tier.id() + (insulated ? "_insulated" : ""));
     }
 
     // The wires a block draws, ready for the render thread (positions relative to origin, the light at each middle).
@@ -55,7 +56,7 @@ public final class WireRenderer {
             float[] to = { (float) (wire.to().x - origin.getX()), (float) (wire.to().y - origin.getY()), (float) (wire.to().z - origin.getZ()) };
             double[] mid = Catenary.point(new double[] { wire.from().x, wire.from().y, wire.from().z }, new double[] { wire.to().x, wire.to().y, wire.to().z }, 0.5);
             int light = level != null ? LightCoordsUtil.getLightCoords(level, BlockPos.containing(mid[0], mid[1], mid[2])) : LightCoordsUtil.FULL_BRIGHT;
-            out.add(new Prepared(from, to, wire.tier(), light));
+            out.add(new Prepared(from, to, wire.tier(), wire.insulated(), light));
         }
         return out;
     }
@@ -69,14 +70,14 @@ public final class WireRenderer {
         Identifier location = glow.atlasLocation();
         collector.submitCustomGeometry(poseStack, RenderTypes.entityCutout(location), (pose, buffer) -> {
             for (Prepared wire : wires) {
-                draw(pose, buffer, wire, atlas.getSprite(sprite(wire.tier())), wire.light());
+                draw(pose, buffer, wire, atlas.getSprite(sprite(wire.tier(), wire.insulated())), wire.light());
             }
         });
-        boolean anyEv = wires.stream().anyMatch(w -> w.tier() == VoltageTier.EV);
+        boolean anyEv = wires.stream().anyMatch(w -> w.tier() == VoltageTier.EHV);
         if (anyEv) {
             collector.submitCustomGeometry(poseStack, RenderTypes.eyes(location), (pose, buffer) -> {
                 for (Prepared wire : wires) {
-                    if (wire.tier() == VoltageTier.EV) {
+                    if (wire.tier() == VoltageTier.EHV) {
                         draw(pose, buffer, wire, glow, LightCoordsUtil.FULL_BRIGHT);
                     }
                 }
@@ -88,7 +89,8 @@ public final class WireRenderer {
         double[] a = { wire.from()[0], wire.from()[1], wire.from()[2] }, b = { wire.to()[0], wire.to()[1], wire.to()[2] };
         double length = Catenary.length(a, b);
         int segments = Math.max(4, (int) Math.ceil(length * 2.0));
-        double half = wire.tier().wireWidthPx() / 32.0;
+        // The rubber sheath adds half a pixel round an insulated conductor.
+        double half = (wire.tier().wireWidthPx() + (wire.insulated() ? 0.5 : 0.0)) / 32.0;
         double[][] points = new double[segments + 1][];
         for (int i = 0; i <= segments; i++) {
             points[i] = Catenary.point(a, b, (double) i / segments);

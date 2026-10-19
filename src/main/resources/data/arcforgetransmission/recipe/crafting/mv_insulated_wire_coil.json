@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "C": "arcforgetransmission:mv_wire_coil",
+    "R": "#c:rubbers"
+  },
+  "pattern": [
+    "CCC",
+    "CRC",
+    "CCC"
+  ],
+  "result": {
+    "count": 8,
+    "id": "arcforgetransmission:mv_insulated_wire_coil"
+  }
+}

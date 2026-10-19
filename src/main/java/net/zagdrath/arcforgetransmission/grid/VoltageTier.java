@@ -17,7 +17,7 @@ public enum VoltageTier {
     LV(128, "copper", 8, 0.008, 16, 1.0F),
     MV(512, "aluminium", 16, 0.011, 24, 1.25F),
     HV(2_048, "silver_alloy", 32, 0.017, 32, 1.5F),
-    EV(8_192, "superconductor", 64, 0.00001, 64, 2.0F);
+    EHV(8_192, "superconductor", 64, 0.00001, 64, 2.0F);
 
     private final int volts, ratedAmps, defaultMaxSpan;
     private final String conductor;
@@ -55,6 +55,26 @@ public enum VoltageTier {
         return defaultMaxSpan;
     }
 
+    // What touching a live bare wire of the tier does: a flat amount (half-hearts) plus a share of the victim's max
+    // health. LV stings (1.5 hearts); MV takes a quarter of your health, HV half, and EHV all of it.
+    public double defaultShockDamage() {
+        return this == LV ? 3.0 : 0.0;
+    }
+
+    public double defaultShockFraction() {
+        return switch (this) {
+            case LV -> 0.0;
+            case MV -> 0.25;
+            case HV -> 0.5;
+            case EHV -> 1.0;
+        };
+    }
+
+    // Whether its wire comes rubber-insulated too (LV and MV; HV and EHV lines are always bare).
+    public boolean insulatable() {
+        return this == LV || this == MV;
+    }
+
     // How wide each conductor is drawn, in px.
     public float wireWidthPx() {
         return wireWidthPx;
@@ -69,7 +89,8 @@ public enum VoltageTier {
         return name().toLowerCase(Locale.ROOT);
     }
 
+    // By id; "ev", EHV's name before it was renamed, still reads as EHV (grids saved then).
     public static VoltageTier byId(String id) {
-        return valueOf(id.toUpperCase(Locale.ROOT));
+        return id.equals("ev") ? EHV : valueOf(id.toUpperCase(Locale.ROOT));
     }
 }

@@ -16,7 +16,7 @@ import java.util.Set;
 
 // The four transmission towers' models (TowerRenderer draws them; TowerPlacement takes their cells and shapes from
 // them), after real power-line structures: the LV Distribution Pole (a 12-34.5 kV wood pole), the MV Sub-Transmission
-// Pole (69 kV), the HV H-Frame Tower (138 kV) and the EV Lattice Tower (345 kV double circuit). For now they're inert
+// Pole (69 kV), the HV H-Frame Tower (138 kV) and the EHV Lattice Tower (345 kV double circuit). For now they're inert
 // structures; wires between their insulators come later.
 //
 // They're large models (Arcforge's docs/TEXTURE_STYLE.md, "Large model texturing" and "Transmission towers") on one
@@ -41,7 +41,14 @@ public final class TowerMesh extends MeshBuilder {
         DISTRIBUTION_POLE(10, 0, 0),
         SUB_TRANSMISSION_POLE(15, 0, 0),
         H_FRAME(21, -2, 0),
-        LATTICE(32, -2, -2);
+        LATTICE(32, -2, -2),
+        SUBSTATION_MV(3, 0, 0),
+        SUBSTATION_HV(4, 0, 0),
+        SUBSTATION_EHV(5, 0, 0),
+        UNIT_LV(1, 0, 0),
+        UNIT_MV(2, 0, 0),
+        UNIT_HV(2, 0, 0),
+        UNIT_EHV(3, 0, 0);
 
         public final int height, mainX, mainZ;
 
@@ -135,6 +142,8 @@ public final class TowerMesh extends MeshBuilder {
             case SUB_TRANSMISSION_POLE -> mesh.subTransmissionPole();
             case H_FRAME -> mesh.hFrame();
             case LATTICE -> mesh.lattice();
+            case SUBSTATION_MV, SUBSTATION_HV, SUBSTATION_EHV -> mesh.substation(Substation.of(design));
+            case UNIT_LV, UNIT_MV, UNIT_HV, UNIT_EHV -> mesh.unit(Unit.of(design));
         }
         List<float[]> shapes = new ArrayList<>(mesh.frame);
         shapes.addAll(mesh.insulators);
@@ -322,7 +331,7 @@ public final class TowerMesh extends MeshBuilder {
         shieldPeak(rx, top, cz, 18);
     }
 
-    // EV Lattice Tower, 32 blocks: four galvanized corner legs on stepped concrete footings, battered to a waist at the
+    // EHV Lattice Tower, 32 blocks: four galvanized corner legs on stepped concrete footings, battered to a waist at the
     // lowest crossarms and straight above; X-bracing in every bay with girts at its panel points and plan bracing at the
     // arm levels; three crossarm levels each side (double circuit, the middle arms longest) with a suspension string at
     // each tip; a shield wire peak; an anti-climb guard of barbed bars; step bolts up the north-west leg; and a danger
@@ -532,6 +541,154 @@ public final class TowerMesh extends MeshBuilder {
             swatchBox(Math.min(p[0], q[0]) - (west ? 0 : 0.4F), y - 0.4F, Math.min(p[2], q[2]) - (west ? 0.4F : 0), Math.max(p[0], q[0]) + (west ? 0 : 0.4F),
                     y + 0.4F, Math.max(p[2], q[2]) + (west ? 0.4F : 0), GALV0 + 8);
         }
+    }
+
+    // ================================================================================================================
+    // The transformers
+    // ================================================================================================================
+
+    // A substation transformer's size, by tier (px): the tank's half-width (x) and half-depth (z) and its height, its
+    // primary (higher) tier (1 MV, 2 HV, 3 EHV; the secondary is one down), and its bushings' spacing along the edge.
+    public record Substation(float halfX, float halfZ, float height, int high, float spacing) {
+        public static final float PAD = 4, LID = 2;
+
+        public static Substation of(Design design) {
+            return switch (design) {
+                case SUBSTATION_MV -> new Substation(13, 10, 26, 1, 9);
+                case SUBSTATION_HV -> new Substation(17, 13, 34, 2, 11);
+                default -> new Substation(21, 16, 42, 3, 13);
+            };
+        }
+
+        // The lid's top, where the bushings stand.
+        public float top() {
+            return PAD + height + LID;
+        }
+
+        // The primary bushings stand along the north edge, the secondary along the south (z).
+        public float primaryZ() {
+            return 8 - halfZ + 4;
+        }
+
+        public float secondaryZ() {
+            return 8 + halfZ - 4;
+        }
+    }
+
+    // A Substation Transformer (MV: LV to MV, HV: MV to HV, EHV: HV to EHV): a concrete pad, the galvanized tank and its
+    // lid, a radiator bank on each side (fins on headers), the conservator drum on its saddles, and two rows of porcelain
+    // post bushings on the lid: the primary (higher tier, taller) along the north edge, the secondary along the south.
+    // Wires leave each row its own way along the line.
+    private void substation(Substation t) {
+        float c = 8, y0 = Substation.PAD, y1 = y0 + t.height(), top = t.top();
+        float padX = t.halfX() + 9, padZ = t.halfZ() + 5;
+        concrete(c - padX, 0, c - padZ, c + padX, y0, c + padZ);
+        plateBox(c - t.halfX(), y0, c - t.halfZ(), c + t.halfX(), y1, c + t.halfZ(), Mat.GALV);
+        plateBox(c - t.halfX() - 1, y1, c - t.halfZ() - 1, c + t.halfX() + 1, top, c + t.halfZ() + 1, Mat.GALV);
+        frame.add(new float[] { c - padX, 0, c - padZ, c + padX, y0, c + padZ });
+        frame.add(new float[] { c - t.halfX() - 1, y0, c - t.halfZ() - 1, c + t.halfX() + 1, top, c + t.halfZ() + 1 });
+        // Radiators: thin fins 3 px apart standing off each side, on a header top and bottom.
+        float out = 7, f0 = y0 + 3, f1 = y1 - 3;
+        for (int side = -1; side <= 1; side += 2) {
+            float inner = c + side * t.halfX(), outer = inner + side * out;
+            for (float z = c - t.halfZ() + 2.5F; z <= c + t.halfZ() - 2.5F; z += 3) {
+                plateBox(Math.min(inner, outer), f0, z - 0.5F, Math.max(inner, outer), f1, z + 0.5F, Mat.GALV);
+            }
+            for (float y : new float[] { f0 - 1.5F, f1 + 0.5F }) {
+                plateBox(Math.min(inner, outer) + (side > 0 ? 0 : 1), y, c - t.halfZ() + 1.5F, Math.max(inner, outer) - (side > 0 ? 1 : 0), y + 1,
+                        c + t.halfZ() - 1.5F, Mat.GALV);
+            }
+            frame.add(new float[] { Math.min(inner, outer), f0 - 1.5F, c - t.halfZ() + 1.5F, Math.max(inner, outer), f1 + 1.5F, c + t.halfZ() - 1.5F });
+        }
+        // The conservator: a drum along x over the middle of the lid, on two saddles.
+        float r = Math.max(3, t.halfZ() * 0.3F), cy = top + 3 + r, half = t.halfX() * 0.75F;
+        member(new float[] { c - half, cy, c }, new float[] { c + half, cy, c }, 2 * r, 2 * r, UP, Mat.GALV, true);
+        for (float x : new float[] { c - half * 0.6F, c + half * 0.6F }) {
+            plateBox(x - 1, top, c - 1, x + 1, cy - r + 0.5F, c + 1, Mat.GALV);
+        }
+        frame.add(new float[] { c - half, top, c - r, c + half, cy + r, c + r });
+        for (int i = -1; i <= 1; i++) {
+            bushing(t.high(), c + i * t.spacing(), top, t.primaryZ(), false);
+            bushing(t.high() - 1, c + i * t.spacing(), top, t.secondaryZ(), false);
+        }
+    }
+
+    // A unit transformer's size by tier (0 LV to 3 EHV, px): it grows with the voltage. Its cable box fills the front
+    // (north) 2.5 px of its block, the tank behind it (never into the block it serves), its bushings across the lid.
+    public record Unit(int tier, float halfX, float halfZ, float height, float spacing) {
+        public static final float BOX = 2.5F;
+
+        public static Unit of(Design design) {
+            int tier = design.ordinal() - Design.UNIT_LV.ordinal();
+            float[] spacing = { 5.6F, 6.0F, 6.5F, 7.5F };
+            return new Unit(tier, 6 + 2 * tier, 4.5F + 1.5F * tier, 9 + 3 * tier, spacing[tier]);
+        }
+
+        public float centreZ() {
+            return BOX + halfZ;
+        }
+
+        // The lid's top, where the bushings stand.
+        public float top() {
+            return height + 1;
+        }
+    }
+
+    // A Unit Transformer: a galvanized tank with fins on its sides, the cable box on its front (north, toward the FE block
+    // it serves) and three bushings on the lid, A B C west to east, in its tier's own insulator (the same as its towers'
+    // and the substations'). It grows from LV (about a block) to EHV (three across, three tall).
+    private void unit(Unit u) {
+        float c = 8, z0 = Unit.BOX, z1 = Unit.BOX + 2 * u.halfZ(), y1 = u.height();
+        plateBox(c - u.halfX(), 0, z0, c + u.halfX(), y1, z1, Mat.GALV);
+        plateBox(c - u.halfX() - 0.5F, y1, z0 - 0.5F, c + u.halfX() + 0.5F, u.top(), z1 + 0.5F, Mat.GALV);
+        for (int side = -1; side <= 1; side += 2) {
+            float inner = c + side * u.halfX(), outer = inner + side * 2;
+            for (float z = z0 + 1.5F; z <= z1 - 1.5F; z += 2.5F) {
+                plateBox(Math.min(inner, outer), 1.5F, z - 0.4F, Math.max(inner, outer), y1 - 1.5F, z + 0.4F, Mat.GALV);
+            }
+        }
+        // The cable box, out to the block's north face.
+        plateBox(c - 3, 1.5F, 0, c + 3, 6.5F, z0, Mat.GALV);
+        frame.add(new float[] { c - u.halfX() - 2, 0, 0, c + u.halfX() + 2, u.top(), z1 + 0.5F });
+        for (int i = -1; i <= 1; i++) {
+            bushing(u.tier(), c + i * u.spacing(), u.top(), u.centreZ(), true);
+        }
+    }
+
+    // A transformer's bushing at (x, y, z) in its tier's insulator (0 LV: the porcelain pin, 1 MV: the porcelain post,
+    // 2 HV: four glass discs, 3 EHV: six larger ones; a unit transformer's a little smaller). Returns its top, where the
+    // wire attaches (tools/tower_attach_groups_gen.py works the same).
+    private float bushing(int tier, float x, float y, float z, boolean unit) {
+        return switch (tier) {
+            case 0 -> {
+                pinInsulator(x, y, z);
+                yield y + 7.6F;
+            }
+            case 1 -> {
+                float height = unit ? 10 : 14;
+                postInsulator(x, y, z, height);
+                yield y + height;
+            }
+            case 2 -> glassStack(x, y, z, unit ? 3 : 4, unit ? 2.4F : 3.0F);
+            default -> glassStack(x, y, z, unit ? 4 : 6, unit ? 3.0F : 4.0F);
+        };
+    }
+
+    // An upright stack of cap-and-pin glass discs on a clevis (an HV or EHV bushing): each a steel pin, the glass rim and
+    // glazed top stepping in, and the steel cap; a line clamp on top. Returns the clamp's top.
+    private float glassStack(float x, float y, float z, int discs, float rim) {
+        turned(x, z, new float[][] { { y, 1.0F }, { y + 1.0F, 1.0F } }, 8, Ramp.GALV, true, false);
+        float s = y + 1.0F;
+        for (int i = 0; i < discs; i++) {
+            turned(x, z, new float[][] { { s, 0.6F }, { s + 0.6F, 0.6F } }, 6, Ramp.GALV, false, false);
+            turned(x, z, new float[][] { { s + 0.6F, rim }, { s + 1.6F, rim }, { s + 1.6F, rim * 0.6F }, { s + 2.4F, rim * 0.6F } }, 8, Ramp.GLASS, true,
+                    true);
+            turned(x, z, new float[][] { { s + 2.4F, 1.2F }, { s + 3.0F, 1.2F } }, 8, Ramp.GALV, true, false);
+            s += 3.0F;
+        }
+        turned(x, z, new float[][] { { s, 1.6F }, { s + 1.0F, 1.6F } }, 8, Ramp.GALV, true, true);
+        insulators.add(new float[] { x - rim, y, z - rim, x + rim, s + 1.0F, z + rim });
+        return s + 1.0F;
     }
 
     // ================================================================================================================

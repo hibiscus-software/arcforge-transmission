@@ -7,7 +7,7 @@ particles and the four tower item sprites, for Arcforge: Transmission (namespace
 
     python tools/transmission_tower_texture_gen.py <addon repo>
 
-The four towers (LV Distribution Pole, MV Sub-Transmission Pole, HV H-Frame Tower, EV Lattice Tower) are large models
+The four towers (LV Distribution Pole, MV Sub-Transmission Pole, HV H-Frame Tower, EHV Lattice Tower) are large models
 (docs/TEXTURE_STYLE.md, "Large model texturing" and "Transmission towers"): no light is painted across a part, every
 plate or member shades itself from edge strips laid at 1:1, and the grain fields are big and non-repeating, so each
 part shows its own window of them (TowerMesh picks it from where the part is). Round parts take the stepped
@@ -415,15 +415,59 @@ ITEMS["hv_h_frame_tower"] = sprite(
     + [(1, y, c) for y, c in ((5, TL), (6, TM), (7, TL), (8, TD))] + [(x, y, c) for x in (7, 8) for y, c in ((5, TL), (6, TM), (7, TL), (8, TD))]
     + [(14, y, c) for y, c in ((5, TL), (6, TM), (7, TL), (8, TD))]
     + line(4, 10, 11, 15, GM) + line(11, 10, 4, 15, GL) + [(2, 0, GL), (2, 1, GM), (13, 0, GL), (13, 1, GD)])
-# EV Lattice Tower: battered legs to a waist, the body, three arm levels with strings, X-bracing, the shield peak. Its
+# EHV Lattice Tower: battered legs to a waist, the body, three arm levels with strings, X-bracing, the shield peak. Its
 # members are 1 px, so only the outside of the whole is outlined (like iron bars), leaving the lattice open.
-ev = []
-ev += line(2, 15, 6, 7, GL) + line(13, 15, 9, 7, GM) + [(6, y, GL) for y in range(1, 8)] + [(9, y, GM) for y in range(1, 8)]
-ev += line(3, 14, 11, 9, GD) + line(12, 14, 4, 9, GD) + [(x, 12, GM) for x in range(4, 12)]
-ev += [(x, 2, GL) for x in range(3, 13)] + [(x, 4, GL) for x in range(1, 15)] + [(x, 7, GM) for x in range(2, 14)]
-ev += line(6, 1, 9, 4, GD) + line(9, 1, 6, 4, GD) + [(7, 0, GL), (8, 0, GM)]
-ev += [(3, 3, TL), (12, 3, TM), (1, 5, TL), (1, 6, TM), (14, 5, TL), (14, 6, TM), (2, 8, TL), (2, 9, TM), (13, 8, TL), (13, 9, TM)]
-ITEMS["ev_lattice_tower"] = sprite(ev, exterior=True)
+ehv = []
+ehv += line(2, 15, 6, 7, GL) + line(13, 15, 9, 7, GM) + [(6, y, GL) for y in range(1, 8)] + [(9, y, GM) for y in range(1, 8)]
+ehv += line(3, 14, 11, 9, GD) + line(12, 14, 4, 9, GD) + [(x, 12, GM) for x in range(4, 12)]
+ehv += [(x, 2, GL) for x in range(3, 13)] + [(x, 4, GL) for x in range(1, 15)] + [(x, 7, GM) for x in range(2, 14)]
+ehv += line(6, 1, 9, 4, GD) + line(9, 1, 6, 4, GD) + [(7, 0, GL), (8, 0, GM)]
+ehv += [(3, 3, TL), (12, 3, TM), (1, 5, TL), (1, 6, TM), (14, 5, TL), (14, 6, TM), (2, 8, TL), (2, 9, TM), (13, 8, TL), (13, 9, TM)]
+ITEMS["ehv_lattice_tower"] = sprite(ehv, exterior=True)
+
+
+def bushing_tones(glass):
+    """A bushing's lit and mid tones: glass for HV and EHV, porcelain below."""
+    return (TL, TM) if glass else (PL, PM)
+
+
+def substation_sprite(primary, high_glass, low_glass):
+    """A Substation Transformer: the galvanized tank (lit left, shade right) on its pad, radiator fins each side, the
+    conservator drum on the lid, and the bushings in their tiers' insulators: three taller (primary, `primary` px) behind
+    three short."""
+    shapes = box(1, 14, 14, 15, CONC[3], CONC[1], CONC[2])
+    shapes += box(4, 7, 11, 13, GL, GD, GM)
+    for x in (1, 3, 12, 14):
+        shapes += [(x, y, GM if x in (3, 12) else GD) for y in range(8, 13)]
+    shapes += [(x, 6, GM) for x in range(5, 11)] + [(5, 6, GL), (10, 6, GD)]
+    hl, hm = bushing_tones(high_glass)
+    ll, lm = bushing_tones(low_glass)
+    for x in (5, 8, 11):
+        for k in range(primary):
+            shapes.append((x - 1, 5 - k, hl if k % 2 else hm))
+    for x in (5, 8, 11):
+        shapes += [(x, 6, lm), (x, 5, ll)]
+    return sprite(shapes)
+
+
+def unit_sprite(size, glass):
+    """A Unit Transformer: the tank (wider and taller with the tier), its cable box at the front (left) and three
+    bushings in its tier's insulator."""
+    top = 9 - size
+    shapes = box(4 - size // 2, top, 12 + (size + 1) // 2, 15, GL, GD, GM) + box(1, 11, 3, 14, GL, GD, GM)
+    lit, mid = bushing_tones(glass)
+    for x in (5, 8, 11):
+        for k in range(size + 2):
+            shapes.append((x, top - 1 - k, lit if k % 2 else mid))
+    return sprite(shapes)
+
+
+ITEMS["mv_substation_transformer"] = substation_sprite(2, False, False)
+ITEMS["hv_substation_transformer"] = substation_sprite(3, True, False)
+ITEMS["ehv_substation_transformer"] = substation_sprite(4, True, True)
+for tier, size in (("lv", 0), ("mv", 1), ("hv", 2), ("ehv", 3)):
+    ITEMS[tier + "_unit_transformer"] = unit_sprite(size, size >= 2)
+
 
 def main():
     repo = sys.argv[1] if len(sys.argv) > 1 else "."
