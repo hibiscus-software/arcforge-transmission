@@ -8,6 +8,10 @@ package net.zagdrath.arcforgetransmission.tower;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseEntityBlock;
@@ -19,8 +23,11 @@ import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
+import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import net.zagdrath.arcforgetransmission.grid.block.GridInteractions;
+import net.zagdrath.arcforgetransmission.grid.item.WireCoilItem;
 
 // A transmission tower's main block, at the foot of one of its poles or legs: its block entity draws the whole tower
 // (TowerRenderer) and takes the rest with it when it goes. FACING is the line's direction, the way the
@@ -72,5 +79,18 @@ public class TowerBlock extends BaseEntityBlock {
         if (!level.isClientSide() && level.getBlockState(main).getBlock() instanceof TowerBlock) {
             level.destroyBlock(main, drop);
         }
+    }
+
+    // Arcforge's Wrench on any part of the tower: its insulators' labels (see GridInteractions).
+    @Override
+    protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand,
+            BlockHitResult hit) {
+        if (WireCoilItem.endpointAt(level, pos) instanceof TowerBlockEntity tower) {
+            InteractionResult result = GridInteractions.wrench(stack, level, tower, player, hit.getLocation(), false);
+            if (result != null) {
+                return result;
+            }
+        }
+        return InteractionResult.TRY_WITH_EMPTY_HAND;
     }
 }

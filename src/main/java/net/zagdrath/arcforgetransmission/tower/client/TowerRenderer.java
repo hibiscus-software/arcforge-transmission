@@ -6,6 +6,7 @@
 
 package net.zagdrath.arcforgetransmission.tower.client;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -31,6 +32,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.zagdrath.arcforge.client.renderer.blockentity.MeshRendering;
 import net.zagdrath.arcforge.client.renderer.blockentity.StructureRenderer;
+import net.zagdrath.arcforgetransmission.grid.client.WireRenderer;
 import net.zagdrath.arcforgetransmission.tower.TowerBlockEntity;
 import net.zagdrath.arcforgetransmission.tower.TowerContent;
 import net.zagdrath.arcforgetransmission.tower.TowerPlacement;
@@ -39,8 +41,9 @@ import net.zagdrath.arcforgetransmission.tower.model.TowerMesh;
 
 // Draws a transmission tower from its main block: the model (TowerMesh, on the sheet block/transmission_tower/towers),
 // built once per tower and turned once per facing, drawn from its copy on the GPU and shaded like Arcforge's other
-// large models (Arcforge's MeshRendering: each face as a block face turned its way is). Arcforge's StructureRenderer
-// keeps it drawn while any of it is in view, not only while its main block's chunk section is.
+// large models (Arcforge's MeshRendering: each face as a block face turned its way is), and the wires strung from it
+// (WireRenderer). Arcforge's StructureRenderer keeps it drawn while any of it is in view, not only while its main
+// block's chunk section is.
 public class TowerRenderer implements StructureRenderer<TowerBlockEntity, TowerRenderer.State> {
     public static final Identifier SHEET = Identifier.fromNamespaceAndPath(TowerContent.MODID, "block/transmission_tower/towers");
     private static final float[] EMPTY = new float[0];
@@ -56,6 +59,7 @@ public class TowerRenderer implements StructureRenderer<TowerBlockEntity, TowerR
         public float offsetX, offsetZ;
         public @Nullable TextureAtlasSprite sheet;
         public int light;
+        public List<WireRenderer.Prepared> wires = List.of();
     }
 
     public TowerRenderer(BlockEntityRendererProvider.Context context) {}
@@ -91,10 +95,12 @@ public class TowerRenderer implements StructureRenderer<TowerBlockEntity, TowerR
         // The light just above the centre column's foot.
         state.light = level != null ? LightCoordsUtil.getLightCoords(level, TowerPlacement.centre(tier, facing, tower.getBlockPos()).above())
                 : LightCoordsUtil.FULL_BRIGHT;
+        state.wires = WireRenderer.prepare(tower.wires(), tower.getBlockPos(), level);
     }
 
     @Override
     public void submit(State state, PoseStack poseStack, SubmitNodeCollector collector, CameraRenderState camera) {
+        WireRenderer.submit(state.wires, poseStack, collector);
         TextureAtlasSprite sheet = state.sheet;
         if (sheet == null) {
             return;

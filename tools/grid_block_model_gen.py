@@ -315,7 +315,7 @@ def creative_texture(kind, tier_index):
             else:
                 c = STEEL_DEEP
             if 3 <= x <= 4 and 3 <= y <= 4:
-                c = colours[0] if (x, y) == (3, 3) else colours[1]
+                c = colours[0]
             px[4 + x, 4 + y] = c
     for i in range(tier_index + 1):
         px[3 + 2 * i, 2] = r["lit"]

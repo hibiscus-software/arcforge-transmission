@@ -24,10 +24,11 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.zagdrath.arcforgetransmission.ArcforgeTransmission;
+import net.zagdrath.arcforgetransmission.grid.block.GridContent;
 
 // Everything the transmission towers register: the four tower blocks and their items, the invisible part block, the two
-// block entity types and a creative tab. Call register(modEventBus) from the mod's constructor. For now the towers are
-// inert structures: no recipes, no wires, no energy.
+// block entity types and a creative tab (which also shows the grid's items, GridContent). Call register(modEventBus) from
+// the mod's constructor. The towers carry wires through their insulators (TowerBlockEntity); they have no recipes yet.
 public final class TowerContent {
     // The addon's mod id.
     public static final String MODID = ArcforgeTransmission.MODID;
@@ -64,7 +65,10 @@ public final class TowerContent {
     public static final DeferredHolder<CreativeModeTab, CreativeModeTab> TAB = CREATIVE_MODE_TABS.register("transmission", () -> CreativeModeTab.builder()
             .title(Component.translatable("itemGroup." + MODID + ".transmission"))
             .icon(() -> EV_LATTICE_TOWER_ITEM.get().getDefaultInstance())
-            .displayItems((parameters, output) -> towerItems().forEach(item -> output.accept(item.get())))
+            .displayItems((parameters, output) -> {
+                towerItems().forEach(item -> output.accept(item.get()));
+                GridContent.tabItems().forEach(item -> output.accept(item.get()));
+            })
             .build());
 
     private TowerContent() {}

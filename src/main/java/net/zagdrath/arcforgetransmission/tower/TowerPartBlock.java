@@ -12,6 +12,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.BlockGetter;
@@ -26,9 +28,12 @@ import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
+import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import net.zagdrath.arcforgetransmission.grid.block.GridInteractions;
+import net.zagdrath.arcforgetransmission.grid.item.WireCoilItem;
 
 // One of a transmission tower's invisible blocks round its main block (like Arcforge's Arc Quarry parts). Its shape is the piece of
 // the tower's model inside it, so the outline, hits and collision follow the poles, arms and members and leave the gaps
@@ -131,5 +136,18 @@ public class TowerPartBlock extends BaseEntityBlock {
         if (mainState(level, pos) == null) {
             level.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
         }
+    }
+
+    // Arcforge's Wrench on any part of the tower: its insulators' labels (see GridInteractions).
+    @Override
+    protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand,
+            BlockHitResult hit) {
+        if (WireCoilItem.endpointAt(level, pos) instanceof TowerBlockEntity tower) {
+            InteractionResult result = GridInteractions.wrench(stack, level, tower, player, hit.getLocation(), false);
+            if (result != null) {
+                return result;
+            }
+        }
+        return InteractionResult.TRY_WITH_EMPTY_HAND;
     }
 }

@@ -454,6 +454,7 @@ def main():
     PARTICLE_WOOD.save(os.path.join(os.path.dirname(out), "particle_wood.png"))
     PARTICLE_STEEL.save(os.path.join(os.path.dirname(out), "particle_steel.png"))
     items = os.path.join(repo, "src/main/resources/assets/arcforgetransmission/textures/item")
+    os.makedirs(items, exist_ok=True)
     for name, im in ITEMS.items():
         im.save(os.path.join(items, name + ".png"))
     print("wrote", out, "swatches:", len(SWATCHES), "items:", len(ITEMS))

@@ -63,6 +63,19 @@ dependencies {
     // Players install Arcforge itself; localRuntime puts it in the dev runs without publishing a dependency on it.
     compileOnly files("libs/arcforge-${arcforge_version}+${minecraft_version}.jar")
     localRuntime files("libs/arcforge-${arcforge_version}+${minecraft_version}.jar")
+
+    // Unit tests for the grid's maths (grid/, grid/data/, tower/model/): plain Java, run outside the game.
+    testImplementation platform('org.junit:junit-bom:5.11.4')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+repositories {
+    mavenCentral()
+}
+
+tasks.named('test', Test).configure {
+    useJUnitPlatform()
 }
 
 tasks.withType(ProcessResources).configureEach {

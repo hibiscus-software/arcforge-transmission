@@ -1,0 +1,16 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "arcforgetransmission:block/pole_transformer"
+    },
+    "facing=east": {
+      "model": "arcforgetransmission:block/pole_transformer"
+    },
+    "facing=south": {
+      "model": "arcforgetransmission:block/pole_transformer"
+    },
+    "facing=west": {
+      "model": "arcforgetransmission:block/pole_transformer"
+    }
+  }
+}

@@ -6,19 +6,28 @@
 
 package net.zagdrath.arcforgetransmission.tower;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.jspecify.annotations.Nullable;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
+import net.zagdrath.arcforgetransmission.grid.VoltageTier;
+import net.zagdrath.arcforgetransmission.grid.block.GridEndpointBlockEntity;
+import net.zagdrath.arcforgetransmission.grid.data.AttachGroups;
+import net.zagdrath.arcforgetransmission.grid.world.Insulator;
+import net.zagdrath.arcforgetransmission.tower.model.TowerMesh;
 
-// A transmission tower's main block entity: what TowerRenderer draws the tower from, and what clears its parts away when
-// it goes. It holds no data: the tier is its block, the facing its block state.
-public class TowerBlockEntity extends BlockEntity {
+// A transmission tower's main block entity: what TowerRenderer draws the tower from, what clears its parts away when
+// it goes, and the tower's insulators for the grid (each one its own wire point, from the tower's attach groups). It
+// holds no data of its own: the tier is its block, the facing its block state, the labels GridData's.
+public class TowerBlockEntity extends GridEndpointBlockEntity {
     private boolean removing;
     // The box the tower is drawn in, worked out once (its tier and facing never change).
     private @Nullable AABB renderBox;
@@ -36,18 +45,40 @@ public class TowerBlockEntity extends BlockEntity {
         return state.hasProperty(TowerBlock.FACING) ? state.getValue(TowerBlock.FACING) : Direction.NORTH;
     }
 
+    // Every insulator, group by group, turned with the tower.
+    @Override
+    public List<Insulator> insulators() {
+        TowerTier tier = tier();
+        Direction facing = facing();
+        int turns = TowerPlacement.turns(facing);
+        BlockPos centre = TowerPlacement.centre(tier, facing, worldPosition);
+        VoltageTier voltage = VoltageTier.valueOf(tier.name());
+        List<Insulator> out = new ArrayList<>();
+        List<AttachGroups.Group> groups = AttachGroups.get(tier.id()).groups();
+        for (int g = 0; g < groups.size(); g++) {
+            for (AttachGroups.Terminal terminal : groups.get(g).terminals()) {
+                double[] p = terminal.pos();
+                double[] t = TowerMesh.turnedPoint((float) p[0], (float) p[1], (float) p[2], turns);
+                out.add(new Insulator(voltage, terminal.phase(), new Vec3(centre.getX() + t[0], centre.getY() + t[1], centre.getZ() + t[2]), g));
+            }
+        }
+        return out;
+    }
+
     public boolean isRemoving() {
         return removing;
     }
 
+    // The tower's box, and its wires'.
     public AABB getRenderBox() {
         if (renderBox == null) {
             renderBox = TowerPlacement.renderBox(tier(), facing(), worldPosition);
         }
-        return renderBox;
+        return withWires(renderBox);
     }
 
-    // The whole tower goes with its main block; its parts drop nothing.
+    // The whole tower goes with its main block; its parts drop nothing. Its wires go too, dropping their coils
+    // (GridEndpointBlockEntity).
     @Override
     public void preRemoveSideEffects(BlockPos pos, BlockState state) {
         removing = true;
