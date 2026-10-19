@@ -42,6 +42,22 @@ class TowerAttachGroupsTest {
         }
     }
 
+    // The Pole-Mount Transformer's primaries' tops and secondaries' tips are on its model too.
+    @Test
+    void theTransformersTerminalsAreOnItsModel() {
+        float[] quads = TowerMesh.poleTransformer().solid();
+        AttachGroups.Model groups = AttachGroups.get("pole_transformer");
+        assertEquals(2, groups.groups().size());
+        for (AttachGroups.Group group : groups.groups()) {
+            assertEquals(3, group.terminals().size());
+            for (AttachGroups.Terminal terminal : group.terminals()) {
+                double d = distanceToSurface(quads, terminal.pos());
+                assertTrue(d < 0.05, "pole_transformer " + terminal.label() + " is " + d + " px off the model");
+            }
+        }
+        assertEquals(List.of(Phase.L1, Phase.N, Phase.L2), groups.groups().get(1).terminals().stream().map(AttachGroups.Terminal::phase).toList());
+    }
+
     @Test
     void eachTowerHasItsCircuits() {
         assertEquals(2, AttachGroups.get("lv_distribution_pole").groups().size(), "LV groups");

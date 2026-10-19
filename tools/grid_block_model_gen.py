@@ -4,7 +4,7 @@
 
 Writes:
     assets/arcforgetransmission/models/block/inductor/<tier>.json and textures/block/inductor/<tier>.png
-    assets/arcforgetransmission/models/block/pole_transformer.json and textures/block/pole_transformer.png
+    assets/arcforgetransmission/models/block/pole_transformer.json (particles only) and textures/item/pole_transformer.png
     assets/arcforgetransmission/models/block/creative_{source,sink}/<tier>.json and their 16x16 textures
     data/arcforgetransmission/attach_groups/{inductor_<tier>,pole_transformer}.json
 
@@ -16,9 +16,9 @@ like an end rod. Per tier:
     MV  a porcelain line post: a flange, a core with three sheds and a line clamp
     HV  three glass cap-and-pin discs on a clevis
     EV  four larger glass discs
-The Pole-Mount Transformer (LV) hangs on its brackets from the block behind it (the pole): a painted can, three primary
-bushings on the lid (A, B, C) and the split-phase secondary on its front (L1, N, L2; the neutral a bare stud bonded to the
-can). The creative blocks are plain cubes on Arcforge's Creative (pink) ramp with an FE port (orange out, blue in) and one
+The Pole-Mount Transformer (LV) is drawn by its block entity from TowerMesh.poleTransformer() (the can the LV pole used to
+carry, hung on the same brackets, with three primaries A B C on the lid and the split-phase secondary L1 N L2 on its
+front); here are only its particles, item sprite and attach points. The creative blocks are plain cubes on Arcforge's Creative (pink) ramp with an FE port (orange out, blue in) and one
 pip per tier.
 
 Element models with every face its own rect on a 64x64 sheet at 1 texel per px (never stretched). Round parts carry a
@@ -127,39 +127,45 @@ def inductor(tier):
     return parts, [8.0, top, 8.0]
 
 
-def pole_transformer():
-    """The can hangs off its brackets from the block behind (south, z = 16); the front is north."""
-    parts = []
-    # The hanger: a back strap against the pole and two brackets out to the can.
-    parts.append(part("strap", (6.5, 2, 15), (9.5, 13, 16), "galv", cull={"south": "south"}))
-    for i, y in enumerate((3.5, 9.5)):
-        parts.append(part(f"bracket_{i}", (5.5, y, 13), (10.5, y + 1.5, 15), "galv", ["east", "west", "up", "down"]))
-    # The can, a band round it, the lid.
-    parts.append(part("can", (3, 1, 3), (13, 11, 13), "can", ["north", "south", "east", "west", "down"]))
-    parts.append(part("band", (2.5, 8.5, 2.5), (13.5, 9.5, 13.5), "can"))
-    parts.append(part("lid", (2.75, 11, 2.75), (13.25, 11.75, 13.25), "can"))
-    # Three primary bushings on the lid, A B C west to east.
-    terminals = {}
-    for label, x in (("A", 4.5), ("B", 8.0), ("C", 11.5)):
-        levels = [(f"bushing_{label}_core", 11.75, 12.5, 0.75, "porcelain"),
-                  (f"bushing_{label}_shed", 12.5, 13.0, 1.4, "porcelain"),
-                  (f"bushing_{label}_neck", 13.0, 13.5, 0.75, "porcelain"),
-                  (f"bushing_{label}_shed2", 13.5, 14.0, 1.25, "porcelain"),
-                  (f"bushing_{label}_stem", 14.0, 15.0, 0.75, "porcelain"),
-                  (f"bushing_{label}_cap", 15.0, 15.75, 0.6, "galv")]
-        parts += stack(levels, cx=x, cz=8.0)
-        terminals[label] = [x, 15.75, 8.0]
-    # The secondary on the front: L1 and L2 porcelain, N a bare stud bonded to the can.
-    for label, x in (("L1", 4.5), ("N", 8.0), ("L2", 11.5)):
-        if label == "N":
-            parts.append(part("secondary_N", (x - 0.6, 5.4, 1.5), (x + 0.6, 6.6, 3), "galv", ["north", "east", "west", "up", "down"]))
-            terminals[label] = [x, 6.0, 1.5]
-        else:
-            parts.append(part(f"secondary_{label}_core", (x - 0.75, 5.25, 1.75), (x + 0.75, 6.75, 3), "porcelain", ["east", "west", "up", "down"]))
-            parts.append(part(f"secondary_{label}_shed", (x - 1.25, 4.75, 1.25), (x + 1.25, 7.25, 1.75), "porcelain"))
-            parts.append(part(f"secondary_{label}_stud", (x - 0.5, 5.5, 0.5), (x + 0.5, 6.5, 1.25), "galv", ["north", "east", "west", "up", "down"]))
-            terminals[label] = [x, 6.0, 0.5]
-    return parts, terminals
+def pole_transformer_terminals():
+    """The transformer is drawn from TowerMesh.poleTransformer() (the can the LV pole used to carry); its attach points
+    are read off the same constants: the primaries' tops on the lid, the secondaries' tips on the front."""
+    can_z, can_y1 = 10.5, 16.0
+    primary_top = can_y1 - 0.8 + 3.2
+    t = {}
+    for label, x in (("A", 5.2), ("B", 8.0), ("C", 10.8)):
+        t[label] = [x, round(primary_top, 4), can_z]
+    for label, x, z in (("L1", 5.0, 3.0), ("N", 8.0, 4.0), ("L2", 11.0, 3.0)):
+        t[label] = [x, 6.0, z]
+    return t
+
+
+def transformer_item():
+    """The item sprite: the can (vertical bands of its paint), its lid, three brown primaries and the secondaries."""
+    img = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
+    px = img.load()
+    bands = [CAN[1], CAN[3], CAN[4], CAN[5], CAN[6], CAN[5], CAN[4], CAN[3], CAN[3], CAN[2], CAN[1]]
+    for y in range(5, 15):
+        for i, x in enumerate(range(3, 14)):
+            c = bands[i]
+            if y == 14:
+                c = CAN[0]
+            px[x, y] = c
+    for x in range(2, 15):
+        px[x, 4] = CAN[6] if x < 9 else CAN[4]
+        px[x, 5] = CAN[2]
+    for x in (4, 8, 12):
+        px[x, 1] = PORC[5]
+        px[x, 2] = PORC[4]
+        px[x - 1, 2] = PORC[3]
+        px[x + 1, 2] = PORC[2]
+        px[x, 3] = PORC[3]
+    for x, c in ((5, PORC[4]), (8, GALV[7]), (11, PORC[4])):
+        px[x, 9] = c
+        px[x, 10] = PORC[1] if c != GALV[7] else GALV[3]
+    for x in range(3, 14):
+        px[x, 15] = (0, 0, 0, 0)
+    return img
 
 
 # --- UV packing ---------------------------------------------------------------------------------------------------
@@ -349,10 +355,10 @@ def main():
                    attach(f"inductor_{tier}", [{"name": "insulator", "circuit": "three_phase",
                                                  "terminals": [{"label": "A", "pos": point}]}],
                           "px in the block's up-pointing frame (mounted on the block below); origin the block's minimum corner"))
-    parts, terminals = pole_transformer()
-    placed = pack(parts)
-    save(sheet(placed), os.path.join(assets, "textures/block/pole_transformer.png"))
-    write_json(os.path.join(assets, "models/block/pole_transformer.json"), model_json(f"{NS}:block/pole_transformer", parts, placed, DISPLAY))
+    terminals = pole_transformer_terminals()
+    save(transformer_item(), os.path.join(assets, "textures/item/pole_transformer.png"))
+    write_json(os.path.join(assets, "models/block/pole_transformer.json"),
+               {"textures": {"particle": f"{NS}:block/transmission_tower/particle_steel"}})
     write_json(os.path.join(data, "pole_transformer.json"),
                attach("pole_transformer",
                       [{"name": "primary", "circuit": "three_phase",
@@ -366,7 +372,7 @@ def main():
             save(creative_texture("out" if kind == "source" else "in", i), os.path.join(assets, f"textures/block/creative_{kind}", tier + ".png"))
             write_json(os.path.join(assets, f"models/block/creative_{kind}", tier + ".json"),
                        {"parent": "minecraft:block/cube_all", "textures": {"all": f"{NS}:block/creative_{kind}/{tier}"}})
-    print("wrote the inductors, the pole-mount transformer and the creative blocks")
+    print("wrote the inductors, the pole-mount transformer's data and the creative blocks")
 
 
 if __name__ == "__main__":

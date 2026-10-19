@@ -99,7 +99,7 @@ public final class TowerMesh extends MeshBuilder {
     static final int SKIN_LV_X = 0, SKIN_LV_W = 16, SKIN_MV_X = 16, SKIN_MV_W = 30, SKIN_H = 512;
     // Disc tops, cap (top row) to rim, 8 x 8.
     static final int DISC_PORCELAIN_X = 176, DISC_GLASS_X = 184, DISC_Y = 32;
-    // Modules: the danger sign, the end grain, the pole tag and the transformer lid (unused since the can left the LV pole; kept so the sheet stays as it is).
+    // Modules: the danger sign, the end grain, the pole tag and the transformer lid (the Pole-Mount Transformer's).
     static final int SIGN_X = 176, SIGN_Y = 40, GRAIN_X = 192, GRAIN_Y = 40, TAG_X = 208, TAG_Y = 40, LID_X = 212, LID_Y = 40;
 
     // Flat swatches (4x4 from (64, 224), 32 a row), in the generator's order.
@@ -156,6 +156,60 @@ public final class TowerMesh extends MeshBuilder {
         }
         return cells;
     }
+
+    // ================================================================================================================
+    // The Pole-Mount Transformer
+    // ================================================================================================================
+
+    // Where the transformer's can stands in its block (px, front north, the pole to the south): the same can the LV pole
+    // used to carry, one block tall, as close to the block's south face as it fits.
+    public static final float CAN_X = 8.0F, CAN_Z = 10.5F, CAN_Y0 = 0.0F, CAN_Y1 = 16.0F;
+    // The primaries' x (A, B, C, west to east), the secondaries' (L1, N, L2), and their heights.
+    public static final float[] PRIMARY_X = { 5.2F, 8.0F, 10.8F }, SECONDARY_X = { 5.0F, 8.0F, 11.0F };
+    public static final float PRIMARY_TOP = CAN_Y1 - 0.8F + 3.2F, SECONDARY_Y = 6.0F;
+    // The faces the secondaries stand off: the can's north facet, and their tips.
+    public static final float SECONDARY_TIP_Z = 3.0F, NEUTRAL_TIP_Z = 4.0F;
+    // Where its pole's surface is when it hangs on an LV pole (the next block south, its 8 facets of 2 px).
+    private static final float POLE_FACE_Z = 16.0F + 8.0F - 2.41F;
+    private static Built transformer;
+
+    // The Pole-Mount Transformer, built once: px in its block's frame, front north; the hanger brackets reach south
+    // into the pole's block.
+    public static synchronized Built poleTransformer() {
+        if (transformer == null) {
+            TowerMesh mesh = new TowerMesh();
+            mesh.buildPoleTransformer();
+            transformer = new Built(mesh.solid.toArray(), List.copyOf(mesh.boxes), cells(mesh.boxes));
+        }
+        return transformer;
+    }
+
+    private void buildPoleTransformer() {
+        float r = can(CAN_X, CAN_Z, CAN_Y0, CAN_Y1);
+        // Two hanger brackets from inside the pole to inside the can, as on the LV pole.
+        for (float y : new float[] { 5, 13 }) {
+            member(new float[] { CAN_X, y, POLE_FACE_Z + 0.6F }, new float[] { CAN_X, y, CAN_Z + r - 1.2F }, 3.0F, 1.0F, UP, Mat.GALV, true);
+        }
+        for (float x : PRIMARY_X) {
+            primaryBushing(x, CAN_Y1 - 0.8F, CAN_Z);
+        }
+        // The secondary on the can's north facet: L1 and L2 porcelain bushings standing off it with a terminal stud,
+        // the neutral a bare stud with a nut (bonded to the can).
+        float face = CAN_Z - r * (float) Math.cos(Math.PI / 8);
+        float y = SECONDARY_Y;
+        for (int i = 0; i < 3; i++) {
+            float x = SECONDARY_X[i];
+            if (i == 1) {
+                swatchBox(x - 0.5F, y - 0.5F, NEUTRAL_TIP_Z + 0.6F, x + 0.5F, y + 0.5F, face + 0.4F, GALV0 + 6);
+                swatchBox(x - 0.9F, y - 0.9F, NEUTRAL_TIP_Z, x + 0.9F, y + 0.9F, NEUTRAL_TIP_Z + 0.6F, GALV0 + 8);
+            } else {
+                swatchBox(x - 0.8F, y - 0.8F, face - 1.6F, x + 0.8F, y + 0.8F, face + 0.4F, PORC0 + 3);
+                swatchBox(x - 1.3F, y - 1.3F, face - 1.3F, x + 1.3F, y + 1.3F, face - 0.8F, PORC0 + 4);
+                swatchBox(x - 0.45F, y - 0.45F, SECONDARY_TIP_Z, x + 0.45F, y + 0.45F, face - 1.6F, GALV0 + 7);
+            }
+        }
+    }
+
 
     // ================================================================================================================
     // The towers
@@ -575,6 +629,38 @@ public final class TowerMesh extends MeshBuilder {
         member(new float[] { x, y + 0.5F, z }, new float[] { x, y + height - 2.0F, z }, 2.0F, 2.0F, new float[] { 1, 0, 0 }, Mat.GALV, true);
         swatchBox(x - 1.2F, y + height - 2.0F, z - 2.0F, x + 1.2F, y + height - 0.6F, z + 2.0F, GALV0 + 6);
         swatchBox(x - 0.6F, y + height - 0.6F, z - 1.2F, x + 0.6F, y + height, z + 1.2F, GALV0 + 7);
+    }
+
+    // The pole-mounted transformer can from y0 to y1 at (x, z): 8 facets of 4 px with the ramp across each, a seam at
+    // the lid's flange, the lid's rings on top. Returns its radius.
+    private float can(float x, float z, float y0, float y1) {
+        float r = (float) (4.0 / (2.0 * Math.sin(Math.PI / 8)));
+        turned(x, z, new float[][] { { y0, r - 0.6F }, { y0 + 0.8F, r }, { y1 - 1.6F, r } }, 8, Ramp.CAN, false, false);
+        lid(x, y0, z, r - 0.6F, false);
+        turned(x, z, new float[][] { { y1 - 1.6F, r + 0.5F }, { y1 - 0.8F, r + 0.5F }, { y1 - 0.8F, r - 0.2F } }, 8, Ramp.CAN, false, true);
+        lid(x, y1 - 0.8F, z, r - 0.2F, true);
+        boxes.add(new float[] { x - r, y0, z - r, x + r, y1, z + r });
+        return r;
+    }
+
+    // A primary bushing standing on the lid at (x, y, z): porcelain, two sheds, its top (the wire's attach point) at
+    // y + 3.2.
+    private void primaryBushing(float x, float y, float z) {
+        turned(x, z, new float[][] { { y, 0.9F }, { y + 1.2F, 0.9F }, { y + 1.2F, 1.3F }, { y + 1.8F, 1.3F }, { y + 1.8F, 0.9F },
+                { y + 2.6F, 0.9F }, { y + 2.6F, 1.2F }, { y + 3.2F, 1.2F } }, 6, Ramp.PORCELAIN, true, false);
+    }
+
+    // A round flat end in the lid's rings (8 facets of radius r at y), looking up or down.
+    private void lid(float x, float y, float z, float r, boolean up) {
+        float[][] rim = ring(x, z, r, 8);
+        List<float[]> st = new ArrayList<>();
+        float size = 2 * r, off = (12 - size) / 2.0F;
+        for (float[] p : rim) {
+            st.add(new float[] { p[0] - (x - r), up ? (z + r) - p[2] : p[2] - (z - r) });
+        }
+        float[] base = up ? new float[] { x - r, y, z + r } : new float[] { x - r, y, z - r };
+        paintPlane(st, base, new float[] { 1, 0, 0 }, up ? new float[] { 0, 0, -1 } : new float[] { 0, 0, 1 },
+                List.of(new float[] { 0, size, 0, size, LID_X + off, LID_Y + off }));
     }
 
     // A flat steel V brace: two straps from one bolt at (x, y0, z0) on a pole's face up and out `spread` px each way
