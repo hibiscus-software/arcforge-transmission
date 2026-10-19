@@ -55,6 +55,7 @@ import net.zagdrath.arcforgetransmission.grid.GridEdge;
 import net.zagdrath.arcforgetransmission.grid.VoltageTier;
 import net.zagdrath.arcforgetransmission.grid.block.GridContent;
 import net.zagdrath.arcforgetransmission.grid.block.PoleTransformerBlock;
+import net.zagdrath.arcforgetransmission.grid.block.StationFenceBarbedWireBlock;
 import net.zagdrath.arcforgetransmission.grid.world.ConfigReset;
 import net.zagdrath.arcforgetransmission.grid.world.GridConfig;
 import net.zagdrath.arcforgetransmission.grid.world.GridData;
@@ -81,7 +82,9 @@ import net.zagdrath.arcforgetransmission.tower.TowerTier;
 //    and not when held;
 //  - a device's state comes back whole from its saved data, the grid's save (node keys, a regulator's boost) reloads as
 //    it was, and a block whose chunk unloads and loads again takes up where it left off;
-//  - a grid saved before the tiers' voltages doubled loads unchanged (tiers are saved by name) and runs at the new ratings.
+//  - a grid saved before the tiers' voltages doubled loads unchanged (tiers are saved by name) and runs at the new ratings;
+//  - Station Fence Barbed Wire goes only on a Station Fence, joins the next along the fence, and pops off as an item when
+//    its fence is broken.
 // Each test stands on a stone floor in an empty structure, with room round it.
 @EventBusSubscriber(modid = ArcforgeTransmission.MODID)
 public final class TransmissionGameTests {
@@ -102,6 +105,7 @@ public final class TransmissionGameTests {
         TESTS.put("device_state_survives_saving", TransmissionGameTests::deviceStateSurvivesSaving);
         TESTS.put("grid_save_reloads_and_chunks_unload", TransmissionGameTests::gridSaveReloadsAndChunksUnload);
         TESTS.put("old_save_loads_at_the_new_ratings", TransmissionGameTests::oldSaveLoadsAtTheNewRatings);
+        TESTS.put("barbed_wire_stands_only_on_a_station_fence", TransmissionGameTests::barbedWireStandsOnlyOnAFence);
     }
 
     private TransmissionGameTests() {}
@@ -854,6 +858,36 @@ public final class TransmissionGameTests {
         helper.assertTrue(((Number) settings.get("wires.lv.ratedAmps").getDefault()).doubleValue() == 16.0
                 && ((Number) settings.get("wires.ehv.ratedAmps").getDefault()).doubleValue() == 128.0
                 && ((Number) settings.get("transformers.poleRating").getDefault()).intValue() == 4_096, "The config's defaults aren't the new ratings");
+        helper.succeed();
+    }
+
+    // Placed as a player would: not on stone, but on a fence (joining the one beside it); its fence broken, it drops.
+    private static void barbedWireStandsOnlyOnAFence(GameTestHelper helper) {
+        floor(helper, 8);
+        BlockPos stone = new BlockPos(1, 1, 1), fence = new BlockPos(3, 1, 1), next = new BlockPos(4, 1, 1);
+        helper.setBlock(stone, Blocks.STONE);
+        helper.setBlock(fence, GridContent.STATION_FENCE.get());
+        helper.setBlock(next, GridContent.STATION_FENCE.get());
+        Block barbed = GridContent.STATION_FENCE_BARBED_WIRE.get();
+        net.minecraft.world.entity.player.Player player = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
+        for (BlockPos on : new BlockPos[] { stone, fence, next }) {
+            net.minecraft.world.item.ItemStack stack = new net.minecraft.world.item.ItemStack(GridContent.STATION_FENCE_BARBED_WIRE_ITEM.get(), 4);
+            player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, stack);
+            helper.placeAt(player, stack, on, net.minecraft.core.Direction.UP);
+        }
+        helper.assertBlockNotPresent(barbed, stone.above());
+        helper.assertFalse(barbed.defaultBlockState().canSurvive(helper.getLevel(), helper.absolutePos(stone.above())),
+                "Barbed wire could stand on stone");
+        helper.assertBlockPresent(barbed, fence.above());
+        helper.assertBlockPresent(barbed, next.above());
+        var placed = helper.getBlockState(fence.above());
+        helper.assertTrue(placed.getValue(StationFenceBarbedWireBlock.EAST) == StationFenceBarbedWireBlock.Side.RUN,
+                "It didn't join the barbed wire beside it: " + placed);
+        helper.destroyBlock(fence);
+        helper.assertBlockNotPresent(barbed, fence.above());
+        helper.assertItemEntityPresent(GridContent.STATION_FENCE_BARBED_WIRE_ITEM.get(), fence.above(), 2.0);
+        helper.assertTrue(helper.getBlockState(next.above()).getValue(StationFenceBarbedWireBlock.WEST) == StationFenceBarbedWireBlock.Side.NONE,
+                "Its neighbour still joins it");
         helper.succeed();
     }
 }

@@ -52,7 +52,9 @@ public final class GridYard {
     // Whether Station Fence (fence) or Ground Grid (not) lies within r blocks across and `up` blocks up or down.
     private static boolean near(ServerLevel level, BlockPos at, int r, int up, boolean fence) {
         for (BlockPos pos : BlockPos.betweenClosed(at.offset(-r, -up, -r), at.offset(r, up, r))) {
-            if (level.isLoaded(pos) && level.getBlockState(pos).is(fence ? GridContent.STATION_FENCE.get() : GridContent.GROUND_GRID.get())) {
+            // Barbed wire stands only on a Station Fence: it counts as the fence too.
+            if (level.isLoaded(pos) && (fence ? level.getBlockState(pos).is(GridContent.STATION_FENCE.get())
+                    || level.getBlockState(pos).is(GridContent.STATION_FENCE_BARBED_WIRE.get()) : level.getBlockState(pos).is(GridContent.GROUND_GRID.get()))) {
                 return true;
             }
         }

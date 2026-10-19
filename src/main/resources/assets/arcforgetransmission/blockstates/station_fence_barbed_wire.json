@@ -1,0 +1,412 @@
+{
+  "multipart": [
+    {
+      "when": {
+        "facing": "north"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/station_fence_barbed_wire_post",
+        "y": 0
+      }
+    },
+    {
+      "when": {
+        "facing": "north",
+        "north": "none",
+        "east": "none",
+        "south": "none",
+        "west": "none"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/station_fence_barbed_wire_lone",
+        "y": 0
+      }
+    },
+    {
+      "when": {
+        "facing": "north",
+        "north": "run"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/station_fence_barbed_wire_out_run",
+        "y": 0
+      }
+    },
+    {
+      "when": {
+        "facing": "north",
+        "north": "left"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/station_fence_barbed_wire_out_left",
+        "y": 0
+      }
+    },
+    {
+      "when": {
+        "facing": "north",
+        "north": "right"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/station_fence_barbed_wire_out_right",
+        "y": 0
+      }
+    },
+    {
+      "when": {
+        "facing": "north",
+        "east": "run"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/station_fence_barbed_wire_right",
+        "y": 0
+      }
+    },
+    {
+      "when": {
+        "facing": "north",
+        "south": "run"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/station_fence_barbed_wire_in_run",
+        "y": 0
+      }
+    },
+    {
+      "when": {
+        "facing": "north",
+        "south": "left"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/station_fence_barbed_wire_in_left",
+        "y": 0
+      }
+    },
+    {
+      "when": {
+        "facing": "north",
+        "south": "right"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/station_fence_barbed_wire_in_right",
+        "y": 0
+      }
+    },
+    {
+      "when": {
+        "facing": "north",
+        "west": "run"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/station_fence_barbed_wire_left",
+        "y": 0
+      }
+    },
+    {
+      "when": {
+        "facing": "east"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/station_fence_barbed_wire_post",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
+        "north": "none",
+        "east": "none",
+        "south": "none",
+        "west": "none"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/station_fence_barbed_wire_lone",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
+        "east": "run"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/station_fence_barbed_wire_out_run",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
+        "east": "left"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/station_fence_barbed_wire_out_left",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
+        "east": "right"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/station_fence_barbed_wire_out_right",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
+        "south": "run"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/station_fence_barbed_wire_right",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
+        "west": "run"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/station_fence_barbed_wire_in_run",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
+        "west": "left"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/station_fence_barbed_wire_in_left",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
+        "west": "right"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/station_fence_barbed_wire_in_right",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
+        "north": "run"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/station_fence_barbed_wire_left",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "south"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/station_fence_barbed_wire_post",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
+        "north": "none",
+        "east": "none",
+        "south": "none",
+        "west": "none"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/station_fence_barbed_wire_lone",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
+        "south": "run"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/station_fence_barbed_wire_out_run",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
+        "south": "left"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/station_fence_barbed_wire_out_left",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
+        "south": "right"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/station_fence_barbed_wire_out_right",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
+        "west": "run"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/station_fence_barbed_wire_right",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
+        "north": "run"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/station_fence_barbed_wire_in_run",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
+        "north": "left"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/station_fence_barbed_wire_in_left",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
+        "north": "right"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/station_fence_barbed_wire_in_right",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
+        "east": "run"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/station_fence_barbed_wire_left",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "west"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/station_fence_barbed_wire_post",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
+        "north": "none",
+        "east": "none",
+        "south": "none",
+        "west": "none"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/station_fence_barbed_wire_lone",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
+        "west": "run"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/station_fence_barbed_wire_out_run",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
+        "west": "left"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/station_fence_barbed_wire_out_left",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
+        "west": "right"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/station_fence_barbed_wire_out_right",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
+        "north": "run"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/station_fence_barbed_wire_right",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
+        "east": "run"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/station_fence_barbed_wire_in_run",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
+        "east": "left"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/station_fence_barbed_wire_in_left",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
+        "east": "right"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/station_fence_barbed_wire_in_right",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
+        "south": "run"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/station_fence_barbed_wire_left",
+        "y": 270
+      }
+    }
+  ]
+}

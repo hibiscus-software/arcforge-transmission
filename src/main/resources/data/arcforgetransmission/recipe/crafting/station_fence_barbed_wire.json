@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "key": {
+    "N": "#c:nuggets/iron",
+    "R": "#c:rods/steel"
+  },
+  "pattern": [
+    "N N",
+    "RRR",
+    "N N"
+  ],
+  "result": {
+    "count": 6,
+    "id": "arcforgetransmission:station_fence_barbed_wire"
+  }
+}

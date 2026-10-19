@@ -85,6 +85,7 @@ public final class GridConfig {
     public static final ModConfigSpec.DoubleValue CAPACITOR_VARS, REACTOR_VARS, SWITCH_LOW, SWITCH_HIGH;
     public static final ModConfigSpec.IntValue YARD_RADIUS, GROUND_GRID_RADIUS;
     public static final ModConfigSpec.DoubleValue STEP_FRACTION;
+    public static final ModConfigSpec.DoubleValue BARBED_WIRE_DAMAGE;
     public static final ModConfigSpec.DoubleValue FUSE_FACTOR;
     public static final ModConfigSpec.IntValue BREAKER_TRIP_TICKS;
     public static final ModConfigSpec.IntValue RECLOSE_DELAY;
@@ -172,6 +173,10 @@ public final class GridConfig {
                 .defineInRange("yardRadius", 12, 1, 64);
         GROUND_GRID_RADIUS = BUILDER.comment("...unless Ground Grid lies within this many blocks of it.").defineInRange("groundGridRadius", 4, 1, 32);
         STEP_FRACTION = BUILDER.comment("A step-potential shock: this share of the victim's max health.").defineInRange("stepFraction", 0.5, 0.0, 1.0);
+        BUILDER.pop();
+        BUILDER.comment("The yard's fence.").push("fence");
+        BARBED_WIRE_DAMAGE = BUILDER.comment("Damage (half-hearts) Station Fence Barbed Wire does to whatever touches it, as a sweet berry bush does",
+                "(0 for none).").defineInRange("barbedWireDamage", 1.0, 0.0, 100.0);
         BUILDER.pop();
     }
 

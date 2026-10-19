@@ -70,7 +70,9 @@ Transformer** (an MV feeder straight to houses) pass power whichever way the gri
 **Substations.** Bring lines in on a **Dead-End Gantry** (each phase's strain string runs out along the incoming line,
 and a slack jumper of the line's own conductor loops from its clamp to the drop on the yard side), join them on **Bus** sections (placed in a row, they join),
 switch them with breakers and disconnects, and fence the yard with **Station Fence** over **Ground Grid** (a fault in an
-ungrounded yard shocks anyone standing near). A **Ground Switch** grounds a dead line so it's safe to work on.
+ungrounded yard shocks anyone standing near). **Station Fence Barbed Wire** goes on top of the fence, leaning outward the
+way you look as you place it (Wrench on Rotate turns it): nothing jumps it, and touching it pricks
+(`fence.barbedWireDamage`, 0 for none). A **Ground Switch** grounds a dead line so it's safe to work on.
 Interlocks: a disconnect only operates with its breaker open (link them with **Control Cable**), a ground switch only
 closes on a dead line, and a breaker won't close onto a grounded one.
 
@@ -138,7 +140,7 @@ by hand:
 |---|---|
 | `transmission_tower_texture_gen.py` | `textures/block/transmission_tower/` (the towers' model sheet and particles), the tower item sprites |
 | `tower_attach_groups_gen.py` | `data/.../attach_groups/` for every tower, transformer and device |
-| `grid_block_model_gen.py` | the Pin Insulators', Pole-Mount Transformer's, Wall Bushing's and Surge Arrester's models, textures and attach groups; the Station Fence's models |
+| `grid_block_model_gen.py` | the Pin Insulators', Pole-Mount Transformer's, Wall Bushing's and Surge Arrester's models, textures and attach groups; the Station Fence's and its Barbed Wire's models |
 | `wire_texture_gen.py` | `textures/block/wire/`, the coil and cable sprites, the Wire Cutters, Burnt Wire |
 | `material_texture_gen.py` | the bauxite and aluminium textures (recoloured from Arcforge's nickel) |
 

@@ -18,7 +18,7 @@ import net.zagdrath.arcforgetransmission.grid.item.WireCoilItem;
 import net.zagdrath.arcforgetransmission.tower.TowerBlock;
 import net.zagdrath.arcforgetransmission.tower.TowerPartBlock;
 
-// Arcforge's Wrench on the grid's blocks (pin insulators, the transformer, the towers), before
+// Arcforge's Wrench on the grid's blocks (pin insulators, the transformer, the towers, barbed wire), before
 // anything else: the game skips a block's own use when the player sneaks with an item in hand, so the sneaking actions
 // (Sneak + Configure for a pin insulator's current limit, Sneak + Dismantle) would never
 // reach the block. This runs whether or not the player sneaks; GridInteractions does the work.
@@ -32,7 +32,19 @@ public final class GridWrenchEvents {
                 || event.getPlayer() == null) {
             return;
         }
-        Block block = event.getLevel().getBlockState(event.getPos()).getBlock();
+        net.minecraft.world.level.block.state.BlockState state = event.getLevel().getBlockState(event.getPos());
+        Block block = state.getBlock();
+        // Barbed wire on Rotate: its outward side a quarter turn (back, sneaking), its strands following.
+        if (block instanceof StationFenceBarbedWireBlock && WrenchItem.mode(event.getItemStack()) == WrenchMode.ROTATE) {
+            if (!event.getLevel().isClientSide() && GridInteractions.mayChange(event.getPlayer(), event.getLevel(), event.getPos())) {
+                var facing = state.getValue(StationFenceBarbedWireBlock.FACING);
+                var turned = state.setValue(StationFenceBarbedWireBlock.FACING, event.getPlayer().isShiftKeyDown() ? facing.getCounterClockWise()
+                        : facing.getClockWise());
+                event.getLevel().setBlock(event.getPos(), StationFenceBarbedWireBlock.connected(turned, event.getLevel(), event.getPos()), Block.UPDATE_ALL);
+            }
+            event.cancelWithResult(InteractionResult.SUCCESS);
+            return;
+        }
         boolean dismantleable = block instanceof PinInsulatorBlock || block instanceof PoleTransformerBlock;
         if (!dismantleable && !(block instanceof TowerBlock) && !(block instanceof TowerPartBlock)) {
             return;

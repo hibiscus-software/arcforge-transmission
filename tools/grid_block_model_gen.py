@@ -393,6 +393,213 @@ def load_vanilla_display():
             "on_shelf": {"rotation": [0, 90, 0], "translation": [0, 0, 0], "scale": [1, 1, 1]}}
 
 
+# Station Fence Barbed Wire: a slim galvanized outrigger on the fence's post, leaning 45 degrees outward (away from the
+# yard), carrying three strands of barbed wire. Drawn facing north (its outward side north, -z); the blockstate turns it.
+# Each strand is 1 px square at BARBED_STRANDS px up the outrigger and as far out (z = 8 - h), with a 1 px barb every 3 px
+# (BARBED_BARBS, along the block), out of one side and the other in turn. Along its run (east and west of a north-facing block) a
+# strand runs straight to the block's edge; where the fence turns, it wraps the corner: round the yard side (a corner
+# fence whose neighbour lies inward) with a 45 degree chamfer, round the outer side with a square jog.
+BARBED_STRANDS = [2.0, 4.0, 6.0]
+BARBED_BARBS = [2, 5, 11, 14]
+BARBED_ARM = 9.0
+# Pieces that may meet another (a run and a corner of the same strand at a T in the fence) are lifted this much, so no
+# two faces ever lie in one plane.
+BARBED_LIFT = 0.02
+
+
+def barbed_wire_texture():
+    """The barbed wire's sheet: row 0 a strand's lit faces (two plies twisting, a highlight every 4 px), row 1 its
+    underside; rows 3 and 4 the barbs; columns 0 to 2 below row 6 the outrigger arm (lit, shade, dark faces); the collar
+    on the post a 3 x 3 cap at (10, 10)."""
+    img = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
+    px = img.load()
+    twist = [STEEL["rivet"], STEEL["lit"], STEEL["mid"], STEEL["lit"]]
+    under = [STEEL["lit"], STEEL["mid"], STEEL["dark"], STEEL["mid"]]
+    for x in range(16):
+        px[x, 0] = twist[x % 4]
+        px[x, 1] = under[x % 4]
+        px[x, 3] = STEEL["lit"]
+        px[x, 4] = STEEL["mid"]
+    for y in range(6, 16):
+        px[0, y] = STEEL["lit"]
+        px[1, y] = STEEL["mid"]
+        px[2, y] = STEEL["dark"]
+    for y in range(10, 13):
+        for x in range(10, 13):
+            px[x, y] = STEEL["lit"] if x == 10 or y == 10 else STEEL["mid"] if x < 12 and y < 12 else STEEL["dark"]
+    return img
+
+
+def bw_tex():
+    return f"{NS}:block/station_fence_barbed_wire"
+
+
+def bw_box(x0, y0, z0, x1, y1, z1, faces, rotation=None):
+    e = {"from": [x0, y0, z0], "to": [x1, y1, z1], "faces": faces}
+    if rotation:
+        e["rotation"] = rotation
+    return e
+
+
+def strand_faces(u0, u1, ends=()):
+    """A strand's faces: its sides and top from row 0 (u0 to u1 along it, so the twist carries on), its underside from
+    row 1, and the ends named."""
+    lit, low = {"uv": [u0, 0, u1, 1], "texture": "#wire"}, {"uv": [u0, 1, u1, 2], "texture": "#wire"}
+    return lit, low, {e: {"uv": [0, 0, 1, 1], "texture": "#wire"} for e in ends}
+
+
+def strand_x(x0, x1, h, z, ends=(), lift=0.0):
+    lit, low, end_faces = strand_faces(x0, x1, ends)
+    faces = {"north": dict(lit), "south": dict(lit), "up": dict(lit), "down": dict(low)}
+    faces.update(end_faces)
+    return bw_box(x0, h - 0.5 + lift, z - 0.5, x1, h + 0.5 + lift, z + 0.5, faces)
+
+
+def strand_z(z0, z1, h, x, ends=(), lift=0.0):
+    lit, low, end_faces = strand_faces(z0, z1, ends)
+    faces = {"west": dict(lit), "east": dict(lit), "up": {"uv": [z0, 0, z1, 1], "texture": "#wire", "rotation": 90},
+             "down": {"uv": [z0, 1, z1, 2], "texture": "#wire", "rotation": 90}}
+    faces.update(end_faces)
+    return bw_box(x - 0.5, h - 0.5 + lift, z0, x + 0.5, h + 0.5 + lift, z1, faces)
+
+
+def barbs_along(axis, lo, hi, h, at, strand, lift=0.0):
+    """The barbs on a straight piece of strand between lo and hi (px along its axis): at BARBED_BARBS, a 1 px cube out of
+    one side of it or the other in turn (level, across the strand; the next strand starts the other way), so seen from
+    the front the strands stay thin lines and the barbs show as nubs from the side."""
+    out = []
+    for i, p in enumerate(BARBED_BARBS):
+        if p - 0.5 < lo + 0.5 or p + 0.5 > hi - 0.5:
+            continue
+        side = 1 if (i + strand) % 2 == 0 else -1
+        c0, c1 = (at + 0.5, at + 1.5) if side > 0 else (at - 1.5, at - 0.5)
+        faces = {"up": {"uv": [0, 3, 1, 4], "texture": "#wire"}, "down": {"uv": [0, 4, 1, 5], "texture": "#wire"}}
+        if axis == "x":
+            faces.update({"west": {"uv": [0, 3, 1, 4], "texture": "#wire"}, "east": {"uv": [0, 4, 1, 5], "texture": "#wire"},
+                          "south" if side > 0 else "north": {"uv": [0, 3, 1, 4], "texture": "#wire"}})
+            out.append(bw_box(p - 0.5, h - 0.5 + lift, c0, p + 0.5, h + 0.5 + lift, c1, faces))
+        else:
+            faces.update({"north": {"uv": [0, 3, 1, 4], "texture": "#wire"}, "south": {"uv": [0, 4, 1, 5], "texture": "#wire"},
+                          "east" if side > 0 else "west": {"uv": [0, 3, 1, 4], "texture": "#wire"}})
+            out.append(bw_box(c0, h - 0.5 + lift, p - 0.5, c1, h + 0.5 + lift, p + 0.5, faces))
+    return out
+
+
+def barbed_post():
+    """On the post: a collar on the fence post's top, the outrigger arm leaning 45 degrees out (north) from it, and where
+    each strand crosses the arm a 1 px hub every run and corner starts from."""
+    collar = {f: {"uv": [10, 10, 13, 13], "texture": "#wire"} for f in ("north", "south", "west", "east", "up")}
+    arm = {"north": {"uv": [0, 6, 1, 15], "texture": "#wire"}, "south": {"uv": [2, 6, 3, 15], "texture": "#wire"},
+           "west": {"uv": [1, 6, 2, 15], "texture": "#wire"}, "east": {"uv": [1, 6, 2, 15], "texture": "#wire"},
+           "up": {"uv": [0, 6, 1, 7], "texture": "#wire"}}
+    elements = [bw_box(6.5, 0, 6.5, 9.5, 1, 9.5, collar),
+                bw_box(7.5, 0.5, 7.5, 8.5, 0.5 + BARBED_ARM, 8.5, arm, {"angle": -45, "axis": "x", "origin": [8, 0.5, 8]})]
+    for h in BARBED_STRANDS:
+        z = 8 - h
+        elements.append(bw_box(7.5, h - 0.5, z - 0.5, 8.5, h + 0.5, z + 0.5, {f: {"uv": [0, 0, 1, 1], "texture": "#wire"} for f in
+                                                                             ("north", "south", "west", "east", "up", "down")}))
+    return elements
+
+
+def barbed_side(kind):
+    """The strands out of the hubs one way, facing north: "left" / "right" along the run (west / east), "in_run" /
+    "out_run" straight on (south / north), "in_left" / "in_right" round a corner on the yard side (a chamfer, then south
+    at the neighbour's own offset), "out_left" / "out_right" round one on the outer side (a square jog, then north)."""
+    elements = []
+    for s, h in enumerate(BARBED_STRANDS):
+        z = 8 - h
+        if kind == "right":
+            elements += [strand_x(8.5, 16, h, z)] + barbs_along("x", 8.5, 16, h, z, s)
+        elif kind == "left":
+            elements += [strand_x(0, 7.5, h, z)] + barbs_along("x", 0, 7.5, h, z, s)
+        elif kind == "in_run":
+            elements += [strand_z(z + 0.5, 16, h, 8)] + barbs_along("z", z + 0.5, 16, h, 8, s)
+        elif kind == "out_run":
+            elements += [strand_z(0, z - 0.5, h, 8)] + barbs_along("z", 0, z - 0.5, h, 8, s)
+        elif kind in ("in_left", "in_right"):
+            sign = 1 if kind == "in_right" else -1
+            # From the hub's corner, 45 degrees out to the neighbour's offset, then south to the edge.
+            length = (h - 1) * math.sqrt(2)
+            mx, mz = 8 + sign * (0.5 + (h - 1) / 2), 8.5 - h + (h - 1) / 2
+            lit, low, _ = strand_faces(0, length)
+            elements.append(bw_box(mx - length / 2, h - 0.5 + BARBED_LIFT, mz - 0.5, mx + length / 2, h + 0.5 + BARBED_LIFT, mz + 0.5,
+                                   {"north": dict(lit), "south": dict(lit), "up": dict(lit), "down": dict(low)},
+                                   {"angle": -45 * sign, "axis": "y", "origin": [mx, h, mz]}))
+            x = 8 + sign * h
+            elements += [strand_z(7.5, 16, h, x, ("north",), BARBED_LIFT)] + barbs_along("z", 7.5, 16, h, x, s, BARBED_LIFT)
+        elif kind in ("out_left", "out_right"):
+            sign = 1 if kind == "out_right" else -1
+            # Along the run to the neighbour's offset, a corner, then north to the edge.
+            x = 8 + sign * h
+            near, far = (8.5, x - 0.5) if sign > 0 else (x + 0.5, 7.5)
+            elements.append(strand_x(near, far, h, z, (), BARBED_LIFT))
+            corner = {f: {"uv": [0, 0, 1, 1], "texture": "#wire"} for f in ("south", "west", "east", "up", "down", "north")}
+            elements.append(bw_box(x - 0.5, h - 0.5 + BARBED_LIFT, z - 0.5, x + 0.5, h + 0.5 + BARBED_LIFT, z + 0.5, corner))
+            elements += [strand_z(0, z - 0.5, h, x, (), BARBED_LIFT)] + barbs_along("z", 0, z - 0.5, h, x, s, BARBED_LIFT)
+    return elements
+
+
+def barbed_lone():
+    """A block with nothing beside it: a short end of each strand either side of its hub."""
+    elements = []
+    for h in BARBED_STRANDS:
+        z = 8 - h
+        elements += [strand_x(6, 7.5, h, z, ("west",)), strand_x(8.5, 10, h, z, ("east",))]
+    return elements
+
+
+BARBED_SIDES = ["left", "right", "in_run", "out_run", "in_left", "in_right", "out_left", "out_right"]
+HORIZONTAL = ["north", "east", "south", "west"]
+
+
+def barbed_model(elements):
+    return {"textures": {"particle": bw_tex(), "wire": bw_tex()}, "render_type": "minecraft:cutout", "elements": elements}
+
+
+def barbed_blockstate():
+    """Multipart: the post turned to its facing; each side's strands by what lies that way (none, run, left, right; see
+    StationFenceBarbedWireBlock), as the side it is for the facing (out, right, in, left), turned with it."""
+    parts = []
+    for f, facing in enumerate(HORIZONTAL):
+        y = f * 90
+        parts.append({"when": {"facing": facing}, "apply": {"model": f"{NS}:block/station_fence_barbed_wire_post", "y": y}})
+        parts.append({"when": {"facing": facing, **{d: "none" for d in HORIZONTAL}},
+                      "apply": {"model": f"{NS}:block/station_fence_barbed_wire_lone", "y": y}})
+        for r, rel in enumerate(["out", "right", "in", "left"]):
+            side = HORIZONTAL[(f + r) % 4]
+            if rel in ("left", "right"):
+                parts.append({"when": {"facing": facing, side: "run"}, "apply": {"model": f"{NS}:block/station_fence_barbed_wire_{rel}", "y": y}})
+            else:
+                for value in ("run", "left", "right"):
+                    parts.append({"when": {"facing": facing, side: value},
+                                  "apply": {"model": f"{NS}:block/station_fence_barbed_wire_{rel}_{value}", "y": y}})
+    return {"multipart": parts}
+
+
+def barbed_inventory():
+    """As an item: the post and a strand out either side."""
+    model = barbed_model(barbed_post() + barbed_side("left") + barbed_side("right"))
+    model["parent"] = "minecraft:block/block"
+    model["display"] = {"gui": {"rotation": [30, 225, 0], "translation": [0, 3, 0], "scale": [0.8, 0.8, 0.8]},
+                        "ground": {"rotation": [0, 0, 0], "translation": [0, 3, 0], "scale": [0.5, 0.5, 0.5]},
+                        "fixed": {"rotation": [0, 0, 0], "translation": [0, 3, 0], "scale": [0.8, 0.8, 0.8]},
+                        "thirdperson_righthand": {"rotation": [75, 45, 0], "translation": [0, 2.5, 0], "scale": [0.375, 0.375, 0.375]},
+                        "firstperson_righthand": {"rotation": [0, 45, 0], "translation": [0, 2, 0], "scale": [0.4, 0.4, 0.4]}}
+    return model
+
+
+def write_barbed_wire(assets):
+    save(barbed_wire_texture(), os.path.join(assets, "textures/block/station_fence_barbed_wire.png"))
+    write_json(os.path.join(assets, "models/block/station_fence_barbed_wire_post.json"), barbed_model(barbed_post()))
+    write_json(os.path.join(assets, "models/block/station_fence_barbed_wire_lone.json"), barbed_model(barbed_lone()))
+    for kind in BARBED_SIDES:
+        write_json(os.path.join(assets, f"models/block/station_fence_barbed_wire_{kind}.json"), barbed_model(barbed_side(kind)))
+    write_json(os.path.join(assets, "models/block/station_fence_barbed_wire_inventory.json"), barbed_inventory())
+    write_json(os.path.join(assets, "blockstates/station_fence_barbed_wire.json"), barbed_blockstate())
+    write_json(os.path.join(assets, "items/station_fence_barbed_wire.json"),
+               {"model": {"type": "minecraft:model", "model": f"{NS}:block/station_fence_barbed_wire_inventory"}})
+
+
 def ground_grid_texture():
     """Ground Grid: bare copper conductors in a square mesh with clamped crossings, on the ground's dark between."""
     copper = [hx(c) for c in ("#5C2E17", "#8A4A26", "#B5663A", "#D9895A")]
@@ -488,6 +695,7 @@ def main():
     save(wall_bushing_texture(), os.path.join(assets, "textures/block/wall_bushing.png"))
     save(station_fence_texture(), os.path.join(assets, "textures/block/station_fence.png"))
     save(ground_grid_texture(), os.path.join(assets, "textures/block/ground_grid.png"))
+    write_barbed_wire(assets)
     # The fence's post on vanilla's fence model, its sides and item with FENCE_RAILS; the grid on the carpet's (its texture
     # key "wool").
     write_json(os.path.join(assets, "models/block/station_fence_post.json"),

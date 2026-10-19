@@ -2,6 +2,15 @@
 
 ## Unreleased: tier voltages, gantry jumpers, station fences, sound and particles, power plants on the grid
 
+### Added
+- **Station Fence Barbed Wire** (Substation Yard tab): a slim galvanized outrigger on top of a Station Fence, leaning
+  45 degrees outward, with three strands of barbed wire (a barb every 3 px, out of one side and the other). It faces
+  the way you look as you place it, its outward side away from the yard; the Wrench on Rotate turns it. Its strands
+  join the next along the fence and wrap its corners. It stands only on a Station Fence and pops off as an item when the
+  fence goes. Its collision fills the block above the fence, so nothing jumps it; touching it does
+  `fence.barbedWireDamage` (1, 0 for none), as a sweet berry bush does. A yard fenced with it still counts as fenced.
+  Six from steel rods and iron nuggets. Its models and texture come from `grid_block_model_gen.py`.
+
 ### Changed
 - **Every tier's voltage and rated current doubled**, so each carries 4x the FE/t: LV 256 V, 16 A, 4,096 FE/t per
   three-phase circuit (was 128 V, 8 A, 1,024); MV 1,024 V, 32 A, 32,768 (was 512 V, 16 A, 8,192); HV 4,096 V, 64 A,

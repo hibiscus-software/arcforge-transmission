@@ -101,6 +101,12 @@ public final class GridContent {
     public static final DeferredBlock<StationFenceBlock> STATION_FENCE = BLOCKS.registerBlock("station_fence", StationFenceBlock::new,
             p -> p.mapColor(MapColor.METAL).strength(4.0F, 6.0F).sound(SoundType.CHAIN).requiresCorrectToolForDrops().noOcclusion());
     public static final DeferredItem<BlockItem> STATION_FENCE_ITEM = ITEMS.registerSimpleBlockItem(STATION_FENCE);
+    // Barbed wire on top of the fence: nothing jumps it, and touching it pricks.
+    public static final DeferredBlock<StationFenceBarbedWireBlock> STATION_FENCE_BARBED_WIRE = BLOCKS.registerBlock("station_fence_barbed_wire",
+            StationFenceBarbedWireBlock::new,
+            p -> p.mapColor(MapColor.METAL).strength(2.0F, 6.0F).sound(SoundType.CHAIN).requiresCorrectToolForDrops().noOcclusion()
+                    .pushReaction(PushReaction.POPPED));
+    public static final DeferredItem<BlockItem> STATION_FENCE_BARBED_WIRE_ITEM = ITEMS.registerSimpleBlockItem(STATION_FENCE_BARBED_WIRE);
     public static final DeferredBlock<GroundGridBlock> GROUND_GRID = BLOCKS.registerBlock("ground_grid", GroundGridBlock::new,
             p -> p.mapColor(MapColor.COLOR_ORANGE).strength(1.0F, 6.0F).sound(SoundType.COPPER).noOcclusion());
     public static final DeferredItem<BlockItem> GROUND_GRID_ITEM = ITEMS.registerSimpleBlockItem(GROUND_GRID);
@@ -136,6 +142,7 @@ public final class GridContent {
         TAB_ITEMS.add(POLE_TRANSFORMER_ITEM);
         TAB_ITEMS.add(MV_DISTRIBUTION_TRANSFORMER_ITEM);
         TAB_ITEMS.add(STATION_FENCE_ITEM);
+        TAB_ITEMS.add(STATION_FENCE_BARBED_WIRE_ITEM);
         TAB_ITEMS.add(GROUND_GRID_ITEM);
         TAB_ITEMS.add(CURRENT_TRANSFORMER);
         TAB_ITEMS.add(POTENTIAL_TRANSFORMER);

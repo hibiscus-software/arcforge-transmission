@@ -153,7 +153,7 @@ public final class TowerContent {
         return switch (id) {
             case "surge_arrester", "fuse_link", "current_transformer", "potential_transformer", "control_cable" -> Tab.PROTECTION;
             case "pole_transformer", "mv_distribution_transformer" -> Tab.TRANSFORMERS;
-            case "station_fence", "ground_grid" -> Tab.YARD;
+            case "station_fence", "station_fence_barbed_wire", "ground_grid" -> Tab.YARD;
             default -> Tab.WIRING;
         };
     }
