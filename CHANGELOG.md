@@ -21,7 +21,8 @@
 - **Station Fence** and **Ground Grid**: a fault in a fenced yard gives step-potential shocks unless Ground Grid lies under it.
 - **HV and EHV Dead-End Towers** and **Transposition Towers** (the jumpers cross, rotating the phases), **Cable Risers**
   (every tier) and **HV and EHV Underground Cable**.
-- **Sectionalizer** (MV): counts recloser operations, opens in the dead time. **Automatic Transfer Switches** (LV, MV).
+- **Sectionalizer** (MV): counts recloser operations, opens in the dead time. **Automatic Transfer Switches** (LV, MV),
+  galvanized pad-mounted cabinets plated like the transformers.
 - **Storage** mode on Unit Transformers and Pin Insulators: a battery behind it covers the grid's shortfall and charges
   from its surplus.
 - **Fault events**: lightning, ground fault, phase loss and unbalance, raised where they happen.
@@ -30,6 +31,8 @@
 - Game tests (`./gradlew runGameTestServer`) and a model renderer (`./gradlew renderPreviews`).
 
 ### Changed
+- **Creative tabs**: one a kind of thing instead of one for everything: Towers & Lines, Transformers, Protection &
+  Switching, Substation Yard, Wiring & Tools, and Materials.
 - **Transformers are electrical links**, not FE buffers: substation and pole-mount transformers pass power either way as
   the grid needs, holding none. The Configure step-up/step-down toggle is gone (Configure now holds or frees the tap
   changer). `poleTransformer.buffer` is replaced by `transformers.poleRating` and `transformers.substationRating`.

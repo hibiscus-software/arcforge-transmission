@@ -13,6 +13,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
@@ -90,16 +91,87 @@ public final class TowerContent {
     public static final Supplier<BlockEntityType<TowerPartBlockEntity>> TOWER_PART_ENTITY = BLOCK_ENTITY_TYPES.register("transmission_tower_part",
             () -> new BlockEntityType<>(TowerPartBlockEntity::new, TOWER_PART.get()));
 
-    // The addon's creative tab.
-    public static final DeferredHolder<CreativeModeTab, CreativeModeTab> TAB = CREATIVE_MODE_TABS.register("transmission", () -> CreativeModeTab.builder()
-            .title(Component.translatable("itemGroup." + MODID + ".transmission"))
-            .icon(() -> EHV_LATTICE_TOWER_ITEM.get().getDefaultInstance())
-            .displayItems((parameters, output) -> {
-                allItems().forEach(item -> output.accept(item.get()));
-                GridContent.tabItems().forEach(item -> output.accept(item.get()));
-                MaterialContent.tabItems().forEach(item -> output.accept(item.get()));
-            })
-            .build());
+    // The addon's creative tabs, one a kind of thing: towers and lines, transformers, protection and switching, the
+    // substation yard, wiring and tools, and materials (in that order, each after the last).
+    public enum Tab {
+        TOWERS("towers"), TRANSFORMERS("transformers"), PROTECTION("protection"), YARD("yard"), WIRING("wiring"), MATERIALS("materials");
+
+        final String id;
+
+        Tab(String id) {
+            this.id = id;
+        }
+    }
+
+    private static final java.util.Map<Tab, DeferredHolder<CreativeModeTab, CreativeModeTab>> TABS = new java.util.EnumMap<>(Tab.class);
+
+    static {
+        Tab previous = null;
+        for (Tab tab : Tab.values()) {
+            Tab before = previous;
+            TABS.put(tab, CREATIVE_MODE_TABS.register(tab.id, () -> {
+                CreativeModeTab.Builder builder = CreativeModeTab.builder()
+                        .title(Component.translatable("itemGroup." + MODID + "." + tab.id))
+                        .icon(() -> icon(tab).getDefaultInstance())
+                        .displayItems((parameters, output) -> itemsIn(tab).forEach(item -> output.accept(item)));
+                if (before != null) {
+                    builder.withTabsBefore(Identifier.fromNamespaceAndPath(MODID, before.id));
+                }
+                return builder.build();
+            }));
+            previous = tab;
+        }
+    }
+
+    private static Item icon(Tab tab) {
+        return switch (tab) {
+            case TOWERS -> EHV_LATTICE_TOWER_ITEM.get();
+            case TRANSFORMERS -> HV_SUBSTATION_TRANSFORMER_ITEM.get();
+            case PROTECTION -> MORE_ITEMS.get(TowerTier.HV_BREAKER).get();
+            case YARD -> MORE_ITEMS.get(TowerTier.HV_BUS).get();
+            case WIRING -> GridContent.coil(net.zagdrath.arcforgetransmission.grid.VoltageTier.HV);
+            case MATERIALS -> MaterialContent.ALUMINIUM_INGOT.get();
+        };
+    }
+
+    // Which tab a structure goes in, by what it is.
+    private static Tab tabOf(TowerTier tier) {
+        return switch (tier.kind()) {
+            case TOWER, DEAD_END -> Tab.TOWERS;
+            case SUBSTATION, UNIT, SERVICE -> Tab.TRANSFORMERS;
+            case FUSE, BREAKER, DISCONNECT, SECTIONALIZER, GROUND, ATS, RELAY -> Tab.PROTECTION;
+            case BUS, REGULATOR, SHUNT -> Tab.YARD;
+        };
+    }
+
+    // Which tab one of the grid's own items goes in, by its id.
+    private static Tab tabOf(String id) {
+        return switch (id) {
+            case "surge_arrester", "fuse_link", "current_transformer", "potential_transformer", "control_cable" -> Tab.PROTECTION;
+            case "pole_transformer", "mv_distribution_transformer" -> Tab.TRANSFORMERS;
+            case "station_fence", "ground_grid" -> Tab.YARD;
+            default -> Tab.WIRING;
+        };
+    }
+
+    private static List<Item> itemsIn(Tab tab) {
+        List<Item> out = new java.util.ArrayList<>();
+        if (tab == Tab.MATERIALS) {
+            MaterialContent.tabItems().forEach(item -> out.add(item.get()));
+            return out;
+        }
+        for (DeferredItem<TowerItem> item : allItems()) {
+            if (tabOf(item.get().tier()) == tab) {
+                out.add(item.get());
+            }
+        }
+        for (DeferredItem<? extends Item> item : GridContent.tabItems()) {
+            if (tabOf(item.getId().getPath()) == tab) {
+                out.add(item.get());
+            }
+        }
+        return out;
+    }
 
     private TowerContent() {}
 

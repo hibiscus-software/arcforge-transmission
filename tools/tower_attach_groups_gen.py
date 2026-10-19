@@ -271,9 +271,9 @@ def ground_switch(tier):
 
 
 def capacitor(tier):
-    """TowerMesh.capacitorBank: a bushing per phase (x 8 + i * 12) on the rack's top (2 + rows x shelf + 1)."""
+    """TowerMesh.capacitorBank: a bushing per phase (x 8 + i * 12) on the top shelf (2 + rows x shelf)."""
     shelf, rows = (0, 10, 12)[tier], (0, 2, 3)[tier]
-    top = bushing_top(tier, 2 + rows * shelf + 1, True)
+    top = bushing_top(tier, 2 + rows * shelf, True)
     return lambda: {"groups": [{"name": "bank", "circuit": "three_phase", "terminals": abc([p(8 + i * 12, top, 8) for i in (-1, 0, 1)])}],
                     "reserved": []}
 

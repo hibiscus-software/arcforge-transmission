@@ -74,6 +74,10 @@ public class TowerItem extends BlockItem {
         return InteractionResult.SUCCESS;
     }
 
+    public TowerTier tier() {
+        return tier;
+    }
+
     // Puts a structure up standing on centre, oriented eighths of a turn from north (its room already checked): the main
     // block and its parts. Returns the main block's state. (The game tests build with it too.)
     public static BlockState build(Level level, Block block, TowerTier tier, BlockPos centre, int eighths) {

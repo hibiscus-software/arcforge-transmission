@@ -167,7 +167,7 @@ public final class TowerMesh extends MeshBuilder {
 
     // Flat swatches (4x4 from (64, 224), 32 a row), in the generator's order.
     static final int GALV0 = 0, WOOD0 = 10, PORC0 = 19, GLASS0 = 26, CAN0 = 33, COPPER0 = 40, CONC0 = 44, ALU0 = 50, HAZARD = 53, BLACK = 54,
-            RED = 55, MARKER = 56, GREEN0 = 57;
+            RED = 55, MARKER = 56;
 
     private static final float[] UP = { 0, 1, 0 };
 
@@ -1411,8 +1411,12 @@ public final class TowerMesh extends MeshBuilder {
             swatchBox(x + r - 0.2F, dy - 1.5F, c - 1.5F, x + r + 0.6F, dy + 1.5F, c + 1.5F, BLACK);
             swatchBox(x + r + 0.6F, dy - 0.2F, c - 1.2F, x + r + 0.8F, dy + 0.2F, c + 0.3F, MARKER);
         }
+        // The control cabinet beside the platform's east end, on its own pedestal, bracketed to the platform.
+        plateBox(x1 + 1.2F, 0, c - 1, x1 + 2.8F, deck + 1, c + 1, Mat.GALV);
+        plateBox(x1 + 0.6F, 0, c - 2, x1 + 3.4F, 0.6F, c + 2, Mat.GALV);
+        plateBox(x1 - 0.2F, deck - 1.2F, c - 0.5F, x1 + 1.2F, deck - 0.2F, c + 0.5F, Mat.GALV);
         plateBox(x1, deck + 1, c - 3, x1 + 4, deck + 9, c + 3, Mat.GALV);
-        frame.add(new float[] { x1, deck + 1, c - 3, x1 + 4, deck + 9, c + 3 });
+        frame.add(new float[] { x1, 0, c - 3, x1 + 4, deck + 9, c + 3 });
     }
 
     // Relay Panel: a galvanized control cabinet on a plinth, its door on the north face with two meters, the trip and
@@ -1466,15 +1470,16 @@ public final class TowerMesh extends MeshBuilder {
         };
     }
 
-    // Shunt Capacitor Bank (MV, HV): a galvanized rack with shelves of capacitor units (stainless cans, two small
-    // porcelain bushings each), a row per shelf, two units a phase; on top, a bushing of its tier per phase (A B C west to
-    // east), the bank's terminals.
+    // Shunt Capacitor Bank (MV, HV): a galvanized rack with shelves of capacitor units (plated steel cans, two small
+    // porcelain bushings each), a row per shelf, two units a phase; standing on its top shelf, a bushing of its tier per
+    // phase (A B C west to east), the bank's terminals.
     public static final float[] CAP_SHELF = { 0, 10, 12, 0 };
     public static final int[] CAP_ROWS = { 0, 2, 3, 0 };
     public static final float CAP_SPACING = 12, CAP_HALF_Z = 5;
 
+    // The top shelf's top, where the bushings stand.
     public static float capTop(int tier) {
-        return 2 + CAP_ROWS[tier] * CAP_SHELF[tier] + 1;
+        return 2 + CAP_ROWS[tier] * CAP_SHELF[tier];
     }
 
     private void capacitorBank(int tier) {
@@ -1493,15 +1498,14 @@ public final class TowerMesh extends MeshBuilder {
             for (int i = -1; i <= 1; i++) {
                 for (float dx : new float[] { -2.8F, 2.8F }) {
                     float x = c + i * CAP_SPACING + dx;
-                    swatchBox(x - 2.2F, y, c - 3.2F, x + 2.2F, y + shelf - 3.0F, c + 3.2F, ALU0 + 2);
-                    swatchBox(x - 2.2F, y + shelf - 3.4F, c - 3.2F, x + 2.2F, y + shelf - 3.0F, c + 3.2F, ALU0 + 1);
+                    plateBox(x - 2.2F, y, c - 3.2F, x + 2.2F, y + shelf - 3.0F, c + 3.2F, Mat.GALV);
                     for (float dz : new float[] { -1.5F, 1.5F }) {
                         swatchBox(x - 0.6F, y + shelf - 3.0F, c + dz - 0.6F, x + 0.6F, y + shelf - 1.6F, c + dz + 0.6F, PORC0 + 3);
                     }
                 }
             }
         }
-        frame.add(new float[] { c - hx - 0.8F, 0, c - CAP_HALF_Z - 0.8F, c + hx + 0.8F, top, c + CAP_HALF_Z + 0.8F });
+        frame.add(new float[] { c - hx - 0.8F, 0, c - CAP_HALF_Z - 0.8F, c + hx + 0.8F, Math.max(top, 2 + CAP_ROWS[tier] * shelf), c + CAP_HALF_Z + 0.8F });
         for (int i = -1; i <= 1; i++) {
             bushing(tier, c + i * CAP_SPACING, top, c, true);
         }
@@ -1703,7 +1707,8 @@ public final class TowerMesh extends MeshBuilder {
         }
     }
 
-    // Automatic Transfer Switch (LV, MV): a green pad-mounted cabinet on a concrete pad with three rows of bushings on its
+    // Automatic Transfer Switch (LV, MV): a galvanized pad-mounted cabinet (plated like the transformers' tanks, its lid a
+    // plate over it) on a concrete pad with three rows of bushings on its
     // roof: the preferred feeder (north row), the load (south row) and the alternate feeder (middle row), each A B C west
     // to east; two position lamps on its front (green: on the preferred; amber: on the alternate).
     public static final float[] ATS_HALF = { 9, 12, 0, 0 }, ATS_H = { 12, 16, 0, 0 }, ATS_SPACING = { 6.0F, 7.5F, 0, 0 };
@@ -1716,12 +1721,7 @@ public final class TowerMesh extends MeshBuilder {
         float c = 8, h = ATS_HALF[tier], height = ATS_H[tier];
         concrete(c - h - 2, 0, c - h - 2, c + h + 2, 1, c + h + 2);
         plateBox(c - h, 1, c - h, c + h, 1 + height, c + h, Mat.GALV);
-        float green = GREEN0 + 1;
-        for (int side = -1; side <= 1; side += 2) {
-            swatchBox(c - h + 1, 2, c + side * h - (side > 0 ? 0 : 0.3F), c + h - 1, height, c + side * h + (side > 0 ? 0.3F : 0), (int) green);
-            swatchBox(c + side * h - (side > 0 ? 0 : 0.3F), 2, c - h + 1, c + side * h + (side > 0 ? 0.3F : 0), height, c + h - 1, GREEN0 + 2);
-        }
-        swatchBox(c - h, 1 + height, c - h, c + h, 1.6F + height, c + h, GREEN0);
+        plateBox(c - h - 0.5F, 1 + height, c - h - 0.5F, c + h + 0.5F, 1.6F + height, c + h + 0.5F, Mat.GALV);
         swatchBox(c - 3, height - 3, c - h - 0.6F, c - 1.6F, height - 1.6F, c - h - 0.3F, alternate ? BLACK : MARKER);
         swatchBox(c + 1.6F, height - 3, c - h - 0.6F, c + 3, height - 1.6F, c - h - 0.3F, alternate ? HAZARD : BLACK);
         frame.add(new float[] { c - h - 2, 0, c - h - 2, c + h + 2, 1.6F + height, c + h + 2 });

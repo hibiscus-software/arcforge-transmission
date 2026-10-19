@@ -58,8 +58,6 @@ ALU = [hx(c) for c in ("#3A3F44", "#9AA1A6", "#C8CDD0")]
 HAZ_YELLOW, HAZ_BLACK = hx("#E0B020"), hx("#1A1A1A")
 RED, RED_DARK = hx("#E5483C"), hx("#8E231C")
 MARKER = hx("#5FD4C4")
-# Pad-mount green (the transfer switch's cabinet): its top, faces and shaded faces.
-GREEN = [hx(c) for c in ("#8DAE7C", "#78996A", "#628257")]
 
 # Flat swatches, in order (TowerMesh's swatch indices match this list; "marker" is unused for now).
 SWATCHES = (
@@ -72,7 +70,6 @@ SWATCHES = (
     + [("conc", i, c) for i, c in enumerate(CONC)]
     + [("alu", i, c) for i, c in enumerate(ALU)]
     + [("hazard", 0, HAZ_YELLOW), ("black", 0, HAZ_BLACK), ("red", 0, RED), ("marker", 0, MARKER)]
-    + [("green", i, c) for i, c in enumerate(GREEN)]
 )
 
 img = Image.new("RGBA", (W, H), (0, 0, 0, 0))
@@ -545,7 +542,6 @@ ITEMS["service_meter"] = service_sprite()
 
 CL, CM, CD = CAN[5], CAN[3], CAN[1]
 KL, KD = COPPER[3], COPPER[1]
-NL, NM, ND = GREEN
 
 
 def glass_or_porcelain(glass, k):
@@ -677,8 +673,8 @@ def sectionalizer_sprite():
 
 
 def ats_sprite(mv):
-    """An Automatic Transfer Switch: the green pad-mounted cabinet on its pad and its three rows of bushings."""
-    shapes = box(1, 14, 14, 15, CONC[3], CONC[1], CONC[2]) + box(2, 7, 13, 13, NL, ND, NM) + [(5, 10, MARKER), (10, 10, HAZ_YELLOW)]
+    """An Automatic Transfer Switch: the galvanized pad-mounted cabinet on its pad and its three rows of bushings."""
+    shapes = box(1, 14, 14, 15, CONC[3], CONC[1], CONC[2]) + box(2, 7, 13, 13, GL, GD, GM) + [(5, 10, MARKER), (10, 10, HAZ_YELLOW)]
     for x in (4, 7, 10):
         shapes += [(x, y, PL if y % 2 else PM) for y in range(3 if mv else 4, 7)]
         shapes += [(x + 1, 6, PM)]

@@ -1,5 +1,4 @@
 {
-  "itemGroup.arcforgetransmission.transmission": "Arcforge: Transmission",
   "block.arcforgetransmission.lv_distribution_pole": "LV Distribution Pole",
   "block.arcforgetransmission.mv_sub_transmission_pole": "MV Sub-Transmission Pole",
   "block.arcforgetransmission.hv_h_frame_tower": "HV H-Frame Tower",
@@ -263,5 +262,11 @@
   "tooltip.arcforgetransmission.info.ground_grid": "Lay it under a yard: within its reach of a fault the ground stays even, so no one standing there is shocked.",
   "tooltip.arcforgetransmission.info.current_transformer": "Fit it to a breaker or substation transformer (use it on one) for a Relay Panel to read its current.",
   "tooltip.arcforgetransmission.info.potential_transformer": "Fit it to a breaker, transformer or capacitor bank (use it on one) for a Relay Panel to read its voltage.",
-  "tooltip.arcforgetransmission.info.control_cable": "Use it on a Relay Panel, then on what it protects or switches; or on a Disconnect Switch, then its breaker (the interlock). Again to unlink. Not used up."
+  "tooltip.arcforgetransmission.info.control_cable": "Use it on a Relay Panel, then on what it protects or switches; or on a Disconnect Switch, then its breaker (the interlock). Again to unlink. Not used up.",
+  "itemGroup.arcforgetransmission.towers": "Transmission: Towers & Lines",
+  "itemGroup.arcforgetransmission.transformers": "Transmission: Transformers",
+  "itemGroup.arcforgetransmission.protection": "Transmission: Protection & Switching",
+  "itemGroup.arcforgetransmission.yard": "Transmission: Substation Yard",
+  "itemGroup.arcforgetransmission.wiring": "Transmission: Wiring & Tools",
+  "itemGroup.arcforgetransmission.materials": "Transmission: Materials"
 }
