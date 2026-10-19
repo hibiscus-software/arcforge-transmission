@@ -62,6 +62,7 @@
   "command.arcforgetransmission.config.already_default": "Already at the defaults: %s",
   "command.arcforgetransmission.config.unknown": "No Arcforge: Transmission setting or section called %s",
   "command.arcforgetransmission.config.and_more": "%s and %s more",
+  "command.arcforgetransmission.config.old_defaults": "The defaults changed: every tier's voltage and rated current doubled (4x the power), and the pole transformers' rating with them. These still hold the old defaults: %s. Reset them to carry the new ratings.",
   "hud.arcforgetransmission.pin_insulator.mode": "%s \u00b7 limit %s A (%s/8)",
   "hud.arcforgetransmission.pin_insulator.flow": "%s \u00b7 %s FE/t",
   "tooltip.arcforgetransmission.hold_shift": "Hold [%s] for info",

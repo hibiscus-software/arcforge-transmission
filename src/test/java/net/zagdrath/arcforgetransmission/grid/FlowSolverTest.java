@@ -36,7 +36,7 @@ class FlowSolverTest {
     void deliversDemandAndPaysLossesFromTheSource() {
         FlowSolver.Result result = line(VoltageTier.LV, 2, 16, 2000, 1000);
         assertEquals(1000.0, result.delivered(2), 1.0E-6);
-        double amps = 1000.0 / 128;
+        double amps = 1000.0 / VoltageTier.LV.volts();
         // Three spans, three conductors each.
         double expectedLoss = 3 * (3 * amps * amps * 0.008 * 16);
         assertEquals(expectedLoss, result.totalLoss(), 1.0E-6);
@@ -87,7 +87,7 @@ class FlowSolverTest {
         FlowSolver.Result result = FlowSolver.solve(graph, List.of(new Port(1, VoltageTier.LV, GridFixtures.at(1), 5000, 0, 4.0),
                 sink(2, VoltageTier.LV, GridFixtures.at(3), 2000)), SETTINGS);
         assertEquals(4.0, result.amps(GridFixtures.edge(0, 1)), 1.0E-9);
-        assertEquals(4.0 * 128, result.delivered(2), 1.0E-6);
+        assertEquals(4.0 * VoltageTier.LV.volts(), result.delivered(2), 1.0E-6);
     }
 
     @Test
@@ -103,9 +103,9 @@ class FlowSolverTest {
 
     @Test
     void superconductorLosesAlmostNothing() {
-        FlowSolver.Result result = line(VoltageTier.EHV, 3, 32, 600_000, 524_288);
-        assertEquals(524_288.0, result.delivered(2), 1.0E-6);
-        assertTrue(result.totalLoss() < 0.01 * 524_288, "EHV lost " + result.totalLoss());
+        FlowSolver.Result result = line(VoltageTier.EHV, 3, 32, 2_400_000, 2_097_152);
+        assertEquals(2_097_152.0, result.delivered(2), 1.0E-6);
+        assertTrue(result.totalLoss() < 0.01 * 2_097_152, "EHV lost " + result.totalLoss());
     }
 
     @Test
@@ -176,17 +176,17 @@ class FlowSolverTest {
         }
         // 10 A on L1, 5 A on L2.
         FlowSolver.Result result = FlowSolver.solve(graph, List.of(source(1, VoltageTier.LV, List.of(1L, 3L), 5000),
-                source(2, VoltageTier.LV, List.of(2L, 3L), 5000), sink(3, VoltageTier.LV, List.of(11L, 13L), 1280),
-                sink(4, VoltageTier.LV, List.of(12L, 13L), 640)), SETTINGS);
-        assertEquals(1280.0, result.delivered(3), 1.0E-6);
-        assertEquals(640.0, result.delivered(4), 1.0E-6);
+                source(2, VoltageTier.LV, List.of(2L, 3L), 5000), sink(3, VoltageTier.LV, List.of(11L, 13L), 2560),
+                sink(4, VoltageTier.LV, List.of(12L, 13L), 1280)), SETTINGS);
+        assertEquals(2560.0, result.delivered(3), 1.0E-6);
+        assertEquals(1280.0, result.delivered(4), 1.0E-6);
         assertEquals(10.0, result.amps(100), 1.0E-9);
         assertEquals(5.0, result.amps(101), 1.0E-9);
         assertEquals(5.0, result.amps(102), 1.0E-9);
         // Balanced, the neutral carries nothing.
         FlowSolver.Result balanced = FlowSolver.solve(graph, List.of(source(1, VoltageTier.LV, List.of(1L, 3L), 5000),
-                source(2, VoltageTier.LV, List.of(2L, 3L), 5000), sink(3, VoltageTier.LV, List.of(11L, 13L), 640),
-                sink(4, VoltageTier.LV, List.of(12L, 13L), 640)), SETTINGS);
+                source(2, VoltageTier.LV, List.of(2L, 3L), 5000), sink(3, VoltageTier.LV, List.of(11L, 13L), 1280),
+                sink(4, VoltageTier.LV, List.of(12L, 13L), 1280)), SETTINGS);
         assertEquals(0.0, balanced.amps(102), 1.0E-9);
         assertEquals(balanced.totalDrawn(), balanced.totalDelivered() + balanced.totalLoss(), 1.0E-6);
     }

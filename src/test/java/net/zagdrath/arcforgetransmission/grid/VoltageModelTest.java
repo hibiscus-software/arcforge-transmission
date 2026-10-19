@@ -141,7 +141,7 @@ class VoltageModelTest {
         FlowSolver.Result up = FlowSolver.solve(graph, List.of(source(1, VoltageTier.LV, lvAt(4), 1000), sink(2, VoltageTier.MV, GridFixtures.at(1), 500)),
                 List.of(transformer(0)), List.of(), Set.of(), S, new FlowSolver.State());
         assertEquals(500, up.delivered(2), 1.0E-6, "stepped up, the same transformer");
-        // The LV side's current is the MV side's times four (512 V / 128 V).
+        // The LV side's current is the MV side's times four (1024 V / 256 V).
         double mvAmps = down.amps(GridFixtures.edge(0, 1)), lvAmps = down.amps(10_000 + GridFixtures.edge(0, 3));
         assertEquals(4.0, lvAmps / mvAmps, 1.0E-6);
         FlowSolver.Result out = FlowSolver.solve(graph, List.of(source(1, VoltageTier.MV, GridFixtures.at(1), 1000), sink(2, VoltageTier.LV, lvAt(4), 500)),

@@ -19,6 +19,9 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.gametest.framework.TestData;
 import net.minecraft.gametest.framework.TestEnvironmentDefinition;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.DoubleTag;
+import net.minecraft.nbt.IntArrayTag;
+import net.minecraft.nbt.ListTag;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
@@ -52,6 +55,7 @@ import net.zagdrath.arcforgetransmission.grid.GridEdge;
 import net.zagdrath.arcforgetransmission.grid.VoltageTier;
 import net.zagdrath.arcforgetransmission.grid.block.GridContent;
 import net.zagdrath.arcforgetransmission.grid.block.PoleTransformerBlock;
+import net.zagdrath.arcforgetransmission.grid.world.ConfigReset;
 import net.zagdrath.arcforgetransmission.grid.world.GridConfig;
 import net.zagdrath.arcforgetransmission.grid.world.GridData;
 import net.zagdrath.arcforgetransmission.grid.world.GridManager;
@@ -76,7 +80,8 @@ import net.zagdrath.arcforgetransmission.tower.TowerTier;
 //  - a transfer switch moves its load to the alternate when the preferred dies (judged from the preferred's own side),
 //    and not when held;
 //  - a device's state comes back whole from its saved data, the grid's save (node keys, a regulator's boost) reloads as
-//    it was, and a block whose chunk unloads and loads again takes up where it left off.
+//    it was, and a block whose chunk unloads and loads again takes up where it left off;
+//  - a grid saved before the tiers' voltages doubled loads unchanged (tiers are saved by name) and runs at the new ratings.
 // Each test stands on a stone floor in an empty structure, with room round it.
 @EventBusSubscriber(modid = ArcforgeTransmission.MODID)
 public final class TransmissionGameTests {
@@ -96,6 +101,7 @@ public final class TransmissionGameTests {
         TESTS.put("transfer_switch_judges_the_preferred_by_its_own_side", TransmissionGameTests::transferSwitch);
         TESTS.put("device_state_survives_saving", TransmissionGameTests::deviceStateSurvivesSaving);
         TESTS.put("grid_save_reloads_and_chunks_unload", TransmissionGameTests::gridSaveReloadsAndChunksUnload);
+        TESTS.put("old_save_loads_at_the_new_ratings", TransmissionGameTests::oldSaveLoadsAtTheNewRatings);
     }
 
     private TransmissionGameTests() {}
@@ -420,7 +426,8 @@ public final class TransmissionGameTests {
         });
         helper.startSequence()
                 .thenExecuteAfter(2, () -> {
-                    setResistance(VoltageTier.MV, 0.6);
+                    // The cells give 2048 FE/t whatever the tier: the drop per unit is P R / V^2, so 4x the resistance it took at 512 V.
+                    setResistance(VoltageTier.MV, 2.4);
                     GridConfig.TAP_DELAY.set(2);
                     wire(helper, generator, ABC, regulator, ABC, VoltageTier.MV, GridEdge.Kind.BARE);
                     wire(helper, regulator, SECOND, sink, ABC, VoltageTier.MV, GridEdge.Kind.BARE);
@@ -794,5 +801,59 @@ public final class TransmissionGameTests {
                 })
                 .thenWaitUntil(() -> helper.assertTrue(stored(helper, loadCell) > before[0], "The load wasn't fed again after its unit came back"))
                 .thenSucceed();
+    }
+
+    // A save written before each tier's volts and amps doubled: an LV wire and an EHV one (its tier still "ev", from before
+    // the rename), in the format of the time. It needs no migration: tiers are saved by name, so it loads as it was and its
+    // wires carry the new ratings.
+    private static void oldSaveLoadsAtTheNewRatings(GameTestHelper helper) {
+        ListTag nodes = new ListTag(), edges = new ListTag();
+        String[] tiers = { "lv", "lv", "ev", "ev" };
+        for (int i = 0; i < tiers.length; i++) {
+            CompoundTag node = new CompoundTag();
+            node.putLong("id", i + 1);
+            node.put("pos", new IntArrayTag(new int[] { i * 16, 64, 0 }));
+            node.putInt("index", 0);
+            node.putString("tier", tiers[i]);
+            node.putString("phase", "a");
+            ListTag at = new ListTag();
+            at.add(DoubleTag.valueOf(i * 16 + 0.5));
+            at.add(DoubleTag.valueOf(70.0));
+            at.add(DoubleTag.valueOf(0.5));
+            node.put("at", at);
+            nodes.add(node);
+        }
+        for (int i = 0; i < 2; i++) {
+            CompoundTag edge = new CompoundTag();
+            edge.putLong("id", 10 + i);
+            edge.putLong("a", 2 * i + 1);
+            edge.putLong("b", 2 * i + 2);
+            edge.putString("tier", tiers[2 * i]);
+            edge.putDouble("length", 16.2);
+            edges.add(edge);
+        }
+        CompoundTag dimension = new CompoundTag();
+        dimension.putString("dimension", "arcforgetransmission:old_save");
+        dimension.putLong("next_id", 20);
+        dimension.put("nodes", nodes);
+        dimension.put("edges", edges);
+        ListTag saved = new ListTag();
+        saved.add(dimension);
+        GridData loaded = GridData.TYPE.codec().parse(NbtOps.INSTANCE, saved).getOrThrow();
+        GridData.Dimension grid = loaded.dimension("arcforgetransmission:old_save");
+        helper.assertTrue(grid != null, "The old save didn't load");
+        var wires = GridData.edgesOf(grid);
+        helper.assertTrue(wires.size() == 2, "Wires lost: " + wires);
+        helper.assertTrue(wires.stream().anyMatch(w -> w.id() == 10 && w.tier() == VoltageTier.LV)
+                && wires.stream().anyMatch(w -> w.id() == 11 && w.tier() == VoltageTier.EHV), "Tiers changed: " + wires);
+        helper.assertTrue(grid.graph().node(1).tier() == VoltageTier.LV && grid.graph().node(3).tier() == VoltageTier.EHV, "Nodes' tiers changed");
+        // The loaded wires run at the new ratings: the tiers' voltages, and the config's defaults for their current (a file
+        // written before keeps its own, and config reset lists it).
+        helper.assertTrue(VoltageTier.LV.volts() == 256 && VoltageTier.EHV.volts() == 16_384, "Tier voltages");
+        var settings = ConfigReset.settings();
+        helper.assertTrue(((Number) settings.get("wires.lv.ratedAmps").getDefault()).doubleValue() == 16.0
+                && ((Number) settings.get("wires.ehv.ratedAmps").getDefault()).doubleValue() == 128.0
+                && ((Number) settings.get("transformers.poleRating").getDefault()).intValue() == 4_096, "The config's defaults aren't the new ratings");
+        helper.succeed();
     }
 }

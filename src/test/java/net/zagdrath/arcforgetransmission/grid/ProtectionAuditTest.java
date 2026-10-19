@@ -86,9 +86,9 @@ class ProtectionAuditTest {
                 protective.put((long) k * 100 + 10 + s, new FlowSolver.Protective(pickup, false));
             }
         }
-        List<Port> ports = List.of(new Port(1, VoltageTier.MV, List.of(1L, 101L, 201L), 20000, 0, Double.POSITIVE_INFINITY),
-                new Port(2, VoltageTier.MV, List.of(6L, 106L, 206L), 0, 512, Double.POSITIVE_INFINITY),
-                new Port(3, VoltageTier.MV, List.of(8L, 108L, 208L), 0, 9000, Double.POSITIVE_INFINITY));
+        List<Port> ports = List.of(new Port(1, VoltageTier.MV, List.of(1L, 101L, 201L), 40000, 0, Double.POSITIVE_INFINITY),
+                new Port(2, VoltageTier.MV, List.of(6L, 106L, 206L), 0, 1024, Double.POSITIVE_INFINITY),
+                new Port(3, VoltageTier.MV, List.of(8L, 108L, 208L), 0, 18000, Double.POSITIVE_INFINITY));
         FlowSolver.Result result = FlowSolver.solve(graph, ports, List.of(), List.of(), Set.of(), protective, S, new FlowSolver.State());
         assertTrue(result.amps(15) > pickup && result.amps(12) < pickup, "the heavy branch is overloaded, the light one isn't");
         assertEquals(1, result.beyond(11), "the feeder breaker counts the one overloaded device on the heavy branch, not the light branch's two");
@@ -97,14 +97,14 @@ class ProtectionAuditTest {
 
     @Test
     void theDifferentialCountsBothSidesIntoTheTransformer() {
-        double rating = 8192, pickup = 0.1 * rating, slope = 0.25;
+        double rating = VoltageTier.MV.defaultMaxPower(), pickup = 0.1 * rating, slope = 0.25;
         // Load through it: in on the primary, out on the secondary (counted in: negative).
-        assertFalse(Differential.trips(6000, -6000, pickup, slope), "load through it");
+        assertFalse(Differential.trips(24000, -24000, pickup, slope), "load through it");
         // A fault beyond it: a big current straight through.
-        assertFalse(Differential.trips(60000, -60000, pickup, slope), "a fault beyond it");
+        assertFalse(Differential.trips(240000, -240000, pickup, slope), "a fault beyond it");
         // A fault inside it (a lightning surge with no arrester): current in from both sides.
-        assertTrue(Differential.trips(6000 + 20000, -6000 + 20000, pickup, slope), "a fault inside it");
-        assertTrue(Differential.trips(20000, 0, pickup, slope), "an internal fault fed from one side");
+        assertTrue(Differential.trips(24000 + 80000, -24000 + 80000, pickup, slope), "a fault inside it");
+        assertTrue(Differential.trips(80000, 0, pickup, slope), "an internal fault fed from one side");
     }
 
     @Test

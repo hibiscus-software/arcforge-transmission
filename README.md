@@ -32,6 +32,21 @@ Engineering style.
    wrong with the wiring.
 5. **Watch the voltage.** Other mods' machines are LV only: MV and above destroys them.
 
+**Tiers.** One three-phase circuit carries the tier's volts times its rated amps in FE/t; the EHV lattice carries two
+circuits, so a full EHV tower line carries twice that. At its rating a circuit loses about 2.5% of its power in each
+longest span (EHV's superconductor next to nothing):
+
+| Tier | Volts | Rated A | FE/t per three-phase circuit | Conductor | Longest span |
+|---|---|---|---|---|---|
+| LV | 256 | 16 | 4,096 | copper | 16 |
+| MV | 1,024 | 32 | 32,768 | aluminium | 24 |
+| HV | 4,096 | 64 | 262,144 | silver alloy | 32 |
+| EHV | 16,384 | 128 | 2,097,152 | superconductor | 64 |
+
+Everything rated by the tier follows it: fuses, breakers and reclosers trip at shares of the wire's rating, unit and
+substation transformers pass the tier's rated power, and the Pole-Mount and MV Distribution Transformers 4,096 FE/t
+(`transformers.poleRating`).
+
 The **Pole-Mount Transformer** hangs on a pole. It takes three phases in on its lid and gives US split phase (L1, N, L2)
 out on its front.
 

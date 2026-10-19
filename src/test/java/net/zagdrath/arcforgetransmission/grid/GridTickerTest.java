@@ -26,7 +26,7 @@ class GridTickerTest {
     @Test
     void energyIsNeverMade() {
         GridGraph graph = GridFixtures.line(VoltageTier.LV, 2, 16);
-        GridFixtures.Buffers terminals = new GridFixtures.Buffers(VoltageTier.LV).source(1, GridFixtures.at(1), 1_000_000, 1024)
+        GridFixtures.Buffers terminals = new GridFixtures.Buffers(VoltageTier.LV).source(1, GridFixtures.at(1), 1_000_000, 4096)
                 .sink(2, GridFixtures.at(4), 900);
         long before = terminals.stored.values().stream().mapToLong(Long::longValue).sum();
         double lost = 0;
@@ -43,9 +43,9 @@ class GridTickerTest {
     @Test
     void anOverloadedWireBurnsOutAfterTheConfiguredTicks() {
         GridGraph graph = GridFixtures.line(VoltageTier.LV, 1, 8);
-        // 2048 FE/t at 128 V is 16 A in each conductor of 8 A wire.
-        GridFixtures.Buffers terminals = new GridFixtures.Buffers(VoltageTier.LV).source(1, GridFixtures.at(1), 10_000_000, 4096)
-                .sink(2, GridFixtures.at(3), 2048);
+        // 8192 FE/t at 256 V is 32 A in each conductor of 16 A wire: twice its rating.
+        GridFixtures.Buffers terminals = new GridFixtures.Buffers(VoltageTier.LV).source(1, GridFixtures.at(1), 10_000_000, 16_384)
+                .sink(2, GridFixtures.at(3), 8192);
         List<FaultEvent> faults = new ArrayList<>();
         Consumer<FaultEvent> listener = faults::add;
         GridFaults.listen(listener);
@@ -54,7 +54,7 @@ class GridTickerTest {
                 assertTrue(GridTicker.tick(graph, terminals, SETTINGS).burnt().isEmpty(), "burnt early at tick " + tick);
             }
             GridTicker.Report report = GridTicker.tick(graph, terminals, SETTINGS);
-            // Both spans of all three conductors carry the full 16 A, so all six go.
+            // Both spans of all three conductors carry the full 32 A, so all six go.
             assertEquals(6, report.burnt().size(), "burnt");
             assertNull(graph.edge(GridFixtures.edge(0, 1)));
             assertNull(graph.edge(GridFixtures.edge(2, 2)));
@@ -65,7 +65,7 @@ class GridTickerTest {
         long burnouts = faults.stream().filter(f -> f.cause() == FaultEvent.Cause.OVERCURRENT_BURNOUT).count();
         assertTrue(overcurrents >= SETTINGS.burnoutTicks(), "overcurrent events " + overcurrents);
         assertEquals(6L, burnouts);
-        assertEquals(16.0, faults.get(faults.size() - 1).magnitude(), 0.5);
+        assertEquals(32.0, faults.get(faults.size() - 1).magnitude(), 0.5);
         // With its wires gone, nothing more moves.
         long delivered = terminals.deliveredTotal;
         GridTicker.tick(graph, terminals, SETTINGS);
@@ -75,14 +75,14 @@ class GridTickerTest {
     @Test
     void aBriefOverloadDoesNotBurn() {
         GridGraph graph = GridFixtures.line(VoltageTier.LV, 1, 8);
-        GridFixtures.Buffers terminals = new GridFixtures.Buffers(VoltageTier.LV).source(1, GridFixtures.at(1), 10_000_000, 4096)
-                .sink(2, GridFixtures.at(3), 2048);
+        GridFixtures.Buffers terminals = new GridFixtures.Buffers(VoltageTier.LV).source(1, GridFixtures.at(1), 10_000_000, 16_384)
+                .sink(2, GridFixtures.at(3), 8192);
         for (int tick = 0; tick < SETTINGS.burnoutTicks() - 1; tick++) {
             GridTicker.tick(graph, terminals, SETTINGS);
         }
         terminals.demand.put(2L, 500.0);
         GridTicker.tick(graph, terminals, SETTINGS);
-        terminals.demand.put(2L, 2048.0);
+        terminals.demand.put(2L, 8192.0);
         for (int tick = 0; tick < SETTINGS.burnoutTicks() - 1; tick++) {
             assertTrue(GridTicker.tick(graph, terminals, SETTINGS).burnt().isEmpty());
         }
@@ -92,9 +92,9 @@ class GridTickerTest {
     @Test
     void anPinInsulatorsCurrentLimitPreventsTheBurnout() {
         GridGraph graph = GridFixtures.line(VoltageTier.LV, 1, 8);
-        // The source's pin insulators are set to the wire's 8 A rating.
-        GridFixtures.Buffers terminals = new GridFixtures.Buffers(VoltageTier.LV).source(1, GridFixtures.at(1), 10_000_000, 4096)
-                .sink(2, GridFixtures.at(3), 2048).limit(1, 8.0);
+        // The source's pin insulators are set to the wire's 16 A rating.
+        GridFixtures.Buffers terminals = new GridFixtures.Buffers(VoltageTier.LV).source(1, GridFixtures.at(1), 10_000_000, 16_384)
+                .sink(2, GridFixtures.at(3), 8192).limit(1, 16.0);
         for (int tick = 0; tick < SETTINGS.burnoutTicks() * 3; tick++) {
             assertTrue(GridTicker.tick(graph, terminals, SETTINGS).burnt().isEmpty(), "burnt at tick " + tick);
         }

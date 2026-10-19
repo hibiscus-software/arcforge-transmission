@@ -21,6 +21,11 @@ import net.neoforged.neoforge.common.ModConfigSpec;
 // or a section's ("wires.ehv"); "" is everything. Changes are written to the file at once and apply straight away (the
 // grid reads its settings every time it uses them).
 public final class ConfigReset {
+    // Defaults raised since a file may have been written (each tier's volts and amps doubled): a file holding the old
+    // value keeps it, and the reset listing says so until it's reset or changed.
+    private static final Map<String, Double> OLD_DEFAULTS = Map.of("wires.lv.ratedAmps", 8.0, "wires.mv.ratedAmps", 16.0,
+            "wires.hv.ratedAmps", 32.0, "wires.ehv.ratedAmps", 64.0, "transformers.poleRating", 1_024.0);
+
     private ConfigReset() {}
 
     // Every setting, by its dotted path, in the file's order.
@@ -70,6 +75,18 @@ public final class ConfigReset {
             }
         });
         return changed;
+    }
+
+    // The settings still holding a default from before it was raised (see OLD_DEFAULTS).
+    public static List<String> stale() {
+        List<String> stale = new ArrayList<>();
+        settings().forEach((name, setting) -> {
+            Double old = OLD_DEFAULTS.get(name);
+            if (old != null && setting.getRaw() instanceof Number value && value.doubleValue() == old) {
+                stale.add(name);
+            }
+        });
+        return stale;
     }
 
     // Resets the settings at or under the path and saves the file. Returns the paths that changed.

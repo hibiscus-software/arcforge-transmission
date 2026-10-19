@@ -1,5 +1,22 @@
 # Changelog
 
+## Unreleased: tier voltages, gantry jumpers, station fences, sound and particles, power plants on the grid
+
+### Changed
+- **Every tier's voltage and rated current doubled**, so each carries 4x the FE/t: LV 256 V, 16 A, 4,096 FE/t per
+  three-phase circuit (was 128 V, 8 A, 1,024); MV 1,024 V, 32 A, 32,768 (was 512 V, 16 A, 8,192); HV 4,096 V, 64 A,
+  262,144 (was 2,048 V, 32 A, 65,536); EHV 16,384 V, 128 A, 2,097,152 (was 8,192 V, 64 A, 524,288). Resistance and
+  reactance per block are unchanged, so at its rating a circuit loses the same share of its power (about 2.5% a longest
+  span) and drops the same voltage per unit.
+- Everything rated by the tier keeps pace: fuse, recloser and breaker trip settings, relay pickups, unit and substation
+  transformers, storage rates, capacitor banks and reactors (shares of the tier's rating) and the HUD's 80% warning.
+  `transformers.poleRating` (Pole-Mount and MV Distribution Transformers) is 4,096 FE/t (was 1,024).
+- **Existing worlds.** Saved grids load as they were (tiers are saved by name) and run at the new voltages. A config
+  file written before keeps its old `wires.<tier>.ratedAmps` and `transformers.poleRating` (half the new current, a
+  quarter of the new pole rating); `/arcforgetransmission config reset all` lists them with a note that the defaults
+  changed, and `/arcforgetransmission config reset all confirm` (or `reset wires`, `reset transformers.poleRating`) puts
+  them on the new ones. Shocks and voltage ratings (`arcforgetransmission:rated/<tier>`) are by tier and unchanged.
+
 ## Unreleased: Phase 4, substations, line hardware and the voltage model
 
 ### Added

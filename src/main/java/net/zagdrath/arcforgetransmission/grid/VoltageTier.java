@@ -11,13 +11,14 @@ import java.util.Locale;
 // The four wire tiers: their line voltage, conductor and current rating are fixed (the design's numbers); resistance and
 // the longest span are defaults that GridSettings may override from config. The default resistances lose about 2.5% of a
 // tier's rated power in one longest span at its rated current (three conductors), so a long line is worth stepping up;
-// the superconductor loses next to nothing. 1 V x 1 A = 1 FE/t, so a tier's rated power
-// is volts x amps. A network is one tier only: transformers (later) are the only bridge between tiers.
+// the superconductor loses next to nothing. 1 V x 1 A = 1 FE/t, so a tier's rated power is volts x amps. A circuit's loss
+// as a share of its power is 3 I R L / V and its drop per unit I Z L / V, so raising volts and amps together (as 1.1 did,
+// both doubled) leaves both where they were. A network is one tier only: transformers are the only bridge between tiers.
 public enum VoltageTier {
-    LV(128, "copper", 8, 0.008, 16, 1.0F),
-    MV(512, "aluminium", 16, 0.011, 24, 1.25F),
-    HV(2_048, "silver_alloy", 32, 0.017, 32, 1.5F),
-    EHV(8_192, "superconductor", 64, 0.00001, 64, 2.0F);
+    LV(256, "copper", 16, 0.008, 16, 1.0F),
+    MV(1_024, "aluminium", 32, 0.011, 24, 1.25F),
+    HV(4_096, "silver_alloy", 64, 0.017, 32, 1.5F),
+    EHV(16_384, "superconductor", 128, 0.00001, 64, 2.0F);
 
     private final int volts, ratedAmps, defaultMaxSpan;
     private final String conductor;

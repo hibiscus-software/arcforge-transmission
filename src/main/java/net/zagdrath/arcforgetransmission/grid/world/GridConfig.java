@@ -105,7 +105,7 @@ public final class GridConfig {
         BUILDER.pop();
         BUILDER.comment("Transformers: electrical links between tiers, carrying power either way, holding none.").push("transformers");
         POLE_TRANSFORMER_RATING = BUILDER.comment("The most power (FE/t) a Pole-Mount or MV Distribution Transformer passes.")
-                .defineInRange("poleRating", 1_024, 1, 1_000_000_000);
+                .defineInRange("poleRating", 4_096, 1, 1_000_000_000);
         SUBSTATION_RATING = BUILDER.comment("The most power a Substation Transformer passes, as a share of its high side's rated power.")
                 .defineInRange("substationRating", 1.0, 0.01, 100.0);
         BUILDER.pop();

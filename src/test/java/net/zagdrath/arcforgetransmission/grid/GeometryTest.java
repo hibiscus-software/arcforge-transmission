@@ -34,8 +34,8 @@ class GeometryTest {
 
     @Test
     void currentIsPowerOverVoltage() {
-        assertEquals(8.0, CircuitMath.current(1024, VoltageTier.LV), 1.0E-12);
-        assertEquals(64.0, CircuitMath.current(524_288, VoltageTier.EHV), 1.0E-12);
+        assertEquals(16.0, CircuitMath.current(4096, VoltageTier.LV), 1.0E-12);
+        assertEquals(128.0, CircuitMath.current(2_097_152, VoltageTier.EHV), 1.0E-12);
         assertEquals(4.0 * 0.5, CircuitMath.loss(2, 0.5), 1.0E-12);
     }
 

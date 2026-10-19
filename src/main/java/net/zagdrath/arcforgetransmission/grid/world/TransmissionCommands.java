@@ -64,6 +64,10 @@ public final class TransmissionCommands {
         MutableComponent confirm = Component.literal(command).withStyle(style -> style.withColor(ChatFormatting.AQUA).withUnderlined(true)
                 .withClickEvent(new ClickEvent.SuggestCommand(command)));
         source.sendSuccess(() -> Component.translatable("command." + m + ".config.preview", changed.size(), list(changed), confirm), false);
+        List<String> stale = ConfigReset.stale();
+        if (!stale.isEmpty()) {
+            source.sendSuccess(() -> Component.translatable("command." + m + ".config.old_defaults", list(stale)).withStyle(ChatFormatting.YELLOW), false);
+        }
         return changed.size();
     }
 
