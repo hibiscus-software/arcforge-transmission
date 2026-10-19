@@ -232,10 +232,10 @@ public final class TowerContent {
 
     // A unit transformer takes pushed FE (a generator beside it) through any of its blocks.
     private static void registerCapabilities(RegisterCapabilitiesEvent event) {
-        event.registerBlockEntity(Capabilities.Energy.BLOCK, TOWER_ENTITY.get(), (tower, side) -> tower.energyCapability());
+        event.registerBlockEntity(Capabilities.Energy.BLOCK, TOWER_ENTITY.get(), (tower, side) -> tower.energyCapability(tower.getBlockPos(), side));
         event.registerBlockEntity(Capabilities.Energy.BLOCK, TOWER_PART_ENTITY.get(), (part, side) -> {
             TowerBlockEntity main = part.main();
-            return main == null ? null : main.energyCapability();
+            return main == null ? null : main.energyCapability(part.getBlockPos(), side);
         });
     }
 }

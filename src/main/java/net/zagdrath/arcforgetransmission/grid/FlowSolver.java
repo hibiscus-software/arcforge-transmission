@@ -65,6 +65,9 @@ public final class FlowSolver {
         GROUNDED,
         // No FE block where it should be (a pin insulator's mount, a unit transformer's front).
         NO_FE_BLOCK,
+        // A power plant that connects at another tier (Generators): it gives nothing here (set by the block, never the
+        // solver).
+        WRONG_TIER_GENERATOR,
         // No live source in its island, or it's in no pair at all.
         DEAD,
         // Wired fine, but nothing on the line can take what it gives or give what it takes.

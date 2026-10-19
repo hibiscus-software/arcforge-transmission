@@ -56,6 +56,31 @@ Turbine Array's energy port beside it). **Output** feeds the blocks at its front
 above. A **Substation Transformer** joins one tier's line to the next tier down, stepping down or (Wrench on Configure)
 up, so a power plant can send EHV across the map and step it back down at the other end.
 
+### Connecting a power plant
+
+Arcforge's power plants are grid generators: each connects at one tier, through a **Unit Transformer** of that tier set to
+**Input** (its generator step-up), with its block touching any cell of the transformer's front face. A plant that pushes
+FE (the turbines) or one the transformer pulls from both work.
+
+| Plant | Connects at | Nameplate (default config) | One circuit at that tier |
+|---|---|---|---|
+| Combustion Plant | LV | 200 FE/t | 4,096 FE/t |
+| Thermoelectric Plant | LV | 200 FE/t | 4,096 FE/t |
+| Diesel Generator | MV | its engine's max: V8 3,000, V12 8,000, V16 15,000 FE/t | 32,768 FE/t |
+| Gas Turbine Array | HV | its max: 4,200 FE/t a block of length (21,000 to 37,800) | 262,144 FE/t |
+| Steam Turbine Array | EHV | its max, growing with its sections (8,199 to 401,722) | 2,097,152 FE/t |
+
+Reactors drive turbines through their steam, so a reactor connects through its Steam Turbine Array.
+
+- The transformer takes the least of the plant's nameplate, what it makes right now, and its own rating.
+- Its HUD names the plant, with the FE/t it gives now and its nameplate. Its comparator reads the plant's load.
+- A plant on a unit transformer of another tier gives nothing: the HUD says so ("Steam Turbine Array connects at EHV").
+- A Pin Insulator takes FE from a plant only at LV.
+
+The ratings are the data map `arcforgetransmission:generator` (on blocks: a `tier`, and a `rating` in FE/t or `auto` to
+read the plant's own max), so a datapack can map another mod's generators. An FE block without an entry works as it
+always has: on a pin insulator at LV (higher overvoltages it), and on a unit transformer of any tier.
+
 **Wire Cutters** cut the wire you look at, or every wire on the insulator you use them on; the coil drops.
 
 **Voltage.** Every wire drops voltage with the current through it, so a long, heavily loaded feeder sags (the HUD shows

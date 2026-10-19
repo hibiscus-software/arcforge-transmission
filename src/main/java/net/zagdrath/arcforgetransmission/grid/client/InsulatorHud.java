@@ -141,7 +141,17 @@ public final class InsulatorHud {
             boolean bushing = endpoint instanceof PinInsulatorBlockEntity insulator && insulator.onWallBushing();
             if (!bushing && port.hudFlow()) {
                 FlowSolver.PortStatus status = port.status();
-                MutableComponent statusText = Component.translatable("port_status." + m + "." + status.name().toLowerCase(Locale.ROOT));
+                PortHud.Generator generator = port.hudGenerator();
+                // A plant refused for its tier: which, and the tier it connects at.
+                MutableComponent statusText = status == FlowSolver.PortStatus.WRONG_TIER_GENERATOR && generator != null
+                        ? Component.translatable("port_status." + m + ".wrong_tier_generator", Component.translatable(generator.name()), generator.tier().name())
+                        : Component.translatable("port_status." + m + "." + status.name().toLowerCase(Locale.ROOT));
+                // The plant feeding it: its name, what it gives now and its nameplate.
+                if (generator != null && !generator.wrong()) {
+                    lines.add(Component.translatable("hud." + m + ".generator", Component.translatable(generator.name()),
+                            String.format(Locale.ROOT, "%,d", generator.output()), String.format(Locale.ROOT, "%,d", generator.nameplate()))
+                            .withStyle(ChatFormatting.AQUA));
+                }
                 lines.add((port.lastFlow() >= 1 ? Component.translatable("hud." + m + ".pin_insulator.flow", statusText, Math.round(port.lastFlow()))
                         : statusText).withStyle(switch (status) {
                     case OK -> ChatFormatting.GREEN;

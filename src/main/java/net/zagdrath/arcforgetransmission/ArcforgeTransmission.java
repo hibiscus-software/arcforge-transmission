@@ -6,6 +6,7 @@
 
 package net.zagdrath.arcforgetransmission;
 
+import net.zagdrath.arcforgetransmission.grid.world.Generators;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -40,6 +41,7 @@ public class ArcforgeTransmission {
         MaterialContent.register(modEventBus);
         TransmissionSounds.register(modEventBus);
         TransmissionParticles.register(modEventBus);
+        Generators.register(modEventBus);
         modContainer.registerConfig(localConfigType(), GridConfig.SPEC, MODID + "-common.toml");
         modEventBus.addListener(ArcforgeTransmission::commonSetup);
         GridPayloads.register(modEventBus);

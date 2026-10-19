@@ -87,7 +87,9 @@ import net.zagdrath.arcforgetransmission.tower.TowerTier;
 //  - a grid saved before the tiers' voltages doubled loads unchanged (tiers are saved by name) and runs at the new ratings;
 //  - Station Fence Barbed Wire goes only on a Station Fence, joins the next along the fence, and pops off as an item when
 //    its fence is broken;
-//  - a fault sends its flashover's arc, and the recloser it trips its own (ArcEvent, the packet the players near get).
+//  - a fault sends its flashover's arc, and the recloser it trips its own (ArcEvent, the packet the players near get);
+//  - a Steam Turbine Array (mapped EHV) against an HV unit transformer: WRONG_TIER_GENERATOR, and nothing passes; an
+//    unmapped FE block still feeds an LV unit transformer.
 // Each test stands on a stone floor in an empty structure, with room round it.
 @EventBusSubscriber(modid = ArcforgeTransmission.MODID)
 public final class TransmissionGameTests {
@@ -110,6 +112,7 @@ public final class TransmissionGameTests {
         TESTS.put("old_save_loads_at_the_new_ratings", TransmissionGameTests::oldSaveLoadsAtTheNewRatings);
         TESTS.put("barbed_wire_stands_only_on_a_station_fence", TransmissionGameTests::barbedWireStandsOnlyOnAFence);
         TESTS.put("faults_and_trips_send_arcs", TransmissionGameTests::faultsAndTripsSendArcs);
+        TESTS.put("a_plant_feeds_only_its_own_tier", TransmissionGameTests::aPlantFeedsOnlyItsOwnTier);
     }
 
     private TransmissionGameTests() {}
@@ -713,6 +716,12 @@ public final class TransmissionGameTests {
                     helper.assertTrue(stored(helper, load) > 0, "No turbine power reached the HV load" + why(helper, generator[0]));
                     helper.assertTrue(generator[0].status() == FlowSolver.PortStatus.OK, "The EHV unit says " + generator[0].status());
                     helper.assertTrue(sink.status() == FlowSolver.PortStatus.OK, "The HV unit says " + sink.status());
+                    // Its HUD names the plant (a mapped EHV generator) with its nameplate, and its comparator reads the plant's load.
+                    var plant = generator[0].hudGenerator();
+                    helper.assertTrue(plant != null && !plant.wrong() && plant.tier() == VoltageTier.EHV && plant.nameplate() > 0 && plant.output() > 0,
+                            "The EHV unit doesn't show its plant: " + plant);
+                    helper.assertTrue(generator[0].comparator() == (int) Math.round(15 * Math.min(1.0, (double) plant.output() / plant.nameplate())),
+                            "The comparator isn't the plant's load: " + generator[0].comparator() + " for " + plant);
                 })
                 .thenSucceed();
     }
@@ -940,6 +949,73 @@ public final class TransmissionGameTests {
                     var buf = new net.minecraft.network.RegistryFriendlyByteBuf(io.netty.buffer.Unpooled.buffer(), level.registryAccess());
                     ArcEvent.CODEC.encode(buf, trip);
                     helper.assertTrue(ArcEvent.CODEC.decode(buf).equals(trip), "The arc's packet doesn't round-trip");
+                })
+                .thenSucceed();
+    }
+
+    // A Steam Turbine Array connects at EHV (the generator data map): an HV unit transformer against it refuses it
+    // (WRONG_TIER_GENERATOR, naming it and its tier) and its line gets nothing, though the turbine runs. An energy cell
+    // (not a mapped plant) still feeds an LV unit transformer, as any FE block always has.
+    private static void aPlantFeedsOnlyItsOwnTier(GameTestHelper helper) {
+        floor(helper, 40);
+        ServerLevel level = helper.getLevel();
+        BlockPos origin = new BlockPos(2, 1, 8);
+        for (int i = 0; i < 5; i++) {
+            for (int j = 0; j < 3; j++) {
+                for (int k = 0; k < 3; k++) {
+                    if (!(j == 1 && k == 1 && i > 0 && i < 4)) {
+                        helper.setBlock(origin.offset(i, j, k), ModBlocks.STEAM_TURBINE_ARRAY_CASING.get());
+                    }
+                }
+            }
+        }
+        helper.onEachTick(() -> {
+            if (level.getBlockEntity(helper.absolutePos(origin)) instanceof SteamTurbineArrayBlockEntity turbine && turbine.isMaster()) {
+                turbine.getSteam().set(0, SteamGrade.SUPERHEATED.resource(), 60000);
+            }
+        });
+        BlockPos hvLoad = cell(helper, "tempered_energy_cell", 30, -1);
+        TowerBlockEntity hvSink = unit(helper, TowerTier.HV_UNIT, 30, 0, 2);
+        TowerBlockEntity lvSource = generator(helper, TowerTier.LV_UNIT, 20, 20);
+        BlockPos lvLoad = cell(helper, "tempered_energy_cell", 34, 19);
+        TowerBlockEntity lvSink = unit(helper, TowerTier.LV_UNIT, 34, 20, 2);
+        TowerBlockEntity[] hv = new TowerBlockEntity[1];
+        helper.startSequence()
+                .thenIdle(3)
+                .thenExecute(() -> {
+                    SteamTurbineArrayBlockEntity turbine = level.getBlockEntity(helper.absolutePos(origin)) instanceof SteamTurbineArrayBlockEntity t ? t : null;
+                    helper.assertTrue(turbine != null && turbine.isMaster(), "The turbine didn't form");
+                    BlockPos port = helper.absolutePos(origin.offset(2, 0, 0));
+                    MultiblockPorts.set(level, turbine, port, SideMode.ENERGY, net.minecraft.core.Direction.NORTH);
+                    BlockPos touching = port.north();
+                    int eighths = 2 * TowerPlacement.turns(net.minecraft.core.Direction.SOUTH);
+                    for (int dx = -4; dx <= 4 && hv[0] == null; dx++) {
+                        for (int dz = -8; dz <= 0 && hv[0] == null; dz++) {
+                            BlockPos centre = new BlockPos(touching.getX() + dx, helper.absolutePos(new BlockPos(0, 1, 0)).getY(), touching.getZ() + dz);
+                            var cells = TowerPlacement.positions(TowerTier.HV_UNIT, eighths, centre);
+                            if (cells.contains(touching) && cells.stream().noneMatch(c -> c.getZ() >= port.getZ())) {
+                                BlockPos relative = centre.subtract(helper.absolutePos(BlockPos.ZERO));
+                                hv[0] = build(helper, TowerTier.HV_UNIT, relative.getX(), relative.getZ(), eighths);
+                            }
+                        }
+                    }
+                    helper.assertTrue(hv[0] != null, "No room for the HV unit against the turbine");
+                    hv[0].configure(false);
+                })
+                .thenExecuteAfter(2, () -> {
+                    wire(helper, hv[0], ABC, hvSink, ABC, VoltageTier.HV, GridEdge.Kind.BARE);
+                    wire(helper, lvSource, ABC, lvSink, ABC, VoltageTier.LV, GridEdge.Kind.BARE);
+                })
+                .thenWaitUntil(() -> {
+                    helper.assertTrue(stored(helper, lvLoad) > 0, "The energy cell didn't feed the LV line" + why(helper, lvSource));
+                    helper.assertTrue(hv[0].status() == FlowSolver.PortStatus.WRONG_TIER_GENERATOR, "The HV unit says " + hv[0].status());
+                })
+                .thenExecuteAfter(20, () -> {
+                    var plant = hv[0].hudGenerator();
+                    helper.assertTrue(plant != null && plant.wrong() && plant.tier() == VoltageTier.EHV, "The HV unit doesn't name the turbine's tier: " + plant);
+                    helper.assertTrue(hv[0].lastFlow() == 0 && stored(helper, hvLoad) == 0, "The turbine fed the HV line: " + hv[0].lastFlow() + " FE/t, "
+                            + stored(helper, hvLoad) + " FE at the load");
+                    helper.assertTrue(lvSource.status() == FlowSolver.PortStatus.OK, "The LV unit on the energy cell says " + lvSource.status());
                 })
                 .thenSucceed();
     }

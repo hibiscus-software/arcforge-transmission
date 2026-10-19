@@ -222,6 +222,8 @@
   "pin_insulator_mode.arcforgetransmission.storage": "Storage (a battery: covers the shortfall, takes the surplus)",
   "port_status.arcforgetransmission.grounded": "Grounded",
   "port_status.arcforgetransmission.no_fe_block": "No FE block",
+  "port_status.arcforgetransmission.wrong_tier_generator": "%s connects at %s",
+  "hud.arcforgetransmission.generator": "%s: %s FE/t of %s nameplate",
   "port_status.arcforgetransmission.dead": "Line dead",
   "port_status.arcforgetransmission.no_partner": "Nothing to trade with",
   "message.arcforgetransmission.interlock.breaker_closed": "Interlocked: open its breaker first",

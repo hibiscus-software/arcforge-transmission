@@ -6,6 +6,7 @@
 
 package net.zagdrath.arcforgetransmission.tower;
 
+import net.zagdrath.arcforgetransmission.grid.world.Generators;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -158,6 +159,10 @@ public class TowerBlockEntity extends GridEndpointBlockEntity implements GridMan
             return 0;
         }
     };
+    // The mapped power plant (Generators) that fed it on Input since its last report, and one of the wrong tier it
+    // refused; what its HUD shows of them (the client's copy).
+    private Generators.@Nullable Plant plant, wrongPlant;
+    private PortHud.@Nullable Generator generator, sentGenerator;
     private @Nullable List<BlockCapabilityCache<EnergyHandler, @Nullable Direction>> face;
     private @Nullable BlockCapabilityCache<EnergyHandler, @Nullable Direction> servedCache;
     private int faceEighths = -1;
@@ -747,7 +752,11 @@ public class TowerBlockEntity extends GridEndpointBlockEntity implements GridMan
         double rated = GridConfig.SETTINGS.ratedAmps(tier.voltage());
         return switch (tier.kind()) {
             case FUSE, BREAKER, DISCONNECT, SECTIONALIZER -> !closed ? 0 : 1 + (int) Math.round(14 * Math.min(1.0, linkAmps(server) / rated));
-            case SUBSTATION, UNIT, SERVICE -> (int) Math.round(15 * Math.min(1.0, lastFlow / (rated * tier.voltage().volts())));
+            // A unit transformer fed by a mapped plant: the plant's load (what it makes over its nameplate).
+            case UNIT -> generator != null && !generator.wrong() && generator.nameplate() > 0
+                    ? (int) Math.round(15 * Math.min(1.0, (double) generator.output() / generator.nameplate()))
+                    : (int) Math.round(15 * Math.min(1.0, lastFlow / (rated * tier.voltage().volts())));
+            case SUBSTATION, SERVICE -> (int) Math.round(15 * Math.min(1.0, lastFlow / (rated * tier.voltage().volts())));
             case DEAD_END, BUS -> (int) Math.round(15 * Math.min(1.0, mostAmps(server) / rated));
             case REGULATOR -> Math.max(0, Math.min(15, 8 + tap.position() / 2));
             case GROUND, SHUNT -> closed ? 15 : 0;
@@ -1229,9 +1238,81 @@ public class TowerBlockEntity extends GridEndpointBlockEntity implements GridMan
         return (int) Math.min(Integer.MAX_VALUE, Math.floor(GridConfig.SETTINGS.ratedAmps(tier) * tier.volts()));
     }
 
-    // The energy capability its blocks show (a unit transformer's: generators push into it on Input), else none.
+    // The energy capability its blocks show (a unit transformer's: generators push into it on Input), else none. Asked
+    // from a side, what pushes in is the block on that side of `at`: a mapped plant of another tier is refused, and one
+    // of its own gives at most its nameplate a tick.
     public @Nullable EnergyHandler energyCapability() {
         return tier().kind() == TowerTier.Kind.UNIT ? intake : null;
+    }
+
+    public @Nullable EnergyHandler energyCapability(BlockPos at, @Nullable Direction side) {
+        if (tier().kind() != TowerTier.Kind.UNIT) {
+            return null;
+        }
+        return side == null ? intake : new SourcedIntake(at.relative(side));
+    }
+
+    private final class SourcedIntake implements EnergyHandler {
+        private final BlockPos from;
+
+        SourcedIntake(BlockPos from) {
+            this.from = from;
+        }
+
+        @Override
+        public long getAmountAsLong() {
+            return intake.getAmountAsLong();
+        }
+
+        @Override
+        public long getCapacityAsLong() {
+            return intake.getCapacityAsLong();
+        }
+
+        @Override
+        public int insert(int amount, TransactionContext transaction) {
+            if (mode != PinInsulatorMode.INPUT || level == null) {
+                return 0;
+            }
+            Generators.Plant from = Generators.at(level, this.from);
+            if (from != null) {
+                if (from.tier() != tier().voltage()) {
+                    wrongPlant = from;
+                    return 0;
+                }
+                plant = from;
+                amount = Math.min(amount, from.nameplate());
+            }
+            return intake.insert(amount, transaction);
+        }
+
+        @Override
+        public int extract(int amount, TransactionContext transaction) {
+            return 0;
+        }
+    }
+
+    // A plant's FE as a unit transformer takes it: no more a call than it may give (Plant.offer).
+    private record Capped(EnergyHandler handler, int most) implements EnergyHandler {
+        @Override
+        public long getAmountAsLong() {
+            return handler.getAmountAsLong();
+        }
+
+        @Override
+        public long getCapacityAsLong() {
+            return handler.getCapacityAsLong();
+        }
+
+        @Override
+        public int insert(int amount, TransactionContext transaction) {
+            return handler.insert(amount, transaction);
+        }
+
+        @Override
+        public int extract(int amount, TransactionContext transaction) {
+            return handler.extract(Math.min(amount, most), transaction);
+        }
     }
 
     // The FE blocks touching a unit transformer's whole front face (each block of it, looking out the front), each once.
@@ -1251,14 +1332,25 @@ public class TowerBlockEntity extends GridEndpointBlockEntity implements GridMan
             }
             faceEighths = eighths();
         }
-        List<EnergyHandler> out = new ArrayList<>();
+        List<EnergyHandler> out = new ArrayList<>(), raw = new ArrayList<>();
         for (BlockCapabilityCache<EnergyHandler, @Nullable Direction> cache : face) {
             if (!level.isLoaded(cache.pos())) {
                 continue;
             }
             EnergyHandler handler = cache.getCapability();
-            if (handler != null && handler != intake && out.stream().noneMatch(h -> h == handler)) {
+            if (handler == null || handler == intake || raw.stream().anyMatch(h -> h == handler)) {
+                continue;
+            }
+            raw.add(handler);
+            // A mapped plant: only one of this tier, and no more than it may give.
+            Generators.Plant found = Generators.at(level, cache.pos());
+            if (found == null) {
                 out.add(handler);
+            } else if (found.tier() != tier().voltage()) {
+                wrongPlant = found;
+            } else {
+                plant = found;
+                out.add(new Capped(handler, found.offer()));
             }
         }
         return out;
@@ -1334,9 +1426,14 @@ public class TowerBlockEntity extends GridEndpointBlockEntity implements GridMan
 
         @Override
         public void report(FlowSolver.PortStatus status, double drawn, double delivered) {
-            TowerBlockEntity.this.status = !anything && mode != PinInsulatorMode.OFF && status != FlowSolver.PortStatus.UNWIRED ? FlowSolver.PortStatus.NO_FE_BLOCK
-                    : status;
+            // A plant of another tier, and nothing else to give: says which, and the tier it connects at.
+            boolean refused = mode == PinInsulatorMode.INPUT && wrongPlant != null && plant == null && drawn <= 0;
+            TowerBlockEntity.this.status = refused ? FlowSolver.PortStatus.WRONG_TIER_GENERATOR
+                    : !anything && mode != PinInsulatorMode.OFF && status != FlowSolver.PortStatus.UNWIRED ? FlowSolver.PortStatus.NO_FE_BLOCK : status;
             lastFlow = drawn > 0 ? drawn : delivered;
+            generator = mode == PinInsulatorMode.INPUT ? plant != null ? PortHud.Generator.of(plant, false) : PortHud.Generator.of(wrongPlant, true) : null;
+            plant = null;
+            wrongPlant = null;
         }
     }
 
@@ -1360,7 +1457,12 @@ public class TowerBlockEntity extends GridEndpointBlockEntity implements GridMan
 
     @Override
     protected boolean hudLiveChanged() {
-        return Math.round(lastFlow) != sentFlow || Math.round(watchedVolts * 1000) != sentWatched;
+        return Math.round(lastFlow) != sentFlow || Math.round(watchedVolts * 1000) != sentWatched || !java.util.Objects.equals(generator, sentGenerator);
+    }
+
+    @Override
+    public PortHud.@Nullable Generator hudGenerator() {
+        return generator;
     }
 
     @Override
@@ -1380,6 +1482,7 @@ public class TowerBlockEntity extends GridEndpointBlockEntity implements GridMan
         sentTap = tap.position();
         sentPosition = transfer.position();
         sentCount = sectionalizer.counted();
+        sentGenerator = generator;
     }
 
     @Override
@@ -1390,6 +1493,7 @@ public class TowerBlockEntity extends GridEndpointBlockEntity implements GridMan
         tag.putLong("hud_reclose", reclosing.recloseAt());
         tag.putLong("hud_watched", Math.round(watchedVolts * 1000));
         tag.putInt("hud_count", sectionalizer.counted());
+        PortHud.Generator.write(tag, generator);
         return tag;
     }
 
@@ -1444,6 +1548,7 @@ public class TowerBlockEntity extends GridEndpointBlockEntity implements GridMan
                 input.read("closed_at", Codec.LONG).orElse(0L));
         input.read("hud_status", Codec.STRING).ifPresent(name -> status = FlowSolver.PortStatus.valueOf(name));
         input.read("hud_flow", Codec.LONG).ifPresent(flow -> lastFlow = flow);
+        generator = PortHud.Generator.read(input, generator);
         input.read("hud_watched", Codec.LONG).ifPresent(v -> watchedVolts = v / 1000.0);
         input.read("hud_count", Codec.INT).ifPresent(count -> sectionalizer.restore(count, false));
     }

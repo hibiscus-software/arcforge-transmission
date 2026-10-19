@@ -24,6 +24,14 @@
   - The sounds come from `tools/transmission_sound_gen.py` (seeded, numpy and soundfile, as Arcforge's) with subtitles,
     the particle sprites from `tools/transmission_particle_gen.py`. `audit.py` checks every sound event has its file
     and subtitle and every sound and sprite comes from a generator (sounds by length and channels, not bytes).
+- **Power plants on the grid**: the data map `arcforgetransmission:generator` gives a generator block the tier it
+  connects at and its nameplate (FE/t, or `auto` for its own max output). Arcforge's are mapped: Combustion and
+  Thermoelectric Plants at LV (200 FE/t), the Diesel Generator at MV, the Gas Turbine Array at HV and the Steam Turbine
+  Array at EHV (their own max output). A mapped plant feeds only a Unit Transformer of its tier, at the least of its
+  nameplate, its output now and the transformer's rating; on another tier the transformer says `WRONG_TIER_GENERATOR`
+  ("Steam Turbine Array connects at EHV") and passes nothing, and a pin insulator takes nothing from a plant above LV.
+  The unit transformer's HUD shows the plant, its FE/t and its nameplate, and its comparator the plant's load. Unmapped
+  FE blocks work as before.
 
 ### Changed
 - **Every tier's voltage and rated current doubled**, so each carries 4x the FE/t: LV 256 V, 16 A, 4,096 FE/t per

@@ -6,6 +6,7 @@
 
 package net.zagdrath.arcforgetransmission.grid.block;
 
+import net.zagdrath.arcforgetransmission.grid.world.Generators;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -157,7 +158,15 @@ public class PinInsulatorBlockEntity extends GridEndpointBlockEntity implements 
 
     @Override
     protected boolean hudLiveChanged() {
-        return Math.round(lastFlow) != sentFlow;
+        return Math.round(lastFlow) != sentFlow || !java.util.Objects.equals(generator, sentGenerator);
+    }
+
+    // A mapped plant above LV it refuses (its HUD says which and where it connects).
+    private PortHud.@Nullable Generator generator, sentGenerator;
+
+    @Override
+    public PortHud.@Nullable Generator hudGenerator() {
+        return generator;
     }
 
     @Override
@@ -166,6 +175,7 @@ public class PinInsulatorBlockEntity extends GridEndpointBlockEntity implements 
         sentMode = mode;
         sentLimit = limitEighths;
         sentFlow = Math.round(lastFlow);
+        sentGenerator = generator;
     }
 
     // Every loaded pin insulator on the same block as this one (this one included), in a fixed order.
@@ -261,7 +271,13 @@ public class PinInsulatorBlockEntity extends GridEndpointBlockEntity implements 
             overvoltage(level, mount, nodes.get(0), tier);
             return;
         }
-        out.add(new PinInsulatorPort(siblings, tier, nodes, handler, mode, limitAmps()));
+        // A mapped plant that connects above LV gives a pin insulator nothing: it needs a unit transformer of its tier.
+        Generators.Plant plant = handler == null ? null : Generators.at(level, mount);
+        if (plant != null && plant.tier() != VoltageTier.LV) {
+            out.add(new PinInsulatorPort(siblings, tier, nodes, null, mode, limitAmps(), plant));
+            return;
+        }
+        out.add(new PinInsulatorPort(siblings, tier, nodes, handler, mode, limitAmps(), null));
     }
 
     private static void overvoltage(ServerLevel level, BlockPos pos, long node, VoltageTier tier) {
@@ -289,15 +305,17 @@ public class PinInsulatorBlockEntity extends GridEndpointBlockEntity implements 
         private final @Nullable EnergyHandler handler;
         private final PinInsulatorMode mode;
         private final double limitAmps;
+        private final Generators.@Nullable Plant refused;
 
         PinInsulatorPort(List<PinInsulatorBlockEntity> pinInsulators, VoltageTier tier, List<Long> nodes, @Nullable EnergyHandler handler, PinInsulatorMode mode,
-                double limitAmps) {
+                double limitAmps, Generators.@Nullable Plant refused) {
             this.pinInsulators = pinInsulators;
             this.tier = tier;
             this.nodes = nodes;
             this.handler = handler;
             this.mode = mode;
             this.limitAmps = limitAmps;
+            this.refused = refused;
         }
 
         private int maxPower() {
@@ -336,10 +354,11 @@ public class PinInsulatorBlockEntity extends GridEndpointBlockEntity implements 
         @Override
         public void report(FlowSolver.PortStatus status, double drawn, double delivered) {
             // No FE block where it's mounted: says so rather than looking wired up and idle.
-            FlowSolver.PortStatus shown = handler == null && mode != PinInsulatorMode.OFF && status != FlowSolver.PortStatus.UNWIRED
-                    ? FlowSolver.PortStatus.NO_FE_BLOCK : status;
+            FlowSolver.PortStatus shown = refused != null && mode != PinInsulatorMode.OFF ? FlowSolver.PortStatus.WRONG_TIER_GENERATOR
+                    : handler == null && mode != PinInsulatorMode.OFF && status != FlowSolver.PortStatus.UNWIRED ? FlowSolver.PortStatus.NO_FE_BLOCK : status;
             for (PinInsulatorBlockEntity pinInsulator : pinInsulators) {
                 pinInsulator.status = shown;
+                pinInsulator.generator = PortHud.Generator.of(refused, true);
                 pinInsulator.lastFlow = drawn > 0 ? drawn : delivered;
             }
         }
@@ -363,6 +382,7 @@ public class PinInsulatorBlockEntity extends GridEndpointBlockEntity implements 
         // The HUD's numbers, sent to the client only (getUpdateTag).
         input.read("hud_status", Codec.STRING).ifPresent(name -> status = FlowSolver.PortStatus.valueOf(name));
         input.read("hud_flow", Codec.LONG).ifPresent(flow -> lastFlow = flow);
+        generator = PortHud.Generator.read(input, generator);
     }
 
     // What the client gets: the saved settings, the insulator's HUD numbers, and its port's status and flow.
@@ -371,6 +391,7 @@ public class PinInsulatorBlockEntity extends GridEndpointBlockEntity implements 
         CompoundTag tag = super.getUpdateTag(registries);
         tag.putString("hud_status", status.name());
         tag.putLong("hud_flow", Math.round(lastFlow));
+        PortHud.Generator.write(tag, generator);
         return tag;
     }
 

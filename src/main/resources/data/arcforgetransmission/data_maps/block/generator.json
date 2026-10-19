@@ -1,0 +1,10 @@
+{
+  "values": {
+    "arcforge:combustion_plant": { "tier": "lv", "rating": 200 },
+    "arcforge:thermoelectric_plant": { "tier": "lv", "rating": 200 },
+    "arcforge:diesel_generator_controller": { "tier": "mv", "rating": "auto" },
+    "arcforge:diesel_generator_casing": { "tier": "mv", "rating": "auto" },
+    "arcforge:gas_turbine_array_casing": { "tier": "hv", "rating": "auto" },
+    "arcforge:steam_turbine_array_casing": { "tier": "ehv", "rating": "auto" }
+  }
+}
