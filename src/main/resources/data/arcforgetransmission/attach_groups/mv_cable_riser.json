@@ -1,0 +1,81 @@
+{
+  "model": "mv_cable_riser",
+  "units": "px in the model's north-facing frame: x across the line, y up from the base block's bottom, z along the line; origin the centre column's base block's minimum corner",
+  "groups": [
+    {
+      "name": "overhead",
+      "circuit": "three_phase",
+      "terminals": [
+        {
+          "label": "A",
+          "pos": [
+            -8,
+            212,
+            13.22
+          ]
+        },
+        {
+          "label": "B",
+          "pos": [
+            -16,
+            182,
+            13.22
+          ]
+        },
+        {
+          "label": "C",
+          "pos": [
+            32,
+            182,
+            13.22
+          ]
+        }
+      ]
+    },
+    {
+      "name": "cable",
+      "circuit": "three_phase",
+      "terminals": [
+        {
+          "label": "A",
+          "pos": [
+            5.5,
+            4,
+            16.72
+          ]
+        },
+        {
+          "label": "B",
+          "pos": [
+            8,
+            4,
+            16.72
+          ]
+        },
+        {
+          "label": "C",
+          "pos": [
+            10.5,
+            4,
+            16.72
+          ]
+        }
+      ]
+    },
+    {
+      "name": "shield",
+      "circuit": "ground",
+      "terminals": [
+        {
+          "label": "G",
+          "pos": [
+            8,
+            238,
+            8
+          ]
+        }
+      ]
+    }
+  ],
+  "reserved": []
+}

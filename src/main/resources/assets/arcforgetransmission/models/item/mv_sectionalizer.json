@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "arcforgetransmission:item/mv_sectionalizer"
+  }
+}

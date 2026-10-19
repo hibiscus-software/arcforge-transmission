@@ -301,20 +301,23 @@ public class PinInsulatorBlockEntity extends GridEndpointBlockEntity implements 
             double offer = 0, demand = 0;
             if (handler != null) {
                 try (Transaction tx = Transaction.openRoot()) {
-                    if (mode == PinInsulatorMode.INPUT) {
+                    if (mode.gives()) {
                         offer = handler.extract(maxPower(), tx);
-                    } else if (mode == PinInsulatorMode.OUTPUT) {
+                    }
+                }
+                try (Transaction tx = Transaction.openRoot()) {
+                    if (mode.takes()) {
                         demand = handler.insert(maxPower(), tx);
                     }
                     // Not committed: only asking.
                 }
             }
-            return new Port(id, tier, nodes, offer, demand, limitAmps);
+            return new Port(id, tier, nodes, offer, demand, limitAmps, mode == PinInsulatorMode.STORAGE, 1.0);
         }
 
         @Override
         public int draw(int fe) {
-            if (handler == null || mode != PinInsulatorMode.INPUT) {
+            if (handler == null || !mode.gives()) {
                 return 0;
             }
             try (Transaction tx = Transaction.openRoot()) {
@@ -326,7 +329,7 @@ public class PinInsulatorBlockEntity extends GridEndpointBlockEntity implements 
 
         @Override
         public int deliver(int fe) {
-            if (handler == null || mode != PinInsulatorMode.OUTPUT) {
+            if (handler == null || !mode.takes()) {
                 return 0;
             }
             try (Transaction tx = Transaction.openRoot()) {

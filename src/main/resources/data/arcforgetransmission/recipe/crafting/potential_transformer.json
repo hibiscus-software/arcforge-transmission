@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "I": "arcforgetransmission:lv_pin_insulator",
+    "P": "#c:plates/steel",
+    "C": "arcforgetransmission:lv_wire_coil"
+  },
+  "pattern": [
+    " I ",
+    "PCP",
+    "PPP"
+  ],
+  "result": {
+    "id": "arcforgetransmission:potential_transformer"
+  }
+}

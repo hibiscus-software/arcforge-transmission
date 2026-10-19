@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "key": {
+    "C": "#c:ingots/aluminum",
+    "I": "arcforgetransmission:ehv_pin_insulator",
+    "R": "#c:rods/steel"
+  },
+  "pattern": [
+    "CCC",
+    "III",
+    "RRR"
+  ],
+  "result": {
+    "count": 2,
+    "id": "arcforgetransmission:ehv_bus"
+  }
+}

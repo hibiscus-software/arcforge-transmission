@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "P": "#c:plates/steel",
+    "G": "#c:glass_blocks",
+    "C": "minecraft:comparator",
+    "R": "minecraft:redstone"
+  },
+  "pattern": [
+    "PGP",
+    "PCP",
+    "PRP"
+  ],
+  "result": {
+    "id": "arcforgetransmission:relay_panel"
+  }
+}

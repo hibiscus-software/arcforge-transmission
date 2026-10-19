@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "key": {
+    "R": "#c:rods/steel",
+    "S": "#c:ingots/steel"
+  },
+  "pattern": [
+    "RSR",
+    "RSR"
+  ],
+  "result": {
+    "count": 6,
+    "id": "arcforgetransmission:station_fence"
+  }
+}

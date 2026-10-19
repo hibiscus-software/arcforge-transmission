@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/carpet",
+  "textures": {
+    "wool": "arcforgetransmission:block/ground_grid"
+  },
+  "render_type": "minecraft:cutout"
+}

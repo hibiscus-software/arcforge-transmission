@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "key": {
+    "I": "arcforgetransmission:hv_pin_insulator",
+    "A": "#c:ingots/hardened_alloy",
+    "T": "arcforge:treated_log",
+    "C": "#c:rods/copper"
+  },
+  "pattern": [
+    "IAI",
+    "CTC",
+    "T T"
+  ],
+  "result": {
+    "id": "arcforgetransmission:hv_transposition_tower"
+  }
+}

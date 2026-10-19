@@ -1,0 +1,89 @@
+{
+  "model": "hv_dead_end_gantry",
+  "units": "px in the model's north-facing frame: x across the line, y up from the base block's bottom, z along the line; origin the centre column's base block's minimum corner",
+  "groups": [
+    {
+      "name": "line",
+      "circuit": "three_phase",
+      "terminals": [
+        {
+          "label": "A",
+          "pos": [
+            -12,
+            66,
+            -15.1
+          ]
+        },
+        {
+          "label": "B",
+          "pos": [
+            8,
+            66,
+            -15.1
+          ]
+        },
+        {
+          "label": "C",
+          "pos": [
+            28,
+            66,
+            -15.1
+          ]
+        }
+      ]
+    },
+    {
+      "name": "yard",
+      "circuit": "three_phase",
+      "terminals": [
+        {
+          "label": "A",
+          "pos": [
+            -12,
+            46.8,
+            13.7
+          ]
+        },
+        {
+          "label": "B",
+          "pos": [
+            8,
+            46.8,
+            13.7
+          ]
+        },
+        {
+          "label": "C",
+          "pos": [
+            28,
+            46.8,
+            13.7
+          ]
+        }
+      ]
+    },
+    {
+      "name": "shield",
+      "circuit": "ground",
+      "terminals": [
+        {
+          "label": "G",
+          "pos": [
+            -24,
+            82,
+            8
+          ]
+        },
+        {
+          "label": "G",
+          "pos": [
+            40,
+            82,
+            8
+          ]
+        }
+      ]
+    }
+  ],
+  "reserved": []
+}

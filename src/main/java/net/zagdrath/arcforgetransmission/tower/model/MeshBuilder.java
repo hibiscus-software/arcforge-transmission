@@ -176,5 +176,17 @@ public abstract class MeshBuilder {
         float[] toArray() {
             return Arrays.copyOf(data, size);
         }
+
+        int size() {
+            return size;
+        }
+
+        float get(int i) {
+            return data[i];
+        }
+
+        void set(int i, float value) {
+            data[i] = value;
+        }
     }
 }

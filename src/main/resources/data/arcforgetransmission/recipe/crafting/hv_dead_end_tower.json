@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "key": {
+    "I": "arcforgetransmission:hv_pin_insulator",
+    "A": "#c:ingots/hardened_alloy",
+    "T": "arcforge:treated_log"
+  },
+  "pattern": [
+    "IAI",
+    "TAT",
+    "T T"
+  ],
+  "result": {
+    "id": "arcforgetransmission:hv_dead_end_tower"
+  }
+}

@@ -1,0 +1,67 @@
+{
+  "model": "mv_sectionalizer",
+  "units": "px in the model's north-facing frame: x across the line, y up from the base block's bottom, z along the line; origin the centre column's base block's minimum corner",
+  "groups": [
+    {
+      "name": "line",
+      "circuit": "three_phase",
+      "terminals": [
+        {
+          "label": "A",
+          "pos": [
+            2,
+            21,
+            4.5
+          ]
+        },
+        {
+          "label": "B",
+          "pos": [
+            8,
+            21,
+            4.5
+          ]
+        },
+        {
+          "label": "C",
+          "pos": [
+            14,
+            21,
+            4.5
+          ]
+        }
+      ]
+    },
+    {
+      "name": "load",
+      "circuit": "three_phase",
+      "terminals": [
+        {
+          "label": "A",
+          "pos": [
+            2,
+            21,
+            11.5
+          ]
+        },
+        {
+          "label": "B",
+          "pos": [
+            8,
+            21,
+            11.5
+          ]
+        },
+        {
+          "label": "C",
+          "pos": [
+            14,
+            21,
+            11.5
+          ]
+        }
+      ]
+    }
+  ],
+  "reserved": []
+}

@@ -1,0 +1,16 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "arcforgetransmission:block/mv_distribution_transformer"
+    },
+    "facing=east": {
+      "model": "arcforgetransmission:block/mv_distribution_transformer"
+    },
+    "facing=south": {
+      "model": "arcforgetransmission:block/mv_distribution_transformer"
+    },
+    "facing=west": {
+      "model": "arcforgetransmission:block/mv_distribution_transformer"
+    }
+  }
+}

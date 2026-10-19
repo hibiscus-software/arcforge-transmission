@@ -34,6 +34,8 @@ import net.zagdrath.arcforgetransmission.grid.GridEdge;
 import net.zagdrath.arcforgetransmission.grid.VoltageTier;
 import net.zagdrath.arcforgetransmission.grid.item.LinkTarget;
 import net.zagdrath.arcforgetransmission.grid.item.ClampMeterItem;
+import net.zagdrath.arcforgetransmission.grid.item.ControlCableItem;
+import net.zagdrath.arcforgetransmission.grid.item.FittingItem;
 import net.zagdrath.arcforgetransmission.grid.item.FuseLinkItem;
 import net.zagdrath.arcforgetransmission.grid.item.GuyWireItem;
 import net.zagdrath.arcforgetransmission.grid.item.WireCoilItem;
@@ -52,7 +54,7 @@ public final class GridContent {
 
     public static final Map<VoltageTier, DeferredBlock<PinInsulatorBlock>> PIN_INSULATORS = new EnumMap<>(VoltageTier.class);
     public static final Map<VoltageTier, DeferredItem<WireCoilItem>> COILS = new EnumMap<>(VoltageTier.class);
-    // Rubber-insulated wire (Arcforge's rubber) and underground cable: LV and MV only, safe to touch.
+    // Rubber-insulated wire (Arcforge's rubber): LV and MV only, safe to touch. Underground cable: every tier.
     public static final Map<VoltageTier, DeferredItem<WireCoilItem>> INSULATED_COILS = new EnumMap<>(VoltageTier.class);
     public static final Map<VoltageTier, DeferredItem<WireCoilItem>> UNDERGROUND_CABLES = new EnumMap<>(VoltageTier.class);
     // Grounded steel strung between tower peaks: catches lightning.
@@ -76,18 +78,39 @@ public final class GridContent {
                 INSULATED_COILS.put(tier, ITEMS.registerItem(tier.id() + "_insulated_wire_coil", p -> new WireCoilItem(tier, GridEdge.Kind.INSULATED, p),
                         p -> p.stacksTo(64)));
                 TAB_ITEMS.add(INSULATED_COILS.get(tier));
-                UNDERGROUND_CABLES.put(tier, ITEMS.registerItem(tier.id() + "_underground_cable", p -> new WireCoilItem(tier, GridEdge.Kind.BURIED, p),
-                        p -> p.stacksTo(64)));
-                TAB_ITEMS.add(UNDERGROUND_CABLES.get(tier));
             }
+            UNDERGROUND_CABLES.put(tier, ITEMS.registerItem(tier.id() + "_underground_cable", p -> new WireCoilItem(tier, GridEdge.Kind.BURIED, p),
+                    p -> p.stacksTo(64)));
+            TAB_ITEMS.add(UNDERGROUND_CABLES.get(tier));
         }
         SHIELD_WIRE_COIL = ITEMS.registerItem("shield_wire_coil", p -> new WireCoilItem(null, GridEdge.Kind.SHIELD, p), p -> p.stacksTo(64));
         TAB_ITEMS.add(SHIELD_WIRE_COIL);
     }
 
-    public static final DeferredBlock<PoleTransformerBlock> POLE_TRANSFORMER = BLOCKS.registerBlock("pole_transformer", PoleTransformerBlock::new,
+    public static final DeferredBlock<PoleTransformerBlock> POLE_TRANSFORMER = BLOCKS.registerBlock("pole_transformer",
+            p -> new PoleTransformerBlock(VoltageTier.LV, p),
             p -> p.mapColor(MapColor.METAL).strength(3.0F, 6.0F).sound(SoundType.METAL).noOcclusion().pushReaction(PushReaction.POPPED));
     public static final DeferredItem<BlockItem> POLE_TRANSFORMER_ITEM = ITEMS.registerSimpleBlockItem(POLE_TRANSFORMER);
+    // The same can with an MV primary: an MV feeder serving houses (split-phase LV) directly.
+    public static final DeferredBlock<PoleTransformerBlock> MV_DISTRIBUTION_TRANSFORMER = BLOCKS.registerBlock("mv_distribution_transformer",
+            p -> new PoleTransformerBlock(VoltageTier.MV, p),
+            p -> p.mapColor(MapColor.METAL).strength(3.0F, 6.0F).sound(SoundType.METAL).noOcclusion().pushReaction(PushReaction.POPPED));
+    public static final DeferredItem<BlockItem> MV_DISTRIBUTION_TRANSFORMER_ITEM = ITEMS.registerSimpleBlockItem(MV_DISTRIBUTION_TRANSFORMER);
+    // A substation yard: its fence (a fault inside it gives step-potential shocks...) and its ground grid (...unless
+    // this lies under it).
+    public static final DeferredBlock<StationFenceBlock> STATION_FENCE = BLOCKS.registerBlock("station_fence", StationFenceBlock::new,
+            p -> p.mapColor(MapColor.METAL).strength(4.0F, 6.0F).sound(SoundType.CHAIN).requiresCorrectToolForDrops().noOcclusion());
+    public static final DeferredItem<BlockItem> STATION_FENCE_ITEM = ITEMS.registerSimpleBlockItem(STATION_FENCE);
+    public static final DeferredBlock<GroundGridBlock> GROUND_GRID = BLOCKS.registerBlock("ground_grid", GroundGridBlock::new,
+            p -> p.mapColor(MapColor.COLOR_ORANGE).strength(1.0F, 6.0F).sound(SoundType.COPPER).noOcclusion());
+    public static final DeferredItem<BlockItem> GROUND_GRID_ITEM = ITEMS.registerSimpleBlockItem(GROUND_GRID);
+    // Instrument transformers fitted to breakers, transformers and banks (what a Relay Panel reads), and the cable that
+    // links a panel to what it protects or a disconnect to its breaker.
+    public static final DeferredItem<FittingItem> CURRENT_TRANSFORMER = ITEMS.registerItem("current_transformer", p -> new FittingItem(true, p),
+            p -> p.stacksTo(16));
+    public static final DeferredItem<FittingItem> POTENTIAL_TRANSFORMER = ITEMS.registerItem("potential_transformer", p -> new FittingItem(false, p),
+            p -> p.stacksTo(16));
+    public static final DeferredItem<ControlCableItem> CONTROL_CABLE = ITEMS.registerItem("control_cable", ControlCableItem::new, p -> p.stacksTo(64));
     public static final DeferredItem<Item> BURNT_WIRE = ITEMS.registerSimpleItem("burnt_wire");
     // Lightning protection for the transformers near it.
     public static final DeferredBlock<SurgeArresterBlock> SURGE_ARRESTER = BLOCKS.registerBlock("surge_arrester", SurgeArresterBlock::new,
@@ -111,13 +134,19 @@ public final class GridContent {
         TAB_ITEMS.add(CLAMP_METER);
         TAB_ITEMS.add(GUY_WIRE);
         TAB_ITEMS.add(POLE_TRANSFORMER_ITEM);
+        TAB_ITEMS.add(MV_DISTRIBUTION_TRANSFORMER_ITEM);
+        TAB_ITEMS.add(STATION_FENCE_ITEM);
+        TAB_ITEMS.add(GROUND_GRID_ITEM);
+        TAB_ITEMS.add(CURRENT_TRANSFORMER);
+        TAB_ITEMS.add(POTENTIAL_TRANSFORMER);
+        TAB_ITEMS.add(CONTROL_CABLE);
         TAB_ITEMS.add(BURNT_WIRE);
     }
 
     public static final Supplier<BlockEntityType<PinInsulatorBlockEntity>> PIN_INSULATOR_ENTITY = BLOCK_ENTITY_TYPES.register("pin_insulator",
             () -> new BlockEntityType<>(PinInsulatorBlockEntity::new, PIN_INSULATORS.values().stream().map(DeferredBlock::get).toArray(PinInsulatorBlock[]::new)));
     public static final Supplier<BlockEntityType<PoleTransformerBlockEntity>> POLE_TRANSFORMER_ENTITY = BLOCK_ENTITY_TYPES.register("pole_transformer",
-            () -> new BlockEntityType<>(PoleTransformerBlockEntity::new, POLE_TRANSFORMER.get()));
+            () -> new BlockEntityType<>(PoleTransformerBlockEntity::new, POLE_TRANSFORMER.get(), MV_DISTRIBUTION_TRANSFORMER.get()));
     public static final Supplier<BlockEntityType<WallBushingBlockEntity>> WALL_BUSHING_ENTITY = BLOCK_ENTITY_TYPES.register("wall_bushing",
             () -> new BlockEntityType<>(WallBushingBlockEntity::new, WALL_BUSHING.get()));
 

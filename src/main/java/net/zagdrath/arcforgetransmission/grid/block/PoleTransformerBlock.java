@@ -41,6 +41,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.zagdrath.arcforgetransmission.ArcforgeTransmission;
+import net.zagdrath.arcforgetransmission.grid.VoltageTier;
 import net.zagdrath.arcforgetransmission.tower.TowerPlacement;
 import net.zagdrath.arcforgetransmission.tower.model.TowerMesh;
 
@@ -68,9 +69,17 @@ public class PoleTransformerBlock extends BaseEntityBlock {
         }
     }
 
-    public PoleTransformerBlock(BlockBehaviour.Properties properties) {
+    // Its primary's tier: LV (the Pole-Mount Transformer) or MV (the MV Distribution Transformer); the secondary is LV.
+    private final VoltageTier primary;
+
+    public PoleTransformerBlock(VoltageTier primary, BlockBehaviour.Properties properties) {
         super(properties);
+        this.primary = primary;
         registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH));
+    }
+
+    public VoltageTier primary() {
+        return primary;
     }
 
     @Override
@@ -138,9 +147,7 @@ public class PoleTransformerBlock extends BaseEntityBlock {
             String m = ArcforgeTransmission.MODID;
             player.sendOverlayMessage(Component.translatable("message." + m + ".transformer.status",
                     GridInteractions.labels(server, transformer, 0), GridInteractions.labels(server, transformer, 1),
-                    Component.translatable("port_status." + m + "." + transformer.primaryStatus().name().toLowerCase(java.util.Locale.ROOT)),
-                    transformer.buffer(), GridInteractions.format(Math.round(transformer.lastIn())),
-                    GridInteractions.format(Math.round(transformer.lastOut()))));
+                    GridInteractions.format(Math.round(transformer.lastFlow()))));
         }
         return InteractionResult.SUCCESS;
     }

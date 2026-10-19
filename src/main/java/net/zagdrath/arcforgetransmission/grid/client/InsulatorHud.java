@@ -126,6 +126,14 @@ public final class InsulatorHud {
             lines.add(Component.translatable("hud." + m + ".insulator." + (wires == 1 ? "wire" : "wires"), wires, format(amps), format(rated))
                     .withStyle(colour));
         }
+        // Its voltage, against its tier's (yellow under the full-power line, red under the cutoff).
+        double volts = endpoint.hudVolts(index);
+        if (volts > 0) {
+            ChatFormatting colour = volts < GridConfig.CUTOFF_VOLTAGE.getAsDouble() ? ChatFormatting.RED
+                    : volts < GridConfig.FULL_POWER_VOLTAGE.getAsDouble() ? ChatFormatting.YELLOW : ChatFormatting.AQUA;
+            lines.add(Component.translatable("hud." + m + ".insulator.volts", String.format(Locale.ROOT, "%.1f", volts * 100),
+                    Math.round(volts * tier.volts())).withStyle(colour));
+        }
         Component mode = endpoint instanceof PortHud port ? port.hudMode() : null;
         if (mode != null) {
             PortHud port = (PortHud) endpoint;

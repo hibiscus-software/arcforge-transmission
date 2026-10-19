@@ -1,5 +1,45 @@
 # Changelog
 
+## Unreleased: Phase 4, substations, line hardware and the voltage model
+
+### Added
+- **Voltage.** Every wire drops R I + X I along its route; each insulator's voltage is on the HUD. A load below
+  `voltage.fullPower` (90%) gets less of what it asks, none at `voltage.cutoff` (70%), settling over a few ticks.
+- **Voltage Regulators** (MV, HV): source side to load side through a boost of up to 10% (16 steps of 5/8%), holding the
+  load side within `voltage.tapBand`. Substation transformers have a **load tap changer** doing the same for their low
+  side. Wrench on Configure holds a tap or lets it run.
+- **Capacitor Banks** (MV, HV) and **Shunt Reactors** (HV, EHV): reactive power that raises or lowers the voltage near
+  them; switched by hand, redstone or a Relay Panel (on `voltage.switchLow` / `switchHigh`).
+- **Bus** (HV, EHV): pipe bus on glass station posts, sections in a row joining up; **Dead-End Gantries** (HV, EHV) to
+  bring lines into a yard.
+- **MV Distribution Transformer**: the pole can with an MV primary, so MV feeders serve houses directly.
+- **Relay Panel**, with **Current** and **Potential Transformers** fitted to what it measures and **Control Cable** to link
+  it: inverse-time and instantaneous overcurrent, fuse-saving or fuse-blowing, lost-phase and unbalance tripping, voltage
+  switching of banks, and transformer differential (a CT-fitted substation transformer survives a lightning surge).
+- **Ground Switches** (MV, HV, EHV) and **interlocks**: disconnects only operate with their breaker open, ground switches
+  only close on a dead line, breakers refuse to close (or reclose) onto a grounded one.
+- **Station Fence** and **Ground Grid**: a fault in a fenced yard gives step-potential shocks unless Ground Grid lies under it.
+- **HV and EHV Dead-End Towers** and **Transposition Towers** (the jumpers cross, rotating the phases), **Cable Risers**
+  (every tier) and **HV and EHV Underground Cable**.
+- **Sectionalizer** (MV): counts recloser operations, opens in the dead time. **Automatic Transfer Switches** (LV, MV).
+- **Storage** mode on Unit Transformers and Pin Insulators: a battery behind it covers the grid's shortfall and charges
+  from its surplus.
+- **Fault events**: lightning, ground fault, phase loss and unbalance, raised where they happen.
+- Recipes, Shift item info, HUD lines and comparator output for all of it; every number in the config (new sections
+  `transformers`, `voltage`, `groundFaults`, more in `protection`, reactance per tier in `wires`).
+- Game tests (`./gradlew runGameTestServer`) and a model renderer (`./gradlew renderPreviews`).
+
+### Changed
+- **Transformers are electrical links**, not FE buffers: substation and pole-mount transformers pass power either way as
+  the grid needs, holding none. The Configure step-up/step-down toggle is gone (Configure now holds or frees the tap
+  changer). `poleTransformer.buffer` is replaced by `transformers.poleRating` and `transformers.substationRating`.
+- **Protection is graded and timed**: breakers and reclosers add `protection.gradingInterval` ticks for each protective
+  device between them and the trouble, so the nearest trips first. **Fuses melt on a curve** (`protection.fuseMelt`): fast
+  at fault current, slowly just over their rating, instead of the tick they pass it.
+- **Lightning** strikes now cause a flashover fault that protection clears (the span burns only if nothing does), instead
+  of tripping devices directly.
+- Wire shocks follow the live networks (through transformers too); a grounded line is dead.
+
 ## Unreleased: Phase 3, protection and the field
 
 ### Added
@@ -33,12 +73,18 @@
 - Outlines follow a turned structure's real shape (each part's own edges at 45 degrees), and diagonal hitboxes fit closer.
 - Fuse Cutouts hang close against the pole they're put on, their bracket into it, facing it; looking anywhere on one shows
   its HUD (the upper half its line, the lower its load).
+- Dead-End Poles' strain insulators are round glazed porcelain with sheds, like the poles' own insulators (the LV
+  pin's size on LV, the MV post's on MV), with a galvanized clevis and round line clamp, instead of flat plates.
 - A structure without room names itself ("The HV Disconnect Switch needs its whole space clear"), not "the tower".
 
 ### Removed
 - The Creative Sources and Sinks. Worlds that had them lose those blocks.
 
 ### Fixed
+- Wire coils, the Clamp Meter, Fuse Links and Guy Wire did nothing on fuse cutouts, reclosers, breakers and disconnect
+  switches (the block took the click as an empty hand). Only an empty hand works a breaker or switch now.
+- The Wrench on Rotate turned a fuse cutout instead of changing its phase: it now steps its label (line and load
+  together, A, B, C).
 - A freeze looking at a tower placed at 45 degrees (its outline was built as one huge shape), the EHV lattice worst.
 - An out-of-memory crash when zero-length links (wall bushings, jumpers) formed a loop: routing could build a cycle.
 

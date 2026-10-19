@@ -4,6 +4,10 @@
     "arcforgetransmission:mv_sub_transmission_pole",
     "arcforgetransmission:hv_h_frame_tower",
     "arcforgetransmission:lv_dead_end_pole",
-    "arcforgetransmission:mv_dead_end_pole"
+    "arcforgetransmission:mv_dead_end_pole",
+    "arcforgetransmission:hv_dead_end_tower",
+    "arcforgetransmission:hv_transposition_tower",
+    "arcforgetransmission:lv_cable_riser",
+    "arcforgetransmission:mv_cable_riser"
   ]
 }

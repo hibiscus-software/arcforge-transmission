@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "key": {
+    "I": "arcforgetransmission:ehv_pin_insulator",
+    "A": "#c:ingots/arcforged_alloy",
+    "R": "#c:rods/steel"
+  },
+  "pattern": [
+    "IAI",
+    "RAR",
+    "R R"
+  ],
+  "result": {
+    "id": "arcforgetransmission:ehv_dead_end_tower"
+  }
+}

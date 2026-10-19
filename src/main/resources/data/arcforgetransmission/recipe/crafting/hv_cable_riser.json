@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "key": {
+    "I": "arcforgetransmission:hv_pin_insulator",
+    "R": "#c:rods/steel",
+    "C": "arcforgetransmission:hv_underground_cable"
+  },
+  "pattern": [
+    "III",
+    "RCR",
+    "R R"
+  ],
+  "result": {
+    "id": "arcforgetransmission:hv_cable_riser"
+  }
+}

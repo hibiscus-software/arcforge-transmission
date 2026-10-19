@@ -36,6 +36,8 @@ public final class GridEdge {
     private final double length;
     private final Kind kind;
     int overTicks;
+    // A voltage regulator's boost through this link (a jumper), per unit, from a to b (the other way it bucks).
+    private double boost;
 
     public GridEdge(long id, long a, long b, VoltageTier tier, CircuitType circuit, double length) {
         this(id, a, b, tier, circuit, length, Kind.BARE);
@@ -90,6 +92,14 @@ public final class GridEdge {
     // Its ohms.
     public double resistance(GridSettings settings) {
         return settings.resistance(tier) * length;
+    }
+
+    public double boost() {
+        return boost;
+    }
+
+    public void setBoost(double boost) {
+        this.boost = boost;
     }
 
     public int overTicks() {

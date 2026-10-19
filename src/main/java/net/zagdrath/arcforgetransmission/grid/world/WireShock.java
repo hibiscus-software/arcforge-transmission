@@ -46,18 +46,8 @@ public final class WireShock {
         if (level.getGameTime() % EVERY != 0) {
             return;
         }
-        // The networks a source fed this tick.
-        Set<Long> energized = new HashSet<>();
-        for (Port port : ports) {
-            if (result.drawn(port.id()) > 0) {
-                for (long node : port.nodes()) {
-                    GridNetwork network = dimension.graph().networkOf(node);
-                    if (network != null) {
-                        energized.add(network.id());
-                    }
-                }
-            }
-        }
+        // The live networks: any a source reaches, through transformers too (a grounded line is dead).
+        Set<Long> energized = new HashSet<>(result.liveNetworks());
         if (energized.isEmpty()) {
             return;
         }

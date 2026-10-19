@@ -142,6 +142,42 @@ def fuse_link():
     return outline(img)
 
 
+def current_transformer():
+    """A Current Transformer: a black toroid (the core in its moulding) with a galvanized mounting foot and its two
+    secondary terminals."""
+    img = Image.new("RGBA", (16, 16), CLEAR)
+    px = img.load()
+    for y in range(2, 13):
+        for x in range(2, 14):
+            d = ((x - 7.5) ** 2 + (y - 7.0) ** 2) ** 0.5
+            if 2.6 < d <= 5.6:
+                lit = (x - 7.5) + (y - 7.0) < -1
+                px[x, y] = RUBBER_RAMP[3] if lit else RUBBER_RAMP[1] if d > 4.6 else RUBBER_RAMP[2]
+    for x in range(4, 12):
+        px[x, 13] = STRAND[3] if x < 8 else STRAND[1]
+        px[x, 14] = STRAND[1]
+    for x in (5, 10):
+        px[x, 12] = hx("#C99A3E")
+    return outline(img)
+
+
+def potential_transformer():
+    """A Potential Transformer: a small galvanized tank with a porcelain bushing on top and its terminal box."""
+    img = Image.new("RGBA", (16, 16), CLEAR)
+    px = img.load()
+    for y in range(7, 15):
+        for x in range(4, 12):
+            px[x, y] = STRAND[4] if x == 4 else STRAND[0] if x == 11 or y == 14 else STRAND[2] if x < 8 else STRAND[1]
+    porc = [hx(c) for c in ("#6E2E14", "#9A4A24", "#BE6A3A", "#D98E5C")]
+    for y, w in ((1, 1), (2, 2), (3, 1), (4, 2), (5, 1), (6, 1)):
+        for x in range(7 - w, 9 + w):
+            px[x, y] = porc[3] if x < 7 else porc[2] if x < 9 else porc[1]
+    for y in range(9, 12):
+        for x in range(12, 14):
+            px[x, y] = STRAND[1]
+    return outline(img)
+
+
 def clamp_meter():
     """A Clamp Meter: the yellow body with its dark display and dial, and the steel clamp jaws open at the top."""
     img = Image.new("RGBA", (16, 16), CLEAR)
@@ -257,11 +293,17 @@ def main():
     for tier in INSULATED:
         save(Image.new("RGBA", (16, 16), RUBBER), os.path.join(tex, "block/wire", tier + "_insulated.png"))
         save(coil(tier, True), os.path.join(tex, "item", tier + "_insulated_wire_coil.png"))
+    # Underground cable for every tier: the conductor in its black sheath with the orange tracer.
+    for tier in RAMPS:
         save(coil(tier, True, stripe=TRACER), os.path.join(tex, "item", tier + "_underground_cable.png"))
     save(Image.new("RGBA", (16, 16), STRAND_TONE), os.path.join(tex, "block/wire/steel.png"))
     save(coil("lv", ramp=STRAND, tip=STRAND[4]), os.path.join(tex, "item/shield_wire_coil.png"))
     save(coil("lv", ramp=STRAND[:2] + STRAND[1:4], tip=STRAND[3], stripe=STRAND[0]), os.path.join(tex, "item/guy_wire.png"))
     save(fuse_link(), os.path.join(tex, "item/fuse_link.png"))
+    save(current_transformer(), os.path.join(tex, "item/current_transformer.png"))
+    save(potential_transformer(), os.path.join(tex, "item/potential_transformer.png"))
+    # Control Cable: grey multicore with a red tracer.
+    save(coil("lv", ramp=RUBBER_RAMP[:1] + RUBBER_RAMP[1:], tip=STRAND[3], stripe=hx("#C8382E")), os.path.join(tex, "item/control_cable.png"))
     save(clamp_meter(), os.path.join(tex, "item/clamp_meter.png"))
     save(glow(), os.path.join(tex, "block/wire/ehv_wire_glow.png"))
     save(cutters(), os.path.join(tex, "item/wire_cutters.png"))

@@ -1,0 +1,89 @@
+{
+  "model": "hv_dead_end_tower",
+  "units": "px in the model's north-facing frame: x across the line, y up from the base block's bottom, z along the line; origin the centre column's base block's minimum corner",
+  "groups": [
+    {
+      "name": "north",
+      "circuit": "three_phase",
+      "terminals": [
+        {
+          "label": "A",
+          "pos": [
+            -42,
+            285.5,
+            -22.95
+          ]
+        },
+        {
+          "label": "B",
+          "pos": [
+            8,
+            285.5,
+            -22.95
+          ]
+        },
+        {
+          "label": "C",
+          "pos": [
+            58,
+            285.5,
+            -22.95
+          ]
+        }
+      ]
+    },
+    {
+      "name": "south",
+      "circuit": "three_phase",
+      "terminals": [
+        {
+          "label": "A",
+          "pos": [
+            -42,
+            285.5,
+            38.95
+          ]
+        },
+        {
+          "label": "B",
+          "pos": [
+            8,
+            285.5,
+            38.95
+          ]
+        },
+        {
+          "label": "C",
+          "pos": [
+            58,
+            285.5,
+            38.95
+          ]
+        }
+      ]
+    },
+    {
+      "name": "shield",
+      "circuit": "ground",
+      "terminals": [
+        {
+          "label": "G",
+          "pos": [
+            -24,
+            334,
+            8
+          ]
+        },
+        {
+          "label": "G",
+          "pos": [
+            40,
+            334,
+            8
+          ]
+        }
+      ]
+    }
+  ],
+  "reserved": []
+}

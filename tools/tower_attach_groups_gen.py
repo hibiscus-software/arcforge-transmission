@@ -215,6 +215,168 @@ def service():
                     "reserved": []}
 
 
+# --- Phase 4: the yard and the line's heavy hardware --------------------------------------------------------------
+
+def glass_strain_length(discs):
+    """TowerMesh.glassStrainLength: the clevis 1, a disc every 3, the clamp 1.6."""
+    return 1.0 + 3.0 * discs + 1.6
+
+
+def bus(tier):
+    """TowerMesh.bus: a pipe a phase at x 8 + i * spacing; its tap clamp's top at the stand, the 1 px cap, the post, the
+    pipe's diameter and 0.8."""
+    spacing = (0, 0, 16, 24)[tier]
+    stand, post, r = (0, 0, 24, 32)[tier], (0, 0, 24, 36)[tier], (0, 0, 1.5, 2.0)[tier]
+    y = stand + 1 + post + 2 * r + 0.8
+    return lambda: {"groups": [{"name": "bus", "circuit": "three_phase", "terminals": abc([p(8 + i * spacing, y, 8) for i in (-1, 0, 1)])}],
+                    "reserved": []}
+
+
+def gantry(tier):
+    """TowerMesh.gantry: each phase dead-ends on its girder's north face (2.5 px off the middle) on a glass string (the
+    clamp's outer face), and drops to a suspension string 3.2 px past its south face (the clamp's bottom); shield peaks
+    on the legs."""
+    spacing, beam, leg = (0, 0, 20, 28)[tier], (0, 0, 64, 96)[tier], (0, 0, 32, 48)[tier]
+    discs, drop = (0, 0, 6, 8)[tier], (0, 0, 4, 6)[tier]
+    xs = [8 + i * spacing for i in (-1, 0, 1)]
+    north = 8 - 2.5 - glass_strain_length(discs)
+    return lambda: {"groups": [{"name": "line", "circuit": "three_phase", "terminals": abc([p(x, beam + 2, north) for x in xs])},
+                               {"name": "yard", "circuit": "three_phase",
+                                "terminals": abc([p(x, string_bottom(beam, drop), 8 + 2.5 + 3.2) for x in xs])},
+                               shield([p(8 - leg, beam + 4 + 14, 8), p(8 + leg, beam + 4 + 14, 8)])],
+                    "reserved": []}
+
+
+def regulator(tier):
+    """TowerMesh.regulator: per phase a tank (x 8 + i * spacing) with its source bushing north and load bushing south,
+    r - 1 off its middle, on its lid (the 4 px deck plus its height); a unit's bushings."""
+    spacing, r, h = (0, 11, 15)[tier], (0, 4.5, 5.5)[tier], (0, 14, 20)[tier]
+    top = bushing_top(tier, 4 + h, True)
+    return lambda: {"groups": [{"name": "source", "circuit": "three_phase", "terminals": abc([p(8 + i * spacing, top, 8 - (r - 1)) for i in (-1, 0, 1)])},
+                               {"name": "load", "circuit": "three_phase", "terminals": abc([p(8 + i * spacing, top, 8 + (r - 1)) for i in (-1, 0, 1)])}],
+                    "reserved": []}
+
+
+def relay_panel():
+    """The Relay Panel has no insulators: it's linked to what it protects with Control Cable."""
+    return lambda: {"groups": [], "reserved": []}
+
+
+def ground_switch(tier):
+    """TowerMesh.groundSwitch: a post per phase (a unit's bushing) on the 2 px base at x 8 + i * the disconnect's spacing."""
+    spacing = (6, 7, 9, 12)[tier]
+    top = bushing_top(tier, 2, True)
+    return lambda: {"groups": [{"name": "line", "circuit": "three_phase", "terminals": abc([p(8 + i * spacing, top, 8) for i in (-1, 0, 1)])}],
+                    "reserved": []}
+
+
+def capacitor(tier):
+    """TowerMesh.capacitorBank: a bushing per phase (x 8 + i * 12) on the rack's top (2 + rows x shelf + 1)."""
+    shelf, rows = (0, 10, 12)[tier], (0, 2, 3)[tier]
+    top = bushing_top(tier, 2 + rows * shelf + 1, True)
+    return lambda: {"groups": [{"name": "bank", "circuit": "three_phase", "terminals": abc([p(8 + i * 12, top, 8) for i in (-1, 0, 1)])}],
+                    "reserved": []}
+
+
+def reactor(tier):
+    """TowerMesh.reactor: three bushings (a substation's size) across the lid at z 6, x 8 + i * spacing."""
+    height, spacing = (0, 0, 26, 34)[tier], (0, 0, 8, 10)[tier]
+    top = bushing_top(tier, 4 + height + 2, False)
+    return lambda: {"groups": [{"name": "reactor", "circuit": "three_phase", "terminals": abc([p(8 + i * spacing, top, 6) for i in (-1, 0, 1)])}],
+                    "reserved": []}
+
+
+def rotated(points):
+    """A transposition's far side: the conductor in at position k leaves at position k + 1 (labels follow the conductor)."""
+    return [points[(k + 1) % 3] for k in range(3)]
+
+
+def dead_end_hv(transpose):
+    """TowerMesh.deadEndHv: strings from the north beam's face (8 - 4.85 + 0.5 - 6) and the south's (8 + 4.85 - 0.5 + 6) at
+    y 285.5, x -42, 8 and 58, six discs; the shield peaks."""
+    y, n, so, length = 282 + 3.5, 8 - 4.85 + 0.5 - 6, 8 + 4.85 - 0.5 + 6, glass_strain_length(6)
+    north = [p(x, y, n - length) for x in (-42, 8, 58)]
+    south = [p(x, y, so + length) for x in (-42, 8, 58)]
+    return lambda: {"groups": [{"name": "north", "circuit": "three_phase", "terminals": abc(north)},
+                               {"name": "south", "circuit": "three_phase", "terminals": abc(rotated(south) if transpose else south)},
+                               shield([p(-24, 316 + 18, 8), p(40, 316 + 18, 8)])],
+                    "reserved": []}
+
+
+def dead_end_ehv(transpose):
+    """TowerMesh.lattice(1 or 2): at each arm tip (tip - side), strings 3.9 px each side of the middle at the arm's level - 2,
+    eight discs; per side the arms in order lower (C), middle (B), top (A); the far side rotated on the transposition."""
+    c, length = 8.0, glass_strain_length(8)
+    arms = ((304.0, 64.0), (368.0, 80.0), (432.0, 56.0))
+    groups = []
+    for name, side in (("west", -1), ("east", 1)):
+        north = [p(c + side * reach - side, level - 2, c - 3.9 - length) for level, reach in arms]
+        south = [p(c + side * reach - side, level - 2, c + 3.9 + length) for level, reach in arms]
+        if transpose:
+            south = rotated(south)
+        groups.append({"name": name + "_north", "circuit": "three_phase",
+                       "terminals": [{"label": label, "pos": pos} for label, pos in zip("CBA", north)]})
+        groups.append({"name": name + "_south", "circuit": "three_phase",
+                       "terminals": [{"label": label, "pos": pos} for label, pos in zip("CBA", south)]})
+    groups.append(shield([p(8, 496 + 14, 8)]))
+    return lambda: {"groups": groups, "reserved": []}
+
+
+def riser_cable(x_conduit, z_conduit):
+    """TowerMesh.conduit: the cable box's top (y 4), its three cables 2.5 px apart across it, 0.5 px south of the conduit."""
+    return {"name": "cable", "circuit": "three_phase", "terminals": abc([p(x_conduit + dx, 4, z_conduit + 0.5) for dx in (-2.5, 0, 2.5)])}
+
+
+def riser_lv():
+    """TowerMesh.riserLv: potheads (posts 7.6 px) on the crossarm (y 136, z 11.5) where the LV pole's pins are."""
+    return lambda: {"groups": [{"name": "overhead", "circuit": "three_phase",
+                                "terminals": abc([p(x, 136 + 7.6, 11.5) for x in (-8, 1, 24)])},
+                               riser_cable(8, 8 + 4.2)],
+                    "reserved": []}
+
+
+def riser_mv():
+    """TowerMesh.riserMv: the MV pole's post insulators as terminations; the conduit 4.6 px off the arms' face."""
+    face = 8 + 3.62
+    z = face + 1.6
+    return lambda: {"groups": [{"name": "overhead", "circuit": "three_phase",
+                                "terminals": abc([p(-8, 196 + 4 + 12, z), p(-16, 166 + 4 + 12, z), p(32, 166 + 4 + 12, z)])},
+                               riser_cable(8, face + 4.6), shield([p(8, 222 + 16, 8)])],
+                    "reserved": []}
+
+
+def riser_stand(tier):
+    """TowerMesh.riserStand: terminations (glass posts on a 7 px stress cone over the deck) at x 8 + i * spacing; each
+    cable's box top (y 4) under it."""
+    deck, post, spacing = (0, 0, 20, 28)[tier], (0, 0, 22, 32)[tier], (0, 0, 12, 16)[tier]
+    xs = [8 + i * spacing for i in (-1, 0, 1)]
+    return lambda: {"groups": [{"name": "overhead", "circuit": "three_phase", "terminals": abc([p(x, deck + 7 + post, 8) for x in xs])},
+                               {"name": "cable", "circuit": "three_phase", "terminals": abc([p(x, 4, 8) for x in xs])}],
+                    "reserved": []}
+
+
+def sectionalizer():
+    """TowerMesh.sectionalizer: the MV recloser's layout, a smaller tank (half 6, height 8; the lid's top at 11)."""
+    top = bushing_top(1, 2 + 8 + 1, True)
+    return lambda: {"groups": [{"name": "line", "circuit": "three_phase", "terminals": abc([p(8 + i * 6, top, 8 - 6 + 2.5) for i in (-1, 0, 1)])},
+                               {"name": "load", "circuit": "three_phase", "terminals": abc([p(8 + i * 6, top, 8 + 6 - 2.5) for i in (-1, 0, 1)])}],
+                    "reserved": []}
+
+
+def ats(tier):
+    """TowerMesh.ats: three rows on the roof (1.6 + height): preferred north, load south, alternate in the middle."""
+    half, height, spacing = (9, 12)[tier], (12, 16)[tier], (6.0, 7.5)[tier]
+    top = bushing_top(tier, 1.6 + height, True)
+
+    def row(r):
+        return abc([p(8 + i * spacing, top, 8 + r * (half - 2.5)) for i in (-1, 0, 1)])
+
+    return lambda: {"groups": [{"name": "preferred", "circuit": "three_phase", "terminals": row(-1)},
+                               {"name": "load", "circuit": "three_phase", "terminals": row(1)},
+                               {"name": "alternate", "circuit": "three_phase", "terminals": row(0)}],
+                    "reserved": []}
+
+
 MODELS = {"lv_distribution_pole": lv, "mv_sub_transmission_pole": mv, "hv_h_frame_tower": hv, "ehv_lattice_tower": ehv,
           "mv_substation_transformer": substation("mv"), "hv_substation_transformer": substation("hv"),
           "ehv_substation_transformer": substation("ehv"), "lv_unit_transformer": unit(0), "mv_unit_transformer": unit(1),
@@ -222,7 +384,15 @@ MODELS = {"lv_distribution_pole": lv, "mv_sub_transmission_pole": mv, "hv_h_fram
           "lv_fuse_cutout": fuse(), "mv_fuse_cutout": fuse(), "lv_recloser": breaker(0), "mv_recloser": breaker(1),
           "hv_circuit_breaker": breaker(2), "ehv_circuit_breaker": breaker(3), "lv_disconnect_switch": disconnect(0),
           "mv_disconnect_switch": disconnect(1), "hv_disconnect_switch": disconnect(2), "ehv_disconnect_switch": disconnect(3),
-          "lv_dead_end_pole": dead_end_lv(), "mv_dead_end_pole": dead_end_mv(), "service_meter": service()}
+          "lv_dead_end_pole": dead_end_lv(), "mv_dead_end_pole": dead_end_mv(), "service_meter": service(),
+          "hv_bus": bus(2), "ehv_bus": bus(3), "hv_dead_end_gantry": gantry(2), "ehv_dead_end_gantry": gantry(3),
+          "mv_voltage_regulator": regulator(1), "hv_voltage_regulator": regulator(2), "relay_panel": relay_panel(),
+          "mv_ground_switch": ground_switch(1), "hv_ground_switch": ground_switch(2), "ehv_ground_switch": ground_switch(3),
+          "mv_capacitor_bank": capacitor(1), "hv_capacitor_bank": capacitor(2), "hv_shunt_reactor": reactor(2),
+          "ehv_shunt_reactor": reactor(3), "hv_dead_end_tower": dead_end_hv(False), "ehv_dead_end_tower": dead_end_ehv(False),
+          "hv_transposition_tower": dead_end_hv(True), "ehv_transposition_tower": dead_end_ehv(True), "lv_cable_riser": riser_lv(),
+          "mv_cable_riser": riser_mv(), "hv_cable_riser": riser_stand(2), "ehv_cable_riser": riser_stand(3),
+          "mv_sectionalizer": sectionalizer(), "lv_transfer_switch": ats(0), "mv_transfer_switch": ats(1)}
 
 
 def main():

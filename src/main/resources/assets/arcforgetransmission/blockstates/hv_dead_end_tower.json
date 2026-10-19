@@ -1,0 +1,28 @@
+{
+  "variants": {
+    "diagonal=false,facing=east": {
+      "model": "arcforgetransmission:block/transmission_tower/wood"
+    },
+    "diagonal=false,facing=north": {
+      "model": "arcforgetransmission:block/transmission_tower/wood"
+    },
+    "diagonal=false,facing=south": {
+      "model": "arcforgetransmission:block/transmission_tower/wood"
+    },
+    "diagonal=false,facing=west": {
+      "model": "arcforgetransmission:block/transmission_tower/wood"
+    },
+    "diagonal=true,facing=east": {
+      "model": "arcforgetransmission:block/transmission_tower/wood"
+    },
+    "diagonal=true,facing=north": {
+      "model": "arcforgetransmission:block/transmission_tower/wood"
+    },
+    "diagonal=true,facing=south": {
+      "model": "arcforgetransmission:block/transmission_tower/wood"
+    },
+    "diagonal=true,facing=west": {
+      "model": "arcforgetransmission:block/transmission_tower/wood"
+    }
+  }
+}

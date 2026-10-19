@@ -1,0 +1,37 @@
+{
+  "model": "mv_capacitor_bank",
+  "units": "px in the model's north-facing frame: x across the line, y up from the base block's bottom, z along the line; origin the centre column's base block's minimum corner",
+  "groups": [
+    {
+      "name": "bank",
+      "circuit": "three_phase",
+      "terminals": [
+        {
+          "label": "A",
+          "pos": [
+            -4,
+            33,
+            8
+          ]
+        },
+        {
+          "label": "B",
+          "pos": [
+            8,
+            33,
+            8
+          ]
+        },
+        {
+          "label": "C",
+          "pos": [
+            20,
+            33,
+            8
+          ]
+        }
+      ]
+    }
+  ],
+  "reserved": []
+}

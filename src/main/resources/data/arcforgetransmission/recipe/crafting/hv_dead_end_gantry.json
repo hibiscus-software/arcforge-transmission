@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "key": {
+    "R": "#c:rods/steel",
+    "A": "#c:ingots/hardened_alloy",
+    "I": "arcforgetransmission:hv_pin_insulator"
+  },
+  "pattern": [
+    "RAR",
+    "I I",
+    "R R"
+  ],
+  "result": {
+    "id": "arcforgetransmission:hv_dead_end_gantry"
+  }
+}

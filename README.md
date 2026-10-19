@@ -36,6 +36,33 @@ up, so a power plant can send EHV across the map and step it back down at the ot
 
 **Wire Cutters** cut the wire you look at, or every wire on the insulator you use them on; the coil drops.
 
+**Voltage.** Every wire drops voltage with the current through it, so a long, heavily loaded feeder sags (the HUD shows
+each insulator's voltage). Below 90% a load gets less than it asks; at 70%, nothing. A **Voltage Regulator** (MV, HV) in
+the line steps its tap to hold the voltage past it, and a substation transformer's load tap changer holds its low side. A
+**Capacitor Bank** switched in raises the voltage near it; a **Shunt Reactor** lowers it. Switch them by hand, by redstone,
+or from a Relay Panel.
+
+**Transformers work both ways.** A substation transformer, a Pole-Mount Transformer and the **MV Distribution
+Transformer** (an MV feeder straight to houses) pass power whichever way the grid needs, holding none.
+
+**Substations.** Bring lines in on a **Dead-End Gantry**, join them on **Bus** sections (placed in a row, they join),
+switch them with breakers and disconnects, and fence the yard with **Station Fence** over **Ground Grid** (a fault in an
+ungrounded yard shocks anyone standing near). A **Ground Switch** grounds a dead line so it's safe to work on.
+Interlocks: a disconnect only operates with its breaker open (link them with **Control Cable**), a ground switch only
+closes on a dead line, and a breaker won't close onto a grounded one.
+
+**Protection coordination.** Breakers and reclosers are graded: the one nearest a fault or overload trips first and the
+rest hold. A **Relay Panel**, linked with Control Cable to breakers fitted with a **Current Transformer**, gives them an
+inverse curve and an instantaneous element (Wrench on Configure: its time dial; sneaking, fuse-saving or fuse-blowing),
+trips on a lost phase or unbalance, and, linked to a substation transformer with a CT, saves it from a lightning surge.
+A **Sectionalizer** counts a recloser's operations and opens in the dead time. An **Automatic Transfer Switch** moves its
+load to its alternate feeder when the preferred one dies, and back when it returns.
+
+**Heavy lines.** **Dead-End Towers** (HV, EHV) end lines or turn corners under tension (place them at 45 degrees);
+**Transposition Towers** rotate the phases. **Cable Risers** (every tier) take an overhead line underground on
+**Underground Cable** (now HV and EHV too). A Unit Transformer (or Pin Insulators) set to **Storage** makes a battery
+behind it grid-tied: it covers what the grid's sources can't and charges from what they have spare.
+
 **Placing.** Towers and devices face the way you look, to the nearest 45 degrees (as a sign), for corners; the Wrench on
 Rotate turns them an eighth at a time. **Dead-End Poles** end or turn a line, and **Guy Wire** anchors them.
 
@@ -66,6 +93,8 @@ game or the server console, as with Arcforge's `/arcforge config reset`:
 ```
 ./gradlew build          # the mod (compiles against libs/arcforge-<version>+<mc>.jar)
 ./gradlew test           # the grid's unit tests, attach points and texel density (plain Java)
+./gradlew runGameTestServer   # the game tests: real blocks in a running world (with Arcforge's own)
+./gradlew renderPreviews      # renders every structure's model to build/previews (-Pdesigns=NAME,NAME~ALT,NAME@lo:hi)
 python tools/audit.py    # the art: rebuilds every generator and checks the output
 ```
 
@@ -76,10 +105,14 @@ audit. Don't edit the generated files by hand.
 
 | Package | What's in it |
 |---|---|
-| `grid` | The pure-Java core: tiers, phases, the graph, the flow solver, burnout. It is unit tested. |
+| `grid` | The pure-Java core: tiers, phases, the graph and its networks, the flow solver (transformers as links, voltage drop, capacitor banks and reactors, storage, grounding, fault currents), burnout. Unit tested. |
+| `grid.protection` | Curves, the fuse element, graded overcurrent, differential, interlocks, sectionalizer, transfer switch, tap control, unbalance. Unit tested. |
 | `grid.data` | Attach points, read from the generated JSON. |
-| `grid.world` | The saved grid, the per-dimension tick, the config. |
-| `grid.block` | Pin Insulators, the transformers, the Wall Bushing and the Surge Arrester. |
-| `grid.item` | Wire coils. |
-| `grid.client` | Wire and transformer rendering. |
-| `tower` | The towers. |
+| `grid.world` | The saved grid, the per-dimension tick (ports, transformers, shunts, grounding, faults, then each block's reaction), shocks, lightning, yards, the config. |
+| `grid.block` | Pin Insulators, the pole-mount transformers, the Wall Bushing, the Surge Arrester, Station Fence and Ground Grid. |
+| `grid.item` | Wire coils and cable, the tools, Control Cable, CT and PT. |
+| `grid.client` | Wire and transformer rendering, the insulator HUD. |
+| `tower` | Everything placed whole: towers, transformers, devices, line hardware, the yard. |
+| `tower.model` | The structures' models, built in code (`ModelPreview` in the test sources renders them). |
+| `tower.client` | Structure rendering and outlines. |
+| `gametest` | Game tests: the grid built from real blocks in a running world. |

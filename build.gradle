@@ -78,6 +78,18 @@ tasks.named('test', Test).configure {
     useJUnitPlatform()
 }
 
+// Renders the tower models to build/previews for review (ModelPreview): ./gradlew renderPreviews [-Pdesigns=A,B~ALT].
+tasks.register('renderPreviews', JavaExec) {
+    group = 'verification'
+    description = 'Renders TowerMesh designs to build/previews'
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'net.zagdrath.arcforgetransmission.tower.model.ModelPreview'
+    args file('src/main/resources/assets/arcforgetransmission/textures/block/transmission_tower/towers.png').path,
+            layout.buildDirectory.dir('previews').get().asFile.path,
+            (project.findProperty('designs') ?: '').toString()
+    systemProperty 'java.awt.headless', 'true'
+}
+
 tasks.withType(ProcessResources).configureEach {
     var replaceProperties = [
             minecraft_version      : minecraft_version,

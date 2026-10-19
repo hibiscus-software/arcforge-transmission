@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "key": {
+    "I": "arcforgetransmission:lv_pin_insulator",
+    "L": "arcforge:treated_log",
+    "C": "arcforgetransmission:lv_underground_cable"
+  },
+  "pattern": [
+    "III",
+    " L ",
+    "CL "
+  ],
+  "result": {
+    "id": "arcforgetransmission:lv_cable_riser"
+  }
+}

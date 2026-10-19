@@ -67,24 +67,31 @@ public class TowerItem extends BlockItem {
             }
         }
         if (!level.isClientSide()) {
-            BlockPos main = positions.get(0);
-            BlockState state = TowerPlacement.oriented(getBlock().defaultBlockState(), eighths);
-            level.setBlock(main, state, Block.UPDATE_ALL);
-            BlockState part = TowerContent.TOWER_PART.get().defaultBlockState()
-                    .setValue(TowerPartBlock.STEEL, tier.steel());
-            for (BlockPos pos : positions) {
-                if (pos.equals(main)) {
-                    continue;
-                }
-                level.setBlock(pos, part, Block.UPDATE_ALL | Block.UPDATE_KNOWN_SHAPE);
-                if (level.getBlockEntity(pos) instanceof TowerPartBlockEntity bounding) {
-                    bounding.setMain(main);
-                }
-            }
+            BlockState state = build(level, getBlock(), tier, centre, eighths);
             level.playSound(null, centre, state.getSoundType().getPlaceSound(), SoundSource.BLOCKS, 1.0F, 0.8F);
         }
         context.getItemInHand().consume(1, context.getPlayer());
         return InteractionResult.SUCCESS;
+    }
+
+    // Puts a structure up standing on centre, oriented eighths of a turn from north (its room already checked): the main
+    // block and its parts. Returns the main block's state. (The game tests build with it too.)
+    public static BlockState build(Level level, Block block, TowerTier tier, BlockPos centre, int eighths) {
+        List<BlockPos> positions = TowerPlacement.positions(tier, eighths, centre);
+        BlockPos main = positions.get(0);
+        BlockState state = TowerPlacement.oriented(block.defaultBlockState(), eighths);
+        level.setBlock(main, state, Block.UPDATE_ALL);
+        BlockState part = TowerContent.TOWER_PART.get().defaultBlockState().setValue(TowerPartBlock.STEEL, tier.steel());
+        for (BlockPos pos : positions) {
+            if (pos.equals(main)) {
+                continue;
+            }
+            level.setBlock(pos, part, Block.UPDATE_ALL | Block.UPDATE_KNOWN_SHAPE);
+            if (level.getBlockEntity(pos) instanceof TowerPartBlockEntity bounding) {
+                bounding.setMain(main);
+            }
+        }
+        return state;
     }
 
     @Override
@@ -92,7 +99,7 @@ public class TowerItem extends BlockItem {
         if (tier.kind() == TowerTier.Kind.SUBSTATION) {
             builder.accept(Component.translatable("tooltip.arcforgetransmission.tower.substation", tier.secondary().name(),
                     String.format("%,d", tier.secondary().volts()), tier.label(), String.format("%,d", tier.volts())).withStyle(ChatFormatting.GRAY));
-        } else {
+        } else if (tier.kind() != TowerTier.Kind.RELAY) {
             builder.accept(Component.translatable("tooltip.arcforgetransmission.tower." + (tier.kind() == TowerTier.Kind.UNIT ? "unit" : "tier"),
                     tier.label(), String.format("%,d", tier.volts())).withStyle(ChatFormatting.GRAY));
         }

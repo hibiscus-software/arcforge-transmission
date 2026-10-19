@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "I": "arcforgetransmission:lv_pin_insulator",
+    "P": "#c:plates/steel",
+    "R": "minecraft:repeater"
+  },
+  "pattern": [
+    "III",
+    "PRP",
+    "III"
+  ],
+  "result": {
+    "id": "arcforgetransmission:lv_transfer_switch"
+  }
+}

@@ -64,7 +64,9 @@ public class PoleTransformerRenderer implements StructureRenderer<PoleTransforme
             ModelFeatureRenderer.@Nullable CrumblingOverlay breakProgress) {
         StructureRenderer.super.extractRenderState(transformer, state, partialTicks, cameraPosition, breakProgress);
         int turns = TowerPlacement.turns(transformer.facing());
-        state.solid = TURNED.computeIfAbsent(turns, t -> TowerMesh.turned(TowerMesh.poleTransformer().solid(), t));
+        boolean mv = transformer.primaryTier() == net.zagdrath.arcforgetransmission.grid.VoltageTier.MV;
+        state.solid = TURNED.computeIfAbsent(turns + (mv ? 4 : 0),
+                k -> TowerMesh.turned((mv ? TowerMesh.poleTransformerMv() : TowerMesh.poleTransformer()).solid(), k % 4));
         state.sheet = Minecraft.getInstance().getAtlasManager().getAtlasOrThrow(AtlasIds.BLOCKS).getSprite(TowerRenderer.SHEET);
         Level level = transformer.getLevel();
         state.light = level != null ? LightCoordsUtil.getLightCoords(level, transformer.getBlockPos()) : LightCoordsUtil.FULL_BRIGHT;

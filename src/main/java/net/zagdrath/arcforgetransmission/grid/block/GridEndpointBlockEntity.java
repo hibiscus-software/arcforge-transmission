@@ -50,8 +50,10 @@ public abstract class GridEndpointBlockEntity extends BlockEntity {
     private List<Phase> hudPhases = List.of();
     private int[] hudWires = new int[0];
     private int[] hudCentiamps = new int[0];
+    // Each insulator's voltage, thousandths of its tier's (0 dead).
+    private int[] hudPermille = new int[0];
     private @Nullable List<Phase> sentPhases;
-    private int @Nullable [] sentWires, sentCentiamps;
+    private int @Nullable [] sentWires, sentCentiamps, sentPermille;
     private long sentAt;
 
     protected GridEndpointBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
@@ -95,14 +97,19 @@ public abstract class GridEndpointBlockEntity extends BlockEntity {
         return index >= 0 && index < hudCentiamps.length ? hudCentiamps[index] / 100.0 : 0.0;
     }
 
+    // An insulator's voltage, per unit of its tier's (0 when dead).
+    public double hudVolts(int index) {
+        return index >= 0 && index < hudPermille.length ? hudPermille[index] / 1000.0 : 0.0;
+    }
+
     // Server: reads the insulators' labels, wires and currents (edgeAmps, the last tick's) from the grid, and tells the
     // client when they've changed: labels, wire counts and the subclass's own state at once (or when forced), currents at
     // most twice a second.
-    public void refreshDisplay(ServerLevel level, Map<Long, Double> edgeAmps, boolean force) {
+    public void refreshDisplay(ServerLevel level, Map<Long, Double> edgeAmps, GridManager.TickView view, boolean force) {
         GridData.Dimension dimension = GridData.of(level);
         List<Long> ids = dimension.nodesAt(worldPosition);
         List<Phase> phases = new ArrayList<>(ids.size());
-        int[] counts = new int[ids.size()], centiamps = new int[ids.size()];
+        int[] counts = new int[ids.size()], centiamps = new int[ids.size()], permille = new int[ids.size()];
         for (int i = 0; i < ids.size(); i++) {
             long id = ids.get(i);
             GridNode node = id < 0 ? null : dimension.graph().node(id);
@@ -118,16 +125,19 @@ public abstract class GridEndpointBlockEntity extends BlockEntity {
                 most = Math.max(most, edgeAmps.getOrDefault(edge.id(), 0.0));
             }
             centiamps[i] = (int) Math.min(Integer.MAX_VALUE, Math.round(most * 100.0));
+            permille[i] = node.phase().isNeutral() || node.phase() == Phase.G ? 0 : (int) Math.round(view.volts(dimension.graph(), id) * 1000.0);
         }
         hudPhases = phases;
         hudWires = counts;
         hudCentiamps = centiamps;
+        hudPermille = permille;
         boolean changed = !phases.equals(sentPhases) || !java.util.Arrays.equals(counts, sentWires) || hudStateChanged();
-        boolean live = !java.util.Arrays.equals(centiamps, sentCentiamps) || hudLiveChanged();
+        boolean live = !java.util.Arrays.equals(centiamps, sentCentiamps) || !java.util.Arrays.equals(permille, sentPermille) || hudLiveChanged();
         if (force || changed || live && level.getGameTime() - sentAt >= 10) {
             sentPhases = phases;
             sentWires = counts;
             sentCentiamps = centiamps;
+            sentPermille = permille;
             sentAt = level.getGameTime();
             hudSent();
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS);
@@ -233,6 +243,7 @@ public abstract class GridEndpointBlockEntity extends BlockEntity {
         });
         input.read("hud_wires", Codec.INT_STREAM).ifPresent(stream -> hudWires = stream.toArray());
         input.read("hud_centiamps", Codec.INT_STREAM).ifPresent(stream -> hudCentiamps = stream.toArray());
+        input.read("hud_permille", Codec.INT_STREAM).ifPresent(stream -> hudPermille = stream.toArray());
     }
 
     // What the client gets: what's saved, and the HUD's numbers.
@@ -246,6 +257,7 @@ public abstract class GridEndpointBlockEntity extends BlockEntity {
         tag.putString("hud_phases", phases.toString());
         tag.putIntArray("hud_wires", hudWires);
         tag.putIntArray("hud_centiamps", hudCentiamps);
+        tag.putIntArray("hud_permille", hudPermille);
         return tag;
     }
 

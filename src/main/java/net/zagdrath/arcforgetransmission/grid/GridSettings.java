@@ -21,6 +21,42 @@ public interface GridSettings {
     // Ticks in a row over its rating before a wire burns out.
     int burnoutTicks();
 
+    // Ohms of reactance per block of one conductor (what reactive current drops voltage across).
+    default double reactance(VoltageTier tier) {
+        return tier.defaultReactance();
+    }
+
+    // A load's power factor (1: none of its current reactive).
+    default double loadPowerFactor() {
+        return 1.0;
+    }
+
+    // At and above this voltage (per unit) a load gets all it asks for; at and below cutoff, nothing; between, a share
+    // rising straight from one to the other.
+    default double fullPowerVoltage() {
+        return 0.9;
+    }
+
+    default double cutoffVoltage() {
+        return 0.7;
+    }
+
+    // The most fault current a source gives, as a multiple of its tier's rating (at its own terminals; the line's
+    // resistance lowers it further out).
+    default double faultMultiple() {
+        return 20.0;
+    }
+
+    // A source's own impedance, ohms: what limits a fault at its terminals to faultMultiple times the rating.
+    default double sourceImpedance(VoltageTier tier) {
+        return tier.volts() / (faultMultiple() * ratedAmps(tier));
+    }
+
+    // Rounds per tick of matching loads to their voltage (each tick starts from the last one's, so it settles over a few).
+    default int voltageRounds() {
+        return 3;
+    }
+
     GridSettings DEFAULTS = new GridSettings() {
         @Override
         public double resistance(VoltageTier tier) {

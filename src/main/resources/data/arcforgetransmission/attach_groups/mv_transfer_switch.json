@@ -1,0 +1,97 @@
+{
+  "model": "mv_transfer_switch",
+  "units": "px in the model's north-facing frame: x across the line, y up from the base block's bottom, z along the line; origin the centre column's base block's minimum corner",
+  "groups": [
+    {
+      "name": "preferred",
+      "circuit": "three_phase",
+      "terminals": [
+        {
+          "label": "A",
+          "pos": [
+            0.5,
+            27.6,
+            -1.5
+          ]
+        },
+        {
+          "label": "B",
+          "pos": [
+            8.0,
+            27.6,
+            -1.5
+          ]
+        },
+        {
+          "label": "C",
+          "pos": [
+            15.5,
+            27.6,
+            -1.5
+          ]
+        }
+      ]
+    },
+    {
+      "name": "load",
+      "circuit": "three_phase",
+      "terminals": [
+        {
+          "label": "A",
+          "pos": [
+            0.5,
+            27.6,
+            17.5
+          ]
+        },
+        {
+          "label": "B",
+          "pos": [
+            8.0,
+            27.6,
+            17.5
+          ]
+        },
+        {
+          "label": "C",
+          "pos": [
+            15.5,
+            27.6,
+            17.5
+          ]
+        }
+      ]
+    },
+    {
+      "name": "alternate",
+      "circuit": "three_phase",
+      "terminals": [
+        {
+          "label": "A",
+          "pos": [
+            0.5,
+            27.6,
+            8.0
+          ]
+        },
+        {
+          "label": "B",
+          "pos": [
+            8.0,
+            27.6,
+            8.0
+          ]
+        },
+        {
+          "label": "C",
+          "pos": [
+            15.5,
+            27.6,
+            8.0
+          ]
+        }
+      ]
+    }
+  ],
+  "reserved": []
+}

@@ -29,9 +29,15 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.phys.Vec3;
 import net.zagdrath.arcforgetransmission.grid.Catenary;
 import net.zagdrath.arcforgetransmission.grid.ConnectionRules;
+import net.zagdrath.arcforgetransmission.grid.Coupling;
+import net.zagdrath.arcforgetransmission.grid.FaultEvent;
 import net.zagdrath.arcforgetransmission.grid.FlowSolver;
 import net.zagdrath.arcforgetransmission.grid.GridEdge;
+import net.zagdrath.arcforgetransmission.grid.GridFaults;
+import net.zagdrath.arcforgetransmission.grid.GridGraph;
+import net.zagdrath.arcforgetransmission.grid.GridNetwork;
 import net.zagdrath.arcforgetransmission.grid.GridNode;
+import net.zagdrath.arcforgetransmission.grid.Shunt;
 import net.zagdrath.arcforgetransmission.grid.GridTicker;
 import net.zagdrath.arcforgetransmission.grid.Phase;
 import net.zagdrath.arcforgetransmission.grid.Port;
@@ -59,15 +65,81 @@ public final class GridManager {
         default void report(FlowSolver.PortStatus status, double drawn, double delivered) {}
     }
 
-    // Something in the world that brings ports: the pin insulators' blocks, a transformer.
+    // Something in the world that takes part in the grid's tick: brings ports (the pin insulators' blocks, a unit
+    // transformer), transformers (couplings), capacitor banks and reactors (shunts), grounded nodes (a closed ground
+    // switch) and protective links (breakers, reclosers, fuses); and, once the tick is solved, reacts to it (protection,
+    // tap changers, sectionalizers, transfer switches).
     public interface PortSource {
         void ports(ServerLevel level, GridData.Dimension dimension, List<PortHandler> out);
+
+        default void couplings(ServerLevel level, GridData.Dimension dimension, List<Coupling> out) {}
+
+        default void shunts(ServerLevel level, GridData.Dimension dimension, List<Shunt> out) {}
+
+        default void grounded(ServerLevel level, GridData.Dimension dimension, Set<Long> out) {}
+
+        default void protective(ServerLevel level, GridData.Dimension dimension, Set<Long> out) {}
+
+        default void afterTick(ServerLevel level, GridData.Dimension dimension, TickView view) {}
     }
+
+    // What a tick came to, for the blocks reacting to it (and between ticks, for interlocks and the HUD): the solve, the
+    // fault current on each wire and link (and how many protective devices lie between each and its fault), each
+    // network's voltage (the average of its nodes' that power passed; per unit) and the grounded networks.
+    public record TickView(FlowSolver.Result result, Map<Long, Double> faultAmps, Map<Long, Integer> faultBeyond, Map<Long, Double> networkVolts,
+            Set<Long> groundedNetworks) {
+        public static final TickView EMPTY = new TickView(FlowSolver.Result.EMPTY, Map.of(), Map.of(), Map.of(), Set.of());
+
+        // The current through a wire or link: the load's, or a fault's if more.
+        public double amps(long edge) {
+            return Math.max(result.amps(edge), faultAmps.getOrDefault(edge, 0.0));
+        }
+
+        public boolean faulted(long edge) {
+            return faultAmps.getOrDefault(edge, 0.0) > 0;
+        }
+
+        // Protective devices between a link and the trouble through it (its fault's, else its loads').
+        public int beyond(long edge) {
+            return faulted(edge) ? faultBeyond.getOrDefault(edge, 0) : result.beyond(edge);
+        }
+
+        public boolean live(GridGraph graph, long node) {
+            GridNetwork network = graph.networkOf(node);
+            return network != null && result.liveNetworks().contains(network.id());
+        }
+
+        public boolean grounded(GridGraph graph, long node) {
+            GridNetwork network = graph.networkOf(node);
+            return network != null && groundedNetworks.contains(network.id());
+        }
+
+        // A node's voltage (per unit): its own if power passed it, else its network's, else nominal if live, else 0.
+        public double volts(GridGraph graph, long node) {
+            Double own = result.nodeVolts().get(node);
+            if (own != null) {
+                return own;
+            }
+            GridNetwork network = graph.networkOf(node);
+            if (network == null || !result.liveNetworks().contains(network.id())) {
+                return 0.0;
+            }
+            return networkVolts.getOrDefault(network.id(), 1.0);
+        }
+    }
+
+    // An active ground fault: where (a node, and the wire it's on, -1 for none), what, since when, and whether it clears
+    // once its line goes dead (a flashover) or stays (a grounded line).
+    private record Fault(long node, long edge, FaultEvent.Cause cause, long since, boolean temporary) {}
 
     private static final Map<ServerLevel, Set<GridEndpointBlockEntity>> LOADED = new WeakHashMap<>();
     // The last tick's current and loss on every wire, per level (for the HUD, devices and the Clamp Meter between ticks).
     private static final Map<ServerLevel, Map<Long, Double>> LAST_AMPS = new WeakHashMap<>();
     private static final Map<ServerLevel, Map<Long, Double>> LAST_LOSS = new WeakHashMap<>();
+    private static final Map<ServerLevel, TickView> LAST_VIEW = new WeakHashMap<>();
+    private static final Map<ServerLevel, FlowSolver.State> STATES = new WeakHashMap<>();
+    private static final Map<ServerLevel, Map<Long, Fault>> FAULTS = new WeakHashMap<>();
+    private static final Map<ServerLevel, Set<Long>> LAST_PHASE_LOSS = new WeakHashMap<>();
 
     private GridManager() {}
 
@@ -88,6 +160,65 @@ public final class GridManager {
         LOADED.remove(level);
         LAST_AMPS.remove(level);
         LAST_LOSS.remove(level);
+        LAST_VIEW.remove(level);
+        STATES.remove(level);
+        FAULTS.remove(level);
+        LAST_PHASE_LOSS.remove(level);
+    }
+
+    // The last tick's view (TickView.EMPTY before the first).
+    public static TickView view(ServerLevel level) {
+        return LAST_VIEW.getOrDefault(level, TickView.EMPTY);
+    }
+
+    // A conductor to ground at a node (on a wire, or -1): a flashover (temporary: it clears when its line goes dead, or
+    // burns the wire if nothing clears it) or a lasting fault. Protection sees its current from the next tick.
+    public static void fault(ServerLevel level, long node, long edge, FaultEvent.Cause cause, boolean temporary) {
+        FAULTS.computeIfAbsent(level, k -> new TreeMap<>()).putIfAbsent(node, new Fault(node, edge, cause, level.getGameTime(), temporary));
+    }
+
+    // Sets a regulator's boost on its links (jumpers between pairs of its insulators, source first), per unit.
+    public static void boost(ServerLevel level, BlockPos pos, List<int[]> pairs, double boost) {
+        GridData.Dimension dimension = GridData.of(level);
+        for (int[] pair : pairs) {
+            Long a = dimension.nodeAt(new GridData.Anchor(pos, pair[0])), b = dimension.nodeAt(new GridData.Anchor(pos, pair[1]));
+            if (a == null || b == null) {
+                continue;
+            }
+            for (GridEdge edge : dimension.graph().edgesOf(a)) {
+                if (edge.isJumper() && edge.other(a) == b) {
+                    edge.setBoost(edge.a() == a ? boost : 1.0 / (1.0 + boost) - 1.0);
+                }
+            }
+        }
+    }
+
+    // Joins (or parts) two blocks' insulators with a jumper (bus sections in a row). True if it changed.
+    public static boolean join(ServerLevel level, GridData.Anchor from, GridData.Anchor to, boolean present) {
+        GridData.Dimension dimension = GridData.of(level);
+        Long a = dimension.nodeAt(from), b = dimension.nodeAt(to);
+        if (a == null || b == null || a < 0 || b < 0 || dimension.graph().node(a) == null || dimension.graph().node(b) == null) {
+            return false;
+        }
+        GridEdge existing = null;
+        for (GridEdge edge : dimension.graph().edgesOf(a)) {
+            if (edge.isJumper() && edge.other(a) == b) {
+                existing = edge;
+            }
+        }
+        if (present && existing == null) {
+            GridNode node = dimension.graph().node(a);
+            if (node.tier() != dimension.graph().node(b).tier()) {
+                return false;
+            }
+            dimension.graph().addEdge(new GridEdge(dimension.newId(), a, b, node.tier(), node.circuit(), 0.0, GridEdge.Kind.JUMPER));
+        } else if (!present && existing != null) {
+            dimension.graph().removeEdge(existing.id());
+        } else {
+            return false;
+        }
+        dimension.markDirty();
+        return true;
     }
 
     // The last tick's loss on every wire of a level (FE/t, by edge id).
@@ -139,7 +270,7 @@ public final class GridManager {
 
     // Tells a block's client what its insulators' HUD shows (GridEndpointBlockEntity.refreshDisplay).
     public static void display(ServerLevel level, GridEndpointBlockEntity endpoint, boolean force) {
-        endpoint.refreshDisplay(level, LAST_AMPS.getOrDefault(level, Map.of()), force);
+        endpoint.refreshDisplay(level, LAST_AMPS.getOrDefault(level, Map.of()), view(level), force);
     }
 
     public static Collection<GridEndpointBlockEntity> loadedIn(ServerLevel level) {
@@ -510,9 +641,18 @@ public final class GridManager {
             return;
         }
         List<PortHandler> handlers = new ArrayList<>();
+        List<Coupling> couplings = new ArrayList<>();
+        List<Shunt> shunts = new ArrayList<>();
+        Set<Long> grounded = new java.util.TreeSet<>(), protective = new java.util.HashSet<>();
+        List<PortSource> sources = new ArrayList<>();
         for (GridEndpointBlockEntity endpoint : new ArrayList<>(loadedIn(level))) {
             if (!endpoint.isRemoved() && endpoint instanceof PortSource source) {
+                sources.add(source);
                 source.ports(level, dimension, handlers);
+                source.couplings(level, dimension, couplings);
+                source.shunts(level, dimension, shunts);
+                source.grounded(level, dimension, grounded);
+                source.protective(level, dimension, protective);
             }
         }
         Map<Long, PortHandler> byId = new HashMap<>();
@@ -523,6 +663,7 @@ public final class GridManager {
             byId.put(id, handler);
             ports.add(handler.port(id));
         }
+        FlowSolver.State state = STATES.computeIfAbsent(level, k -> new FlowSolver.State());
         GridTicker.Report report = GridTicker.tick(dimension.graph(), new GridTicker.Terminals() {
             @Override
             public Collection<Port> ports() {
@@ -530,10 +671,35 @@ public final class GridManager {
             }
 
             @Override
+            public Collection<Coupling> couplings() {
+                return couplings;
+            }
+
+            @Override
+            public Collection<Shunt> shunts() {
+                return shunts;
+            }
+
+            @Override
+            public Set<Long> grounded() {
+                return grounded;
+            }
+
+            @Override
+            public Set<Long> protective() {
+                return protective;
+            }
+
+            @Override
+            public FlowSolver.State state() {
+                return state;
+            }
+
+            @Override
             public void commit(Map<Long, Integer> draws, Map<Long, Integer> deliveries) {
                 // Draw first; if a source gave less than it offered (it changed since), the deliveries in its part of
-                // the grid (the ports joined through any network) shrink to match, so nothing is made.
-                Map<Long, Long> group = groups(dimension, ports);
+                // the grid (the ports joined through any network or transformer) shrink to match, so nothing is made.
+                Map<Long, Long> group = groups(dimension, ports, couplings);
                 Map<Long, long[]> plannedGot = new HashMap<>();
                 for (Map.Entry<Long, Integer> draw : draws.entrySet()) {
                     long[] pg = plannedGot.computeIfAbsent(group.get(draw.getKey()), k -> new long[2]);
@@ -552,9 +718,94 @@ public final class GridManager {
         }, GridConfig.SETTINGS);
         FlowSolver.Result result = report.result();
         byId.forEach((id, handler) -> handler.report(result.status(id), result.drawn(id), result.delivered(id)));
-        WireShock.tick(level, dimension, ports, result);
+        // The grounded networks, and the faults: each active one's current from every source that reaches it.
+        Set<Long> groundedNetworks = new java.util.TreeSet<>();
+        Map<Long, Long> groundedNodeOf = new TreeMap<>();
+        for (long node : grounded) {
+            GridNetwork network = dimension.graph().networkOf(node);
+            if (network != null) {
+                groundedNetworks.add(network.id());
+                groundedNodeOf.putIfAbsent(network.id(), node);
+            }
+        }
+        Map<Long, Fault> faults = FAULTS.computeIfAbsent(level, k -> new TreeMap<>());
+        for (long network : result.groundFaults()) {
+            Long node = groundedNodeOf.get(network);
+            if (node != null) {
+                faults.putIfAbsent(node, new Fault(node, -1, FaultEvent.Cause.GROUND_FAULT, level.getGameTime(), false));
+            }
+        }
+        Map<Long, Double> faultAmps = new TreeMap<>();
+        Map<Long, Integer> faultBeyond = new TreeMap<>();
+        for (Fault fault : new ArrayList<>(faults.values())) {
+            // A lasting fault is a grounded line: it's over once the line is no longer grounded and live.
+            if (!fault.temporary()) {
+                GridNetwork network = dimension.graph().networkOf(fault.node());
+                if (network == null || !result.groundFaults().contains(network.id())) {
+                    faults.remove(fault.node());
+                    continue;
+                }
+            }
+            FlowSolver.FaultFlow flow = FlowSolver.fault(dimension.graph(), ports, couplings, fault.node(), protective, GridConfig.SETTINGS);
+            if (flow.amps() <= 0) {
+                // Dead: a flashover is cleared.
+                if (fault.temporary()) {
+                    faults.remove(fault.node());
+                }
+                continue;
+            }
+            if (fault.since() == level.getGameTime() || fault.since() == level.getGameTime() - 1) {
+                GridFaults.raise(FaultEvent.node(fault.node(), FaultEvent.Cause.GROUND_FAULT, flow.amps()));
+            }
+            flow.edgeAmps().forEach((edge, amps) -> faultAmps.merge(edge, amps, Math::max));
+            flow.beyond().forEach((edge, beyond) -> faultBeyond.merge(edge, beyond, Math::min));
+            if (fault.temporary() && level.getGameTime() - fault.since() >= GridConfig.FLASHOVER_TICKS.getAsInt()) {
+                // Nothing cleared it: the wire burns.
+                GridEdge edge = fault.edge() >= 0 ? dimension.graph().edge(fault.edge()) : null;
+                if (edge != null) {
+                    burnOut(level, dimension, edge);
+                }
+                faults.remove(fault.node());
+                continue;
+            }
+            if (level.getGameTime() % 10 == 0) {
+                GridYard.stepPotential(level, dimension, fault.node(), flow.amps());
+            }
+        }
+        // Each network's voltage: the average of its nodes' that power passed.
+        Map<Long, double[]> sums = new HashMap<>();
+        result.nodeVolts().forEach((node, volts) -> {
+            GridNetwork network = dimension.graph().networkOf(node);
+            if (network != null) {
+                double[] sum = sums.computeIfAbsent(network.id(), k -> new double[2]);
+                sum[0] += volts;
+                sum[1]++;
+            }
+        });
+        Map<Long, Double> networkVolts = new HashMap<>();
+        sums.forEach((network, sum) -> networkVolts.put(network, sum[0] / sum[1]));
+        // A lost phase is told once, when it's lost.
+        Set<Long> lostBefore = LAST_PHASE_LOSS.getOrDefault(level, Set.of());
+        Set<Long> lostNow = new java.util.HashSet<>();
+        for (long portId : result.phaseLoss()) {
+            Port port = ports.get((int) portId - 1);
+            long first = port.nodes().get(0);
+            lostNow.add(first);
+            if (!lostBefore.contains(first)) {
+                GridFaults.raise(FaultEvent.node(first, FaultEvent.Cause.PHASE_LOSS, 0));
+            }
+        }
+        LAST_PHASE_LOSS.put(level, lostNow);
+        TickView view = new TickView(result, faultAmps, faultBeyond, networkVolts, groundedNetworks);
+        LAST_VIEW.put(level, view);
         LAST_AMPS.put(level, result.edgeAmps());
         LAST_LOSS.put(level, result.edgeLoss());
+        for (PortSource source : sources) {
+            if (!(source instanceof GridEndpointBlockEntity endpoint) || !endpoint.isRemoved()) {
+                source.afterTick(level, dimension, view);
+            }
+        }
+        WireShock.tick(level, dimension, ports, result);
         GridLightning.storm(level, dimension);
         // The HUD's numbers every 5 ticks (labels, wiring and device changes go at once, forced, where they happen).
         if (level.getGameTime() % 5 == 0) {
@@ -569,11 +820,19 @@ public final class GridManager {
         }
     }
 
-    // Ports joined through any network share a group (union-find over their nodes' networks): a port's group id.
-    private static Map<Long, Long> groups(GridData.Dimension dimension, List<Port> ports) {
+    // Ports joined through any network or transformer share a group (union-find over their nodes' networks, each
+    // transformer joining its sides'): a port's group id.
+    private static Map<Long, Long> groups(GridData.Dimension dimension, List<Port> ports, List<Coupling> couplings) {
         Map<Long, Long> parent = new HashMap<>();
         Map<Long, Long> byNetwork = new HashMap<>();
-        for (Port port : ports) {
+        List<Port> all = new ArrayList<>(ports);
+        long pseudo = -1;
+        for (Coupling coupling : couplings) {
+            List<Long> nodes = new ArrayList<>(coupling.primary());
+            coupling.secondaries().forEach(nodes::addAll);
+            all.add(new Port(pseudo--, coupling.primaryTier(), nodes, 0, 0, Double.POSITIVE_INFINITY));
+        }
+        for (Port port : all) {
             parent.putIfAbsent(port.id(), port.id());
             for (long node : port.nodes()) {
                 var network = dimension.graph().networkOf(node);

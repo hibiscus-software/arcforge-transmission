@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "I": "arcforgetransmission:ehv_pin_insulator",
+    "P": "#c:plates/steel",
+    "C": "#c:rods/copper",
+    "A": "#c:ingots/arcforged_alloy"
+  },
+  "pattern": [
+    "III",
+    "PCP",
+    "PAP"
+  ],
+  "result": {
+    "id": "arcforgetransmission:ehv_shunt_reactor"
+  }
+}

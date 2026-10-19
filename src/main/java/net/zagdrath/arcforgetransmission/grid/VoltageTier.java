@@ -51,6 +51,17 @@ public enum VoltageTier {
         return defaultResistance;
     }
 
+    // Ohms of reactance per block of one conductor: a line's X/R grows with its voltage (spacing), so LV is about as
+    // resistive as reactive and EHV, its conductor all but lossless, is nearly all reactance.
+    public double defaultReactance() {
+        return switch (this) {
+            case LV -> 0.008;
+            case MV -> 0.022;
+            case HV -> 0.068;
+            case EHV -> 0.12;
+        };
+    }
+
     public int defaultMaxSpan() {
         return defaultMaxSpan;
     }

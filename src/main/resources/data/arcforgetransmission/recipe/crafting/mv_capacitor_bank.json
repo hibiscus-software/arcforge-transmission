@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "I": "arcforgetransmission:mv_pin_insulator",
+    "P": "#c:plates/steel",
+    "L": "#c:plates/lead"
+  },
+  "pattern": [
+    "III",
+    "PLP",
+    "PLP"
+  ],
+  "result": {
+    "id": "arcforgetransmission:mv_capacitor_bank"
+  }
+}

@@ -1,0 +1,67 @@
+{
+  "model": "mv_distribution_transformer",
+  "units": "px in the block's north-facing frame (front north, hung from the block to the south); origin the block's minimum corner",
+  "groups": [
+    {
+      "name": "primary",
+      "circuit": "three_phase",
+      "terminals": [
+        {
+          "label": "A",
+          "pos": [
+            5.2,
+            20.8,
+            15.4
+          ]
+        },
+        {
+          "label": "B",
+          "pos": [
+            8.0,
+            20.8,
+            15.4
+          ]
+        },
+        {
+          "label": "C",
+          "pos": [
+            10.8,
+            20.8,
+            15.4
+          ]
+        }
+      ]
+    },
+    {
+      "name": "secondary",
+      "circuit": "single_phase",
+      "terminals": [
+        {
+          "label": "L1",
+          "pos": [
+            5.0,
+            6.0,
+            7.9
+          ]
+        },
+        {
+          "label": "N",
+          "pos": [
+            8.0,
+            6.0,
+            8.9
+          ]
+        },
+        {
+          "label": "L2",
+          "pos": [
+            11.0,
+            6.0,
+            7.9
+          ]
+        }
+      ]
+    }
+  ],
+  "reserved": []
+}

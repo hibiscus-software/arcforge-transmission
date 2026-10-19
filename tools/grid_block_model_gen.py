@@ -136,11 +136,12 @@ def surge_arrester():
     return parts + stack(levels)
 
 
-def pole_transformer_terminals():
+def pole_transformer_terminals(mv=False):
     """The transformer is drawn from TowerMesh.poleTransformer() (the can the LV pole used to carry); its attach points
-    are read off the same constants: the primaries' tops on the lid, the secondaries' tips on the front."""
+    are read off the same constants: the primaries' tops on the lid, the secondaries' tips on the front. The MV
+    Distribution Transformer (TowerMesh.poleTransformerMv()) is the same can with taller MV primaries (lid + 5.6)."""
     can_z, can_y1 = 15.4, 16.0
-    primary_top = can_y1 - 0.8 + 3.2
+    primary_top = can_y1 - 0.8 + (5.6 if mv else 3.2)
     t = {}
     for label, x in (("A", 5.2), ("B", 8.0), ("C", 10.8)):
         t[label] = [x, round(primary_top, 4), can_z]
@@ -149,8 +150,9 @@ def pole_transformer_terminals():
     return t
 
 
-def transformer_item():
-    """The item sprite: the can (vertical bands of its paint), its lid, three brown primaries and the secondaries."""
+def transformer_item(mv=False):
+    """The item sprite: the can (vertical bands of its paint), its lid, three brown primaries and the secondaries (the MV
+    Distribution Transformer: taller primaries, a shed more)."""
     img = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
     px = img.load()
     bands = [CAN[1], CAN[3], CAN[4], CAN[5], CAN[6], CAN[5], CAN[4], CAN[3], CAN[3], CAN[2], CAN[1]]
@@ -169,6 +171,10 @@ def transformer_item():
         px[x - 1, 2] = PORC[3]
         px[x + 1, 2] = PORC[2]
         px[x, 3] = PORC[3]
+        if mv:
+            px[x, 0] = GALV[6]
+            px[x - 1, 1] = PORC[3]
+            px[x + 1, 1] = PORC[2]
     for x, c in ((5, PORC[4]), (8, GALV[7]), (11, PORC[4])):
         px[x, 9] = c
         px[x, 10] = PORC[1] if c != GALV[7] else GALV[3]
@@ -315,6 +321,38 @@ STEEL = dict(deepest=hx("#16181B"), dark=hx("#2B2F34"), shade=hx("#383C42"), fac
              mid=hx("#575D65"), lit=hx("#727982"), rivet=hx("#959DA6"))
 
 
+def station_fence_texture():
+    """Station Fence: galvanized chain-link, a diamond mesh one texel thick on a clear ground, with a top rail (the
+    vanilla fence models crop their posts and rails out of it)."""
+    img = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
+    px = img.load()
+    for y in range(16):
+        for x in range(16):
+            if (x + y) % 4 == 0 or (x - y) % 4 == 0:
+                px[x, y] = STEEL["rivet"] if (x + y) % 8 == 0 else STEEL["lit"]
+    for x in range(16):
+        px[x, 0] = STEEL["rivet"]
+        px[x, 1] = STEEL["mid"]
+    for y in range(16):
+        px[7, y] = STEEL["rivet"] if y % 2 else STEEL["lit"]
+        px[8, y] = STEEL["mid"]
+    return img
+
+
+def ground_grid_texture():
+    """Ground Grid: bare copper conductors in a square mesh with clamped crossings, on the ground's dark between."""
+    copper = [hx(c) for c in ("#5C2E17", "#8A4A26", "#B5663A", "#D9895A")]
+    img = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
+    px = img.load()
+    for i in range(16):
+        for k in (3, 11):
+            px[i, k] = copper[2] if i % 3 else copper[3]
+            px[k, i] = copper[1] if i % 3 else copper[2]
+    for x, y in ((3, 3), (11, 3), (3, 11), (11, 11)):
+        px[x, y] = STEEL["rivet"]
+    return img
+
+
 def wall_bushing_texture():
     """The Wall Bushing's faces: a single-block machine casing (split face, 1 px bevels, four rivets) with a round porcelain
     bushing set in a recess in the middle, its bore dark: where a wire passes through the wall."""
@@ -375,23 +413,35 @@ def main():
                    attach(f"pin_insulator_{tier}", [{"name": "insulator", "circuit": "three_phase",
                                                  "terminals": [{"label": "A", "pos": point}]}],
                           "px in the block's up-pointing frame (mounted on the block below); origin the block's minimum corner"))
-    terminals = pole_transformer_terminals()
     save(transformer_item(), os.path.join(assets, "textures/item/pole_transformer.png"))
-    write_json(os.path.join(assets, "models/block/pole_transformer.json"),
-               {"textures": {"particle": f"{NS}:block/transmission_tower/particle_steel"}})
-    write_json(os.path.join(data, "pole_transformer.json"),
-               attach("pole_transformer",
-                      [{"name": "primary", "circuit": "three_phase",
-                        "terminals": [{"label": l, "pos": terminals[l]} for l in ("A", "B", "C")]},
-                       {"name": "secondary", "circuit": "single_phase",
-                        "terminals": [{"label": l, "pos": terminals[l]} for l in ("L1", "N", "L2")]}],
-                      "px in the block's north-facing frame (front north, hung from the block to the south); origin the "
-                      "block's minimum corner"))
+    save(transformer_item(mv=True), os.path.join(assets, "textures/item/mv_distribution_transformer.png"))
+    for name, mv in (("pole_transformer", False), ("mv_distribution_transformer", True)):
+        terminals = pole_transformer_terminals(mv)
+        write_json(os.path.join(assets, f"models/block/{name}.json"),
+                   {"textures": {"particle": f"{NS}:block/transmission_tower/particle_steel"}})
+        write_json(os.path.join(data, f"{name}.json"),
+                   attach(name,
+                          [{"name": "primary", "circuit": "three_phase",
+                            "terminals": [{"label": l, "pos": terminals[l]} for l in ("A", "B", "C")]},
+                           {"name": "secondary", "circuit": "single_phase",
+                            "terminals": [{"label": l, "pos": terminals[l]} for l in ("L1", "N", "L2")]}],
+                          "px in the block's north-facing frame (front north, hung from the block to the south); origin the "
+                          "block's minimum corner"))
     parts = surge_arrester()
     placed = pack(parts)
     save(sheet(placed), os.path.join(assets, "textures/block/surge_arrester.png"))
     write_json(os.path.join(assets, "models/block/surge_arrester.json"), model_json(f"{NS}:block/surge_arrester", parts, placed, DISPLAY))
     save(wall_bushing_texture(), os.path.join(assets, "textures/block/wall_bushing.png"))
+    save(station_fence_texture(), os.path.join(assets, "textures/block/station_fence.png"))
+    save(ground_grid_texture(), os.path.join(assets, "textures/block/ground_grid.png"))
+    # The fence on vanilla's fence models; the grid on the carpet's (its texture key "wool").
+    for part in ("post", "side"):
+        write_json(os.path.join(assets, f"models/block/station_fence_{part}.json"),
+                   {"parent": f"minecraft:block/fence_{part}", "textures": {"texture": f"{NS}:block/station_fence"}, "render_type": "minecraft:cutout"})
+    write_json(os.path.join(assets, "models/block/station_fence_inventory.json"),
+               {"parent": "minecraft:block/fence_inventory", "textures": {"texture": f"{NS}:block/station_fence"}, "render_type": "minecraft:cutout"})
+    write_json(os.path.join(assets, "models/block/ground_grid.json"),
+               {"parent": "minecraft:block/carpet", "textures": {"wool": f"{NS}:block/ground_grid"}, "render_type": "minecraft:cutout"})
     write_json(os.path.join(assets, "models/block/wall_bushing.json"), {"parent": "minecraft:block/cube_all", "textures": {"all": f"{NS}:block/wall_bushing"}})
     # A Wall Bushing under a blank Conduit Facade (WallBushingModel): Arcforge's blank facade texture on a full block.
     write_json(os.path.join(assets, "models/block/wall_bushing_blank.json"),

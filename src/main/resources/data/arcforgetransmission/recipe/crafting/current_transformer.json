@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "C": "arcforgetransmission:lv_wire_coil",
+    "R": "#c:rubbers",
+    "P": "#c:plates/steel"
+  },
+  "pattern": [
+    " C ",
+    "CRC",
+    " P "
+  ],
+  "result": {
+    "id": "arcforgetransmission:current_transformer"
+  }
+}

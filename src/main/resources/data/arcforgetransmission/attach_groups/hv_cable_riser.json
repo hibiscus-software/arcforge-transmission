@@ -1,0 +1,67 @@
+{
+  "model": "hv_cable_riser",
+  "units": "px in the model's north-facing frame: x across the line, y up from the base block's bottom, z along the line; origin the centre column's base block's minimum corner",
+  "groups": [
+    {
+      "name": "overhead",
+      "circuit": "three_phase",
+      "terminals": [
+        {
+          "label": "A",
+          "pos": [
+            -4,
+            49,
+            8
+          ]
+        },
+        {
+          "label": "B",
+          "pos": [
+            8,
+            49,
+            8
+          ]
+        },
+        {
+          "label": "C",
+          "pos": [
+            20,
+            49,
+            8
+          ]
+        }
+      ]
+    },
+    {
+      "name": "cable",
+      "circuit": "three_phase",
+      "terminals": [
+        {
+          "label": "A",
+          "pos": [
+            -4,
+            4,
+            8
+          ]
+        },
+        {
+          "label": "B",
+          "pos": [
+            8,
+            4,
+            8
+          ]
+        },
+        {
+          "label": "C",
+          "pos": [
+            20,
+            4,
+            8
+          ]
+        }
+      ]
+    }
+  ],
+  "reserved": []
+}

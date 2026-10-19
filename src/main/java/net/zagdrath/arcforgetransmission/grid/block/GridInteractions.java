@@ -34,7 +34,8 @@ import net.zagdrath.arcforgetransmission.tower.TowerTier;
 
 // What Arcforge's Wrench does to anything with insulators (Arcforge's wrench passes on blocks that aren't its own, so
 // they handle it in useItemOn):
-//   Rotate     on a transformer (substation or unit), turns it a quarter turn (sneaking: the other way), its wires kept;
+//   Rotate     on a fuse cutout, steps its one conductor's label (line and load together, A B C);
+//              on a transformer or device, turns it (sneaking: the other way), its wires kept;
 //              on a tower's group of three-phase insulators, swaps B and C (ABC <-> ACB);
 //              on a lone insulator (a pin insulator), steps its label (A B C, or L1 L2 N)
 //   Port       switches the nearest insulator between three-phase and single-phase labels (only while it has no wires)
@@ -57,6 +58,15 @@ public final class GridInteractions {
             return InteractionResult.SUCCESS;
         }
         BlockPos pos = endpoint.getBlockPos();
+        // A Relay Panel has no insulators: Configure steps its time dial (sneaking: fuse-saving or fuse-blowing).
+        if (endpoint instanceof TowerBlockEntity panel && panel.tier().kind() == TowerTier.Kind.RELAY) {
+            if (WrenchItem.mode(stack) != WrenchMode.CONFIGURE) {
+                return InteractionResult.PASS;
+            }
+            tell(player, panel.configure(player.isSecondaryUseActive()));
+            level.playSound(null, pos, SoundEvents.UI_BUTTON_CLICK.value(), SoundSource.BLOCKS, 0.3F, 1.4F);
+            return InteractionResult.SUCCESS;
+        }
         int index = endpoint.nearest(hit);
         if (index < 0) {
             return InteractionResult.PASS;
@@ -68,6 +78,19 @@ public final class GridInteractions {
         boolean sneaking = player.isSecondaryUseActive();
         switch (mode) {
             case ROTATE -> {
+                // A fuse cutout is one conductor: its line and load step their label together (A -> B -> C).
+                if (endpoint instanceof TowerBlockEntity fuse && fuse.tier().kind() == TowerTier.Kind.FUSE) {
+                    for (int i = 0; i < insulators.size(); i++) {
+                        GridData.Anchor each = new GridData.Anchor(pos, i);
+                        GridNode node = GridManager.node(server, each);
+                        if (node != null) {
+                            GridManager.setPhase(server, each, node.phase().next());
+                        }
+                    }
+                    tell(player, Component.translatable("message." + ArcforgeTransmission.MODID + ".phase.labels", labels(server, endpoint, group)));
+                    GridManager.display(server, endpoint, true);
+                    return InteractionResult.SUCCESS;
+                }
                 // A transformer turns, like an Arcforge machine (sneaking: the other way).
                 if (endpoint instanceof TowerBlockEntity tower && tower.tier().rotatable()) {
                     boolean turned = tower.rotate(!sneaking);
@@ -128,7 +151,7 @@ public final class GridInteractions {
                                 Component.translatable("pin_insulator_mode." + ArcforgeTransmission.MODID + "." + next.id())));
                     }
                 } else if (endpoint instanceof TowerBlockEntity tower && tower.tier().kind() != TowerTier.Kind.TOWER
-                        && tower.tier().kind() != TowerTier.Kind.DEAD_END && tower.configure() != null) {
+                        && tower.tier().kind() != TowerTier.Kind.DEAD_END && tower.configure(sneaking) != null) {
                     tell(player, tower.hudMode());
                 } else {
                     tell(player, Component.translatable("message." + ArcforgeTransmission.MODID + ".phase.labels", labels(server, endpoint, group)));

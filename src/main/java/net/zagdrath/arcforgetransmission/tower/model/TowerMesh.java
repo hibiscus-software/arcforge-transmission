@@ -61,7 +61,38 @@ public final class TowerMesh extends MeshBuilder {
         DISCONNECT_EHV(3, 0, 0),
         DEAD_END_LV(10, 0, 0),
         DEAD_END_MV(15, 0, 0),
-        SERVICE(2, 0, 0);
+        SERVICE(2, 0, 0),
+        BUS_HV(4, 0, 0),
+        BUS_EHV(5, 0, 0),
+        GANTRY_HV(5, -2, 0),
+        GANTRY_EHV(7, -3, 0),
+        REGULATOR_MV(2, 0, 0),
+        REGULATOR_HV(3, 0, 0),
+        RELAY_PANEL(2, 0, 0),
+        GROUND_SWITCH_MV(2, 0, 0),
+        GROUND_SWITCH_HV(2, 0, 0),
+        GROUND_SWITCH_EHV(3, 0, 0),
+        CAPACITOR_MV(3, 0, 0),
+        CAPACITOR_HV(4, 0, 0),
+        REACTOR_HV(4, 0, 0),
+        REACTOR_EHV(5, 0, 0),
+        DEAD_END_HV(21, -2, 0),
+        DEAD_END_EHV(32, -2, -2),
+        TRANSPOSITION_HV(21, -2, 0),
+        TRANSPOSITION_EHV(32, -2, -2),
+        RISER_LV(10, 0, 0),
+        RISER_MV(15, 0, 0),
+        RISER_HV(4, 0, 0),
+        RISER_EHV(5, 0, 0),
+        SECTIONALIZER_MV(2, 0, 0),
+        ATS_LV(2, 0, 0),
+        ATS_MV(2, 0, 0);
+
+        // A Phase 4 design's tier (0 LV to 3 EHV), by its name's suffix.
+        public int tier() {
+            String n = name();
+            return n.endsWith("_EHV") ? 3 : n.endsWith("_HV") ? 2 : n.endsWith("_MV") ? 1 : 0;
+        }
 
         // The tier (0 LV to 3 EHV) of a device design.
         public int deviceTier() {
@@ -136,7 +167,7 @@ public final class TowerMesh extends MeshBuilder {
 
     // Flat swatches (4x4 from (64, 224), 32 a row), in the generator's order.
     static final int GALV0 = 0, WOOD0 = 10, PORC0 = 19, GLASS0 = 26, CAN0 = 33, COPPER0 = 40, CONC0 = 44, ALU0 = 50, HAZARD = 53, BLACK = 54,
-            RED = 55, MARKER = 56;
+            RED = 55, MARKER = 56, GREEN0 = 57;
 
     private static final float[] UP = { 0, 1, 0 };
 
@@ -174,7 +205,7 @@ public final class TowerMesh extends MeshBuilder {
             case DISTRIBUTION_POLE -> mesh.distributionPole();
             case SUB_TRANSMISSION_POLE -> mesh.subTransmissionPole();
             case H_FRAME -> mesh.hFrame();
-            case LATTICE -> mesh.lattice();
+            case LATTICE -> mesh.lattice(0);
             case SUBSTATION_MV, SUBSTATION_HV, SUBSTATION_EHV -> mesh.substation(Substation.of(design));
             case UNIT_LV, UNIT_MV, UNIT_HV, UNIT_EHV -> mesh.unit(Unit.of(design));
             case FUSE_LV, FUSE_MV -> mesh.fuse(design.deviceTier(), alt);
@@ -183,6 +214,22 @@ public final class TowerMesh extends MeshBuilder {
             case DEAD_END_LV -> mesh.deadEndLv();
             case DEAD_END_MV -> mesh.deadEndMv();
             case SERVICE -> mesh.service();
+            case BUS_HV, BUS_EHV -> mesh.bus(design.tier());
+            case GANTRY_HV, GANTRY_EHV -> mesh.gantry(design.tier());
+            case REGULATOR_MV, REGULATOR_HV -> mesh.regulator(design.tier());
+            case RELAY_PANEL -> mesh.relayPanel();
+            case GROUND_SWITCH_MV, GROUND_SWITCH_HV, GROUND_SWITCH_EHV -> mesh.groundSwitch(design.tier(), alt);
+            case CAPACITOR_MV, CAPACITOR_HV -> mesh.capacitorBank(design.tier());
+            case REACTOR_HV, REACTOR_EHV -> mesh.reactor(design.tier());
+            case DEAD_END_HV -> mesh.deadEndHv(false);
+            case TRANSPOSITION_HV -> mesh.deadEndHv(true);
+            case DEAD_END_EHV -> mesh.lattice(1);
+            case TRANSPOSITION_EHV -> mesh.lattice(2);
+            case RISER_LV -> mesh.riserLv();
+            case RISER_MV -> mesh.riserMv();
+            case RISER_HV, RISER_EHV -> mesh.riserStand(design.tier());
+            case SECTIONALIZER_MV -> mesh.sectionalizer(alt);
+            case ATS_LV, ATS_MV -> mesh.ats(design.tier(), alt);
         }
         List<float[]> shapes = new ArrayList<>(mesh.frame);
         shapes.addAll(mesh.insulators);
@@ -226,27 +273,47 @@ public final class TowerMesh extends MeshBuilder {
     public static final float SECONDARY_TIP_Z = 7.9F, NEUTRAL_TIP_Z = 8.9F;
     // Where its pole's surface is when it hangs on an LV pole (the next block south, its 8 facets of 2 px).
     private static final float POLE_FACE_Z = 16.0F + 8.0F - 2.41F;
-    private static Built transformer;
+    private static Built transformer, transformerMv;
+    // The MV can's primaries: taller porcelain with three sheds, their tops (the attach points) at the lid + 5.6.
+    public static final float MV_PRIMARY_TOP = CAN_Y1 - 0.8F + 5.6F;
 
     // The Pole-Mount Transformer, built once: px in its block's frame, front north; the hanger brackets reach south
     // into the pole's block.
     public static synchronized Built poleTransformer() {
         if (transformer == null) {
             TowerMesh mesh = new TowerMesh();
-            mesh.buildPoleTransformer();
+            mesh.buildPoleTransformer(false);
             transformer = new Built(mesh.solid.toArray(), List.copyOf(mesh.boxes), List.copyOf(mesh.boxes), List.of(), cells(mesh.boxes));
         }
         return transformer;
     }
 
-    private void buildPoleTransformer() {
+    // The MV Distribution Transformer: the same can and secondary, its primaries MV porcelain (taller, three sheds).
+    public static synchronized Built poleTransformerMv() {
+        if (transformerMv == null) {
+            TowerMesh mesh = new TowerMesh();
+            mesh.buildPoleTransformer(true);
+            transformerMv = new Built(mesh.solid.toArray(), List.copyOf(mesh.boxes), List.copyOf(mesh.boxes), List.of(), cells(mesh.boxes));
+        }
+        return transformerMv;
+    }
+
+    private void buildPoleTransformer(boolean mv) {
         float r = can(CAN_X, CAN_Z, CAN_Y0, CAN_Y1);
         // Two hanger brackets from inside the pole to inside the can, as on the LV pole.
         for (float y : new float[] { 5, 13 }) {
             member(new float[] { CAN_X, y, POLE_FACE_Z + 0.6F }, new float[] { CAN_X, y, CAN_Z + r - 1.2F }, 3.0F, 1.0F, UP, Mat.GALV, true);
         }
         for (float x : PRIMARY_X) {
-            primaryBushing(x, CAN_Y1 - 0.8F, CAN_Z);
+            if (mv) {
+                float y = CAN_Y1 - 0.8F;
+                turned(x, CAN_Z, new float[][] { { y, 0.9F }, { y + 1.0F, 0.9F }, { y + 1.0F, 1.3F }, { y + 1.6F, 1.3F }, { y + 1.6F, 0.9F },
+                        { y + 2.4F, 0.9F }, { y + 2.4F, 1.3F }, { y + 3.0F, 1.3F }, { y + 3.0F, 0.9F }, { y + 3.8F, 0.9F }, { y + 3.8F, 1.3F },
+                        { y + 4.4F, 1.3F }, { y + 4.4F, 0.9F }, { y + 5.0F, 0.9F } }, 6, Ramp.PORCELAIN, true, false);
+                turned(x, CAN_Z, new float[][] { { y + 5.0F, 0.6F }, { MV_PRIMARY_TOP, 0.6F } }, 6, Ramp.GALV, true, false);
+            } else {
+                primaryBushing(x, CAN_Y1 - 0.8F, CAN_Z);
+            }
         }
         // The secondary on the can's north facet: L1 and L2 porcelain bushings standing off it with a terminal stud,
         // the neutral a bare stud with a nut (bonded to the can).
@@ -375,7 +442,10 @@ public final class TowerMesh extends MeshBuilder {
     // arm levels; three crossarm levels each side (double circuit, the middle arms longest) with a suspension string at
     // each tip; a shield wire peak; an anti-climb guard of barbed bars; step bolts up the north-west leg; and a danger
     // sign on the south face.
-    private void lattice() {
+    // mode 0: the suspension tower; 1: dead-end (a strain string each way at each arm tip, jumpered under it); 2:
+    // transposition (the same, the jumpers crossing to the next arm on their side: lower to middle, middle to top, top
+    // to lower).
+    private void lattice(int mode) {
         float c = 8;
         float[] levels = { 8, 56, 104, 152, 200, 248, 304, 336, 368, 400, 432, 464 };
         // Footings, base plates and the legs, a member per bay (spliced at each panel point).
@@ -427,9 +497,24 @@ public final class TowerMesh extends MeshBuilder {
         // The crossarms: lower (reach 64 px from the tower's middle), middle (80, the longest) and top (56), each side.
         float[][] arms = { { 304, 64 }, { 368, 80 }, { 432, 56 } };
         for (int side = -1; side <= 1; side += 2) {
-            for (float[] level : arms) {
+            float[][] tips = new float[3][];
+            for (int k = 0; k < 3; k++) {
+                float[] level = arms[k];
                 float tipX = arm(side, level[0], level[1]);
-                suspension(tipX, level[0] - 4.0F, c, 13);
+                if (mode == 0) {
+                    suspension(tipX, level[0] - 4.0F, c, 13);
+                } else {
+                    float y = level[0] - 2.0F;
+                    float n = glassStrain(tipX, y, c - DEAD_END_EHV_FACE, -1, DEAD_END_EHV_DISCS, DEAD_END_EHV_RIM);
+                    float so = glassStrain(tipX, y, c + DEAD_END_EHV_FACE, 1, DEAD_END_EHV_DISCS, DEAD_END_EHV_RIM);
+                    tips[k] = new float[] { tipX, y, n, so };
+                }
+            }
+            for (int k = 0; mode > 0 && k < 3; k++) {
+                float[] from = tips[k], to = tips[mode == 2 ? (k + 1) % 3 : k];
+                float drop = Math.min(from[1], to[1]) - 14;
+                jumper(new float[] { from[0], from[1] - 1.6F, from[2] }, new float[] { from[0], drop, from[2] }, new float[] { to[0], drop, to[3] },
+                        new float[] { to[0], to[1] - 1.6F, to[3] });
             }
         }
         // The shield wire peak: four members from the body's top corners to a post.
@@ -823,23 +908,49 @@ public final class TowerMesh extends MeshBuilder {
         }
     }
 
-    // A strain (dead-end) string from a crossarm's face at z0 out along dir (-1 north, +1 south), at (x, y): a clevis,
-    // three porcelain discs on their pin, and the line clamp, its outer face (the terminal) at z0 + dir * STRAIN.
+    // A strain (dead-end) insulator from a crossarm's face at z0 out along dir (-1 north, +1 south), at (x, y), lying
+    // along the line: a galvanized clevis rod, the same glazed porcelain as the pole's own insulators (a core with a shed
+    // every 2 px: the LV pin's size on LV, the MV post's on MV), and the round line clamp, its outer face (the terminal)
+    // at z0 + dir * STRAIN.
     public static final float STRAIN = 8.2F;
 
-    private float strain(float x, float y, float z0, float dir) {
-        float[] zs = { z0, z0 + dir * 1.0F };
-        swatchBox(x - 0.5F, y - 0.5F, Math.min(zs[0], zs[1]), x + 0.5F, y + 0.5F, Math.max(zs[0], zs[1]), GALV0 + 7);
-        float p0 = z0 + dir * 1.0F, p1 = z0 + dir * 7.0F;
-        swatchBox(x - 0.4F, y - 0.4F, Math.min(p0, p1), x + 0.4F, y + 0.4F, Math.max(p0, p1), GALV0 + 6);
-        for (int i = 0; i < 3; i++) {
-            float zc = z0 + dir * (2.0F + 2.0F * i);
-            swatchBox(x - 2.0F, y - 2.0F, zc - 0.4F, x + 2.0F, y + 2.0F, zc + 0.4F, PORC0 + 4 - (i % 2));
+    private float strain(float x, float y, float z0, float dir, boolean mv) {
+        float core = mv ? 1.3F : 1.0F, shed = mv ? 2.6F : 2.2F;
+        int solidFrom = solid.size(), boxesFrom = boxes.size();
+        turned(0, 0, new float[][] { { 0, 0.6F }, { 1.0F, 0.6F } }, 6, Ramp.GALV, false, false);
+        List<float[]> profile = new ArrayList<>();
+        profile.add(new float[] { 1.0F, core });
+        for (float s = 1.5F; s < 6.0F; s += 2.0F) {
+            profile.add(new float[] { s, core });
+            profile.add(new float[] { s, shed });
+            profile.add(new float[] { s + 0.6F, shed });
+            profile.add(new float[] { s + 1.2F, core });
         }
-        float c0 = z0 + dir * 7.0F, c1 = z0 + dir * STRAIN;
-        swatchBox(x - 1.0F, y - 1.0F, Math.min(c0, c1), x + 1.0F, y + 1.0F, Math.max(c0, c1), GALV0 + 7);
-        insulators.add(new float[] { x - 2.0F, y - 2.0F, Math.min(z0, c1), x + 2.0F, y + 2.0F, Math.max(z0, c1) });
+        profile.add(new float[] { 7.0F, core });
+        turned(0, 0, profile.toArray(new float[0][]), 8, Ramp.PORCELAIN, true, true);
+        turned(0, 0, new float[][] { { 7.0F, 1.2F }, { STRAIN, 1.2F } }, 8, Ramp.GALV, true, true);
+        alongZ(solidFrom, x, y, z0, dir);
+        boxes.subList(boxesFrom, boxes.size()).clear();
+        float c1 = z0 + dir * STRAIN;
+        float[] box = { x - shed, y - shed, Math.min(z0, c1), x + shed, y + shed, Math.max(z0, c1) };
+        boxes.add(box);
+        insulators.add(box);
         return c1;
+    }
+
+    // Lays the quads built since `from` (round about the upright axis at the origin, from y 0 up) along z from z0 the way
+    // dir points, centred on (x, y): a quarter turn about x (a turn, not a mirror, so faces still look out).
+    private void alongZ(int from, float x, float y, float z0, float dir) {
+        for (int i = from; i < solid.size(); i += 8) {
+            float px = solid.get(i), py = solid.get(i + 1), pz = solid.get(i + 2);
+            solid.set(i, x / PX + px);
+            solid.set(i + 1, y / PX - dir * pz);
+            solid.set(i + 2, z0 / PX + dir * py);
+            float nx = solid.get(i + 5), ny = solid.get(i + 6), nz = solid.get(i + 7);
+            solid.set(i + 5, nx);
+            solid.set(i + 6, -dir * nz);
+            solid.set(i + 7, dir * ny);
+        }
     }
 
     // The jumper loop under a dead-end's crossarm, from one strain's clamp to the other's: down, across and up, in
@@ -862,12 +973,12 @@ public final class TowerMesh extends MeshBuilder {
         timber(-12, armY, DEAD_END_LV_SOUTH - 3, 28, armY + 4, DEAD_END_LV_SOUTH);
         swatchBox(7.5F, armY + 1.5F, DEAD_END_LV_NORTH - 0.6F, 8.5F, armY + 2.5F, DEAD_END_LV_SOUTH + 0.6F, GALV0 + 7);
         for (float x : new float[] { -8, 1, 24 }) {
-            float n = strain(x, armY + 2, DEAD_END_LV_NORTH, -1), so = strain(x, armY + 2, DEAD_END_LV_SOUTH, 1);
+            float n = strain(x, armY + 2, DEAD_END_LV_NORTH, -1, false), so = strain(x, armY + 2, DEAD_END_LV_SOUTH, 1, false);
             jumperLoop(x, armY + 2, n + 0.5F, so - 0.5F, 7);
         }
         float ny = NEUTRAL_Y, nx = NEUTRAL_X;
         swatchBox(nx - 1.2F, ny - 1.4F, cz - 0.7F, cx - 1.0F, ny, cz + 0.7F, GALV0 + 6);
-        float n = strain(nx, ny - 0.7F, cz - 0.7F, -1), so = strain(nx, ny - 0.7F, cz + 0.7F, 1);
+        float n = strain(nx, ny - 0.7F, cz - 0.7F, -1, false), so = strain(nx, ny - 0.7F, cz + 0.7F, 1, false);
         jumperLoop(nx, ny - 0.7F, n + 0.5F, so - 0.5F, 5);
         tag(cx, 40, cz + 2.41F, true);
     }
@@ -896,7 +1007,7 @@ public final class TowerMesh extends MeshBuilder {
         }
         float[][] phases = { { -8, DEAD_END_MV_UPPER }, { -16, DEAD_END_MV_LOWER }, { 32, DEAD_END_MV_LOWER } };
         for (float[] ph : phases) {
-            float n = strain(ph[0], ph[1] + 2, north, -1), so = strain(ph[0], ph[1] + 2, south, 1);
+            float n = strain(ph[0], ph[1] + 2, north, -1, true), so = strain(ph[0], ph[1] + 2, south, 1, true);
             jumperLoop(ph[0], ph[1] + 2, n + 0.5F, so - 0.5F, 8);
         }
         shieldPeak(cx, top, cz, 16);
@@ -999,6 +1110,11 @@ public final class TowerMesh extends MeshBuilder {
     // A porcelain line post insulator standing at (x, y, z), `height` px: a steel base flange, the core with a shed every
     // 2 px, and a steel line clamp on top.
     private void postInsulator(float x, float y, float z, float height) {
+        postInsulator(x, y, z, height, Ramp.PORCELAIN);
+    }
+
+    // The same in another glaze: HV and EHV posts are the towers' blue-green glass.
+    private void postInsulator(float x, float y, float z, float height, Ramp glaze) {
         turned(x, z, new float[][] { { y, 2.2F }, { y + 1.0F, 2.2F } }, 8, Ramp.GALV, true, false);
         float top = y + height - 1.6F;
         List<float[]> profile = new ArrayList<>();
@@ -1010,7 +1126,7 @@ public final class TowerMesh extends MeshBuilder {
             profile.add(new float[] { s + 1.2F, 1.3F });
         }
         profile.add(new float[] { top, 1.3F });
-        turned(x, z, profile.toArray(new float[0][]), 8, Ramp.PORCELAIN, true, false);
+        turned(x, z, profile.toArray(new float[0][]), 8, glaze, true, false);
         // The clamp: a saddle across the line (along u) on a short stud.
         turned(x, z, new float[][] { { top, 1.6F }, { top + 0.6F, 1.6F } }, 8, Ramp.GALV, true, true);
         swatchBox(x - 1.0F, top + 0.6F, z - 2.2F, x + 1.0F, top + 1.6F, z + 2.2F, GALV0 + 6);
@@ -1131,6 +1247,490 @@ public final class TowerMesh extends MeshBuilder {
                 new float[] { 1, 0, 0 }, UP, Mat.GALV);
         List<float[]> st = List.of(new float[] { 0, 0 }, new float[] { 10, 0 }, new float[] { 10, 12 }, new float[] { 0, 12 });
         paintPlane(st, new float[] { x, y, f }, new float[] { 1, 0, 0 }, UP, List.of(new float[] { 0, 10, 0, 12, SIGN_X, SIGN_Y }));
+    }
+
+    // ================================================================================================================
+    // The yard and the line's heavy hardware (Phase 4)
+    // ================================================================================================================
+
+    // A strain string of `discs` cap-and-pin glass discs lying along the line from z0 the way dir points (-1 north, +1
+    // south), centred on (x, y): a clevis, the discs (each its pin, glass rim and cap) and the line clamp, its outer face
+    // (the terminal) at z0 + dir * glassStrainLength(discs).
+    public static float glassStrainLength(int discs) {
+        return 1.0F + 3.0F * discs + 1.6F;
+    }
+
+    private float glassStrain(float x, float y, float z0, float dir, int discs, float rim) {
+        int solidFrom = solid.size(), boxesFrom = boxes.size();
+        turned(0, 0, new float[][] { { 0, 0.6F }, { 1.0F, 0.6F } }, 6, Ramp.GALV, false, false);
+        float s = 1.0F;
+        for (int i = 0; i < discs; i++) {
+            turned(0, 0, new float[][] { { s, 0.6F }, { s + 0.6F, 0.6F } }, 6, Ramp.GALV, false, false);
+            turned(0, 0, new float[][] { { s + 0.6F, rim }, { s + 1.6F, rim }, { s + 1.6F, rim * 0.6F }, { s + 2.4F, rim * 0.6F } }, 8, Ramp.GLASS, true,
+                    true);
+            turned(0, 0, new float[][] { { s + 2.4F, 1.2F }, { s + 3.0F, 1.2F } }, 8, Ramp.GALV, true, false);
+            s += 3.0F;
+        }
+        turned(0, 0, new float[][] { { s, 1.4F }, { s + 1.6F, 1.4F } }, 8, Ramp.GALV, true, true);
+        alongZ(solidFrom, x, y, z0, dir);
+        boxes.subList(boxesFrom, boxes.size()).clear();
+        float end = z0 + dir * glassStrainLength(discs);
+        float[] box = { x - rim, y - rim, Math.min(z0, end), x + rim, y + rim, Math.max(z0, end) };
+        boxes.add(box);
+        insulators.add(box);
+        return end;
+    }
+
+    // A round pipe (bus or conduit) of radius r from z0 to z1 along z, centred on (x, y).
+    private void pipe(float x, float y, float z0, float z1, float r) {
+        int solidFrom = solid.size(), boxesFrom = boxes.size();
+        turned(0, 0, new float[][] { { 0, r }, { z1 - z0, r } }, 8, Ramp.GALV, true, true);
+        alongZ(solidFrom, x, y, z0, 1);
+        boxes.subList(boxesFrom, boxes.size()).clear();
+        boxes.add(new float[] { x - r, y - r, z0, x + r, y + r, z1 });
+    }
+
+    // A thin run in one flat tone from point to point (a jumper, a cable), w px square, its sides only.
+    private void rod(float[] a, float[] b, float w, int swatch) {
+        float[] d = normalize(sub(b, a));
+        float[] u = Math.abs(d[1]) < 0.9F ? UP : new float[] { 1, 0, 0 };
+        float[] s = scale(normalize(cross(d, u)), w / 2), t = scale(normalize(cross(s, d)), w / 2);
+        float[][] off = { add(s, t), sub(t, s), scale(add(s, t), -1), sub(s, t) };
+        float[] uv = swatchUv(swatch);
+        for (int i = 0; i < 4; i++) {
+            float[] o0 = off[i], o1 = off[(i + 1) % 4];
+            float[] p0 = add(a, o0), p1 = add(b, o0), p2 = add(b, o1), p3 = add(a, o1);
+            float[] n = cross(sub(p2, p0), sub(p3, p1));
+            if (dot(n, add(o0, o1)) < 0) {
+                quad(p3, p2, p1, p0, uv);
+            } else {
+                quad(p0, p1, p2, p3, uv);
+            }
+        }
+        boxes.add(new float[] { Math.min(a[0], b[0]) - w, Math.min(a[1], b[1]) - w, Math.min(a[2], b[2]) - w, Math.max(a[0], b[0]) + w,
+                Math.max(a[1], b[1]) + w, Math.max(a[2], b[2]) + w });
+    }
+
+    // A copper jumper through the points in order.
+    private void jumper(float[]... points) {
+        for (int i = 0; i + 1 < points.length; i++) {
+            rod(points[i], points[i + 1], 0.8F, COPPER0 + 1);
+        }
+    }
+
+    // Bus (HV, EHV): a section of rigid pipe bus two blocks long along the line, one pipe a phase on a station post
+    // insulator of its tier's porcelain on a galvanized pedestal, a tap clamp on each pipe's middle (its terminal).
+    // Sections placed end to end in a row join their phases.
+    public static final float[] BUS_SPACING = { 0, 0, 16, 24 }, BUS_STAND = { 0, 0, 24, 32 }, BUS_POST = { 0, 0, 24, 36 }, BUS_PIPE = { 0, 0, 1.5F, 2.0F };
+    public static final float BUS_Z0 = -8, BUS_Z1 = 24;
+
+    public static float busTap(int tier) {
+        return BUS_STAND[tier] + 1 + BUS_POST[tier] + 2 * BUS_PIPE[tier] + 0.8F;
+    }
+
+    private void bus(int tier) {
+        float c = 8, sp = BUS_SPACING[tier], stand = BUS_STAND[tier], post = BUS_POST[tier], r = BUS_PIPE[tier];
+        for (int i = -1; i <= 1; i++) {
+            float x = c + i * sp;
+            concrete(x - 4, 0, c - 4, x + 4, 2, c + 4);
+            member(new float[] { x, 2, c }, new float[] { x, stand, c }, 3, 3, new float[] { 1, 0, 0 }, Mat.GALV, true);
+            plateBox(x - 2.5F, stand, c - 2.5F, x + 2.5F, stand + 1, c + 2.5F, Mat.GALV);
+            postInsulator(x, stand + 1, c, post, Ramp.GLASS);
+            float y = stand + 1 + post + r;
+            pipe(x, y, BUS_Z0, BUS_Z1, r);
+            float[] run = { x - r, y - r, BUS_Z0, x + r, y + r, BUS_Z1 };
+            insulators.add(run);
+            swatchBox(x - 1.0F, y + r - 0.4F, c - 1.2F, x + 1.0F, y + r + 0.8F, c + 1.2F, GALV0 + 6);
+            frame.add(new float[] { x - 4, 0, c - 4, x + 4, stand + 1, c + 4 });
+        }
+    }
+
+    // Dead-End Gantry (HV, EHV): where lines come into the yard. Two galvanized A-frame legs (each two members spread
+    // along the line) carry a box girder; each phase dead-ends on its north face on a glass strain string, and a copper
+    // jumper drops under the girder to a suspension string on its south side (the yard's terminal). Shield peaks on the
+    // legs.
+    public static final float[] GANTRY_SPACING = { 0, 0, 20, 28 }, GANTRY_BEAM = { 0, 0, 64, 96 }, GANTRY_LEG = { 0, 0, 32, 48 };
+    public static final int[] GANTRY_DISCS = { 0, 0, 6, 8 }, GANTRY_DROP = { 0, 0, 4, 6 };
+    public static final float[] GANTRY_RIM = { 0, 0, 3.0F, 4.0F };
+    public static final float GANTRY_HALF = 2.5F;
+
+    private void gantry(int tier) {
+        float c = 8, sp = GANTRY_SPACING[tier], beamY = GANTRY_BEAM[tier], leg = GANTRY_LEG[tier];
+        for (int side = -1; side <= 1; side += 2) {
+            float x = c + side * leg;
+            for (int dz = -1; dz <= 1; dz += 2) {
+                concrete(x - 3, 0, c + dz * 16 - 3, x + 3, 2, c + dz * 16 + 3);
+                member(new float[] { x, 2, c + dz * 16 }, new float[] { x, beamY, c + dz * 1.5F }, 3, 3, new float[] { 1, 0, 0 }, Mat.GALV, true);
+            }
+            member(new float[] { x, beamY * 0.45F, c - 8.2F }, new float[] { x, beamY * 0.45F, c + 8.2F }, 2, 2, UP, Mat.GALV, true);
+            frame.add(new float[] { x - 2, 0, c - 19, x + 2, beamY, c + 19 });
+            shieldPeak(x, beamY + 4, c, 14);
+        }
+        plateBox(c - leg - 4, beamY, c - GANTRY_HALF, c + leg + 4, beamY + 4, c + GANTRY_HALF, Mat.GALV);
+        frame.add(new float[] { c - leg - 4, beamY, c - GANTRY_HALF, c + leg + 4, beamY + 4, c + GANTRY_HALF });
+        float y = beamY + 2, discs = GANTRY_DISCS[tier];
+        for (int i = -1; i <= 1; i++) {
+            float x = c + i * sp;
+            float end = glassStrain(x, y, c - GANTRY_HALF, -1, (int) discs, GANTRY_RIM[tier]);
+            suspension(x, beamY, c + GANTRY_HALF + 3.2F, GANTRY_DROP[tier]);
+            float bottom = beamY - 2.2F - 3.0F * GANTRY_DROP[tier] - 3.0F;
+            jumper(new float[] { x, y - 1.4F, end }, new float[] { x, bottom - 6, end }, new float[] { x, bottom - 6, c + GANTRY_HALF + 3.2F },
+                    new float[] { x, bottom - 1.0F, c + GANTRY_HALF + 3.2F });
+        }
+    }
+
+    // Voltage Regulator (MV, HV): three single-phase step regulators on a galvanized platform: round tanks with their
+    // source bushing north and load bushing south (its tier's insulator, a unit's size), a position indicator on each,
+    // and the control cabinet on the east end.
+    public static final float[] REG_SPACING = { 0, 11, 15, 0 }, REG_R = { 0, 4.5F, 5.5F, 0 }, REG_H = { 0, 14, 20, 0 };
+    public static final float REG_DECK = 4;
+
+    public static float regBushingZ(int tier, int dir) {
+        return 8 + dir * (REG_R[tier] - 1.0F);
+    }
+
+    private void regulator(int tier) {
+        float c = 8, sp = REG_SPACING[tier], r = REG_R[tier], h = REG_H[tier], deck = REG_DECK;
+        float x0 = c - sp - r - 2, x1 = c + sp + r + 2;
+        plateBox(x0, deck - 1.5F, c - r - 2, x1, deck, c + r + 2, Mat.GALV);
+        for (float x : new float[] { x0 + 1.5F, x1 - 1.5F }) {
+            for (float z : new float[] { c - r - 0.5F, c + r + 0.5F }) {
+                plateBox(x - 1, 0, z - 1, x + 1, deck - 1.5F, z + 1, Mat.GALV);
+            }
+        }
+        frame.add(new float[] { x0, 0, c - r - 2, x1, deck, c + r + 2 });
+        for (int i = -1; i <= 1; i++) {
+            float x = c + i * sp;
+            turned(x, c, new float[][] { { deck, r }, { deck + h - 1.0F, r }, { deck + h - 1.0F, r + 0.5F }, { deck + h, r + 0.5F } }, 8, Ramp.CAN, true,
+                    false);
+            frame.add(new float[] { x - r - 0.5F, deck, c - r - 0.5F, x + r + 0.5F, deck + h, c + r + 0.5F });
+            bushing(tier, x, deck + h, regBushingZ(tier, -1), true);
+            bushing(tier, x, deck + h, regBushingZ(tier, 1), true);
+            // The position indicator: a dial on the tank's east side.
+            float dy = deck + h * 0.7F;
+            swatchBox(x + r - 0.2F, dy - 1.5F, c - 1.5F, x + r + 0.6F, dy + 1.5F, c + 1.5F, BLACK);
+            swatchBox(x + r + 0.6F, dy - 0.2F, c - 1.2F, x + r + 0.8F, dy + 0.2F, c + 0.3F, MARKER);
+        }
+        plateBox(x1, deck + 1, c - 3, x1 + 4, deck + 9, c + 3, Mat.GALV);
+        frame.add(new float[] { x1, deck + 1, c - 3, x1 + 4, deck + 9, c + 3 });
+    }
+
+    // Relay Panel: a galvanized control cabinet on a plinth, its door on the north face with two meters, the trip and
+    // close lamps (red, green), a selector and a handle.
+    private void relayPanel() {
+        float c = 8;
+        concrete(c - 7, 0, c - 5, c + 7, 1, c + 5);
+        plateBox(c - 6, 1, c - 4, c + 6, 27, c + 4, Mat.GALV);
+        plateBox(c - 6.5F, 27, c - 4.5F, c + 6.5F, 28, c + 4.5F, Mat.GALV);
+        float z = c - 4;
+        swatchBox(c - 5.0F, 3, z - 0.3F, c - 4.6F, 25, z, GALV0 + 2);
+        for (float[] m : new float[][] { { c - 3, 18 }, { c + 2, 18 } }) {
+            swatchBox(m[0] - 2, m[1] - 2, z - 0.4F, m[0] + 2, m[1] + 2, z, BLACK);
+            swatchBox(m[0] - 0.2F, m[1] - 1.5F, z - 0.6F, m[0] + 0.2F, m[1] + 0.5F, z - 0.4F, MARKER);
+        }
+        swatchBox(c - 3.4F, 12, z - 0.5F, c - 2.2F, 13.2F, z, RED);
+        swatchBox(c - 1.0F, 12, z - 0.5F, c + 0.2F, 13.2F, z, MARKER);
+        swatchBox(c + 1.8F, 11.6F, z - 0.6F, c + 3.6F, 13.6F, z, BLACK);
+        swatchBox(c + 4.0F, 7, z - 0.8F, c + 4.8F, 11, z, GALV0 + 7);
+        frame.add(new float[] { c - 7, 0, c - 5, c + 7, 28, c + 5 });
+    }
+
+    // Ground Switch (MV, HV, EHV): a galvanized base, per phase a post of its tier's insulator (its top the line's
+    // terminal) and a grounding blade hinged at the base on the south: up against the post's top when closed (the line
+    // grounded), lying back along the base when open. A copper lead bonds each hinge to the base.
+    public static final float GROUND_BASE = 2, GROUND_HINGE_Z = 6;
+
+    private void groundSwitch(int tier, boolean open) {
+        float c = 8, sp = DISCONNECT_SPACING[tier], base = GROUND_BASE;
+        float reach = bushingHeight(tier) + 2;
+        plateBox(c - sp - 3.5F, 0, c - 4, c + sp + 3.5F, base, c + GROUND_HINGE_Z + reach + 1, Mat.GALV);
+        frame.add(new float[] { c - sp - 3.5F, 0, c - 4, c + sp + 3.5F, base, c + GROUND_HINGE_Z + reach + 1 });
+        for (int i = -1; i <= 1; i++) {
+            float x = c + i * sp;
+            float top = bushing(tier, x, base, c, true);
+            float[] hinge = { x, base + 1.2F, c + GROUND_HINGE_Z };
+            swatchBox(x - 1.2F, base, c + GROUND_HINGE_Z - 1.2F, x + 1.2F, base + 2.0F, c + GROUND_HINGE_Z + 1.2F, GALV0 + 7);
+            float[] end = open ? new float[] { x, base + 1.2F, c + GROUND_HINGE_Z + reach } : new float[] { x, top - 0.8F, c + 1.6F };
+            member(hinge, end, 1.2F, 0.7F, new float[] { 1, 0, 0 }, Mat.GALV, true);
+            jumper(new float[] { x + 1.4F, base + 1.0F, c + GROUND_HINGE_Z }, new float[] { x + 1.4F, base + 0.4F, c + GROUND_HINGE_Z + 2.5F });
+        }
+    }
+
+    // How tall a bushing of a tier stands (a unit's size).
+    private static float bushingHeight(int tier) {
+        return switch (tier) {
+            case 0 -> 7.6F;
+            case 1 -> 10;
+            case 2 -> 1 + 3 * 3 + 1;
+            default -> 1 + 3 * 4 + 1;
+        };
+    }
+
+    // Shunt Capacitor Bank (MV, HV): a galvanized rack with shelves of capacitor units (stainless cans, two small
+    // porcelain bushings each), a row per shelf, two units a phase; on top, a bushing of its tier per phase (A B C west to
+    // east), the bank's terminals.
+    public static final float[] CAP_SHELF = { 0, 10, 12, 0 };
+    public static final int[] CAP_ROWS = { 0, 2, 3, 0 };
+    public static final float CAP_SPACING = 12, CAP_HALF_Z = 5;
+
+    public static float capTop(int tier) {
+        return 2 + CAP_ROWS[tier] * CAP_SHELF[tier] + 1;
+    }
+
+    private void capacitorBank(int tier) {
+        float c = 8, shelf = CAP_SHELF[tier], top = capTop(tier), hx = CAP_SPACING + 6;
+        for (float x : new float[] { c - hx, c + hx }) {
+            for (float z : new float[] { c - CAP_HALF_Z, c + CAP_HALF_Z }) {
+                member(new float[] { x, 0, z }, new float[] { x, top, z }, 1.6F, 1.6F, new float[] { 1, 0, 0 }, Mat.GALV, true);
+            }
+        }
+        for (int row = 0; row <= CAP_ROWS[tier]; row++) {
+            float y = 2 + row * shelf;
+            plateBox(c - hx, y - 1, c - CAP_HALF_Z, c + hx, y, c + CAP_HALF_Z, Mat.GALV);
+            if (row == CAP_ROWS[tier]) {
+                break;
+            }
+            for (int i = -1; i <= 1; i++) {
+                for (float dx : new float[] { -2.8F, 2.8F }) {
+                    float x = c + i * CAP_SPACING + dx;
+                    swatchBox(x - 2.2F, y, c - 3.2F, x + 2.2F, y + shelf - 3.0F, c + 3.2F, ALU0 + 2);
+                    swatchBox(x - 2.2F, y + shelf - 3.4F, c - 3.2F, x + 2.2F, y + shelf - 3.0F, c + 3.2F, ALU0 + 1);
+                    for (float dz : new float[] { -1.5F, 1.5F }) {
+                        swatchBox(x - 0.6F, y + shelf - 3.0F, c + dz - 0.6F, x + 0.6F, y + shelf - 1.6F, c + dz + 0.6F, PORC0 + 3);
+                    }
+                }
+            }
+        }
+        frame.add(new float[] { c - hx - 0.8F, 0, c - CAP_HALF_Z - 0.8F, c + hx + 0.8F, top, c + CAP_HALF_Z + 0.8F });
+        for (int i = -1; i <= 1; i++) {
+            bushing(tier, c + i * CAP_SPACING, top, c, true);
+        }
+    }
+
+    // Shunt Reactor (HV, EHV): an oil-filled tank on a concrete pad with a radiator bank on its east side, a small
+    // conservator, and three bushings of its tier in a row across the lid (A B C west to east).
+    public static final float[] REACTOR_HALF_X = { 0, 0, 12, 16 }, REACTOR_HALF_Z = { 0, 0, 9, 12 }, REACTOR_H = { 0, 0, 26, 34 }, REACTOR_SPACING = { 0, 0, 8,
+            10 };
+
+    public static float reactorTop(int tier) {
+        return Substation.PAD + REACTOR_H[tier] + Substation.LID;
+    }
+
+    private void reactor(int tier) {
+        float c = 8, hx = REACTOR_HALF_X[tier], hz = REACTOR_HALF_Z[tier], y0 = Substation.PAD, y1 = y0 + REACTOR_H[tier], top = reactorTop(tier);
+        concrete(c - hx - 10, 0, c - hz - 4, c + hx + 10, y0, c + hz + 4);
+        plateBox(c - hx, y0, c - hz, c + hx, y1, c + hz, Mat.GALV);
+        plateBox(c - hx - 1, y1, c - hz - 1, c + hx + 1, top, c + hz + 1, Mat.GALV);
+        frame.add(new float[] { c - hx - 10, 0, c - hz - 4, c + hx + 10, y0, c + hz + 4 });
+        frame.add(new float[] { c - hx - 1, y0, c - hz - 1, c + hx + 1, top, c + hz + 1 });
+        float inner = c + hx, outer = inner + 7;
+        for (float z = c - hz + 2.5F; z <= c + hz - 2.5F; z += 3) {
+            plateBox(inner, y0 + 3, z - 0.5F, outer, y1 - 3, z + 0.5F, Mat.GALV);
+        }
+        frame.add(new float[] { inner, y0 + 3, c - hz + 1.5F, outer, y1 - 3, c + hz - 1.5F });
+        float r = 3, cy = top + 3 + r;
+        member(new float[] { c - hx * 0.5F, cy, c + hz - 3 }, new float[] { c + hx * 0.5F, cy, c + hz - 3 }, 2 * r, 2 * r, UP, Mat.GALV, true);
+        for (float x : new float[] { c - hx * 0.3F, c + hx * 0.3F }) {
+            plateBox(x - 1, top, c + hz - 4, x + 1, cy - r + 0.5F, c + hz - 2, Mat.GALV);
+        }
+        frame.add(new float[] { c - hx * 0.5F, top, c + hz - 3 - r, c + hx * 0.5F, cy + r, c + hz - 3 + r });
+        for (int i = -1; i <= 1; i++) {
+            bushing(tier, c + i * REACTOR_SPACING[tier], top, c - 2, false);
+        }
+    }
+
+    // HV Dead-End or Transposition Tower: the H-frame's two poles, a crossbeam on each face (north and south), each phase
+    // dead-ended both ways on glass strain strings with its jumper under the beams. On the transposition tower the
+    // jumpers cross: the conductor that comes in at one place leaves a place over (west to middle, middle to east, east
+    // to west), so the phases rotate along the line.
+    public static final int DEAD_END_HV_DISCS = 6;
+    public static final float DEAD_END_HV_RIM = 3.0F, DEAD_END_HV_BEAM = 282;
+    public static final float[] DEAD_END_HV_X = { -42, 8, 58 };
+
+    public static float deadEndHvNorth() {
+        return 8 - 4.85F + 0.5F - 6.0F;
+    }
+
+    public static float deadEndHvSouth() {
+        return 8 + 4.85F - 0.5F + 6.0F;
+    }
+
+    private void deadEndHv(boolean transpose) {
+        float cz = 8, top = 316, lx = -24, rx = 40, r = 4.85F, beamY = DEAD_END_HV_BEAM;
+        pole(lx, cz, 0, top, 10, 3.0F, true, 40);
+        pole(rx, cz, 0, top, 10, 3.0F, true, 150);
+        float north = deadEndHvNorth(), south = deadEndHvSouth();
+        timber(-48, beamY, north, 64, beamY + 7, cz - r + 0.5F);
+        timber(-48, beamY, cz + r - 0.5F, 64, beamY + 7, south);
+        for (float px : new float[] { lx, rx }) {
+            swatchBox(px - 0.7F, beamY + 2.5F, north - 0.6F, px + 0.7F, beamY + 4.0F, south + 0.6F, GALV0 + 7);
+            vBrace(px, beamY - 24, cz + r + 0.4F, beamY, south - 3.0F, 14.0F, 1.8F, 1.0F, true, true);
+        }
+        float y = beamY + 3.5F;
+        float[] ends = new float[6];
+        for (int k = 0; k < 3; k++) {
+            ends[k] = glassStrain(DEAD_END_HV_X[k], y, north, -1, DEAD_END_HV_DISCS, DEAD_END_HV_RIM);
+            ends[3 + k] = glassStrain(DEAD_END_HV_X[k], y, south, 1, DEAD_END_HV_DISCS, DEAD_END_HV_RIM);
+        }
+        for (int k = 0; k < 3; k++) {
+            int to = transpose ? (k + 1) % 3 : k;
+            float xn = DEAD_END_HV_X[k], xs = DEAD_END_HV_X[to], drop = beamY - 10 - 5 * k;
+            jumper(new float[] { xn, y - 1.4F, ends[k] }, new float[] { xn, drop, ends[k] }, new float[] { xs, drop, ends[3 + to] },
+                    new float[] { xs, y - 1.4F, ends[3 + to] });
+        }
+        // The X-brace between the poles, in their plane.
+        float y0 = 140, y1 = 250;
+        float[] mid = { (lx + rx) / 2.0F, (y0 + y1) / 2.0F, cz };
+        for (float[] end : new float[][] { { lx + 2.2F, y0 }, { lx + 2.2F, y1 }, { rx - 2.2F, y0 }, { rx - 2.2F, y1 } }) {
+            float[] from = { end[0], end[1], cz };
+            member(from, add(mid, scale(normalize(sub(from, mid)), 1.6F)), 2.0F, 2.0F, new float[] { 0, 0, 1 }, Mat.GALV, true);
+        }
+        plateBox(mid[0] - 2.0F, mid[1] - 2.0F, cz - 1.5F, mid[0] + 2.0F, mid[1] + 2.0F, cz + 1.5F, Mat.GALV);
+        shieldPeak(lx, top, cz, 18);
+        shieldPeak(rx, top, cz, 18);
+    }
+
+    // The EHV lattice's dead-end strings at an arm tip: a strain string each way off the tip's end frame, and the jumper
+    // (the lattice's dead-end and transposition towers).
+    public static final int DEAD_END_EHV_DISCS = 8;
+    public static final float DEAD_END_EHV_RIM = 4.0F, DEAD_END_EHV_FACE = 3.9F;
+
+    // Riser (LV, MV): the tier's pole with its crossarm(s) and, where its line insulators would be, cable terminations
+    // (porcelain potheads, their tops the overhead terminals); the cables run from their feet down a galvanized conduit
+    // on the pole's south face to a cable box at its foot, where the underground cable joins (the cable terminals on
+    // the box's top).
+    public static final float RISER_BOX_Y = 4, RISER_CONDUIT_Z = 8 + 4.2F;
+
+    private void riserLv() {
+        float cx = 8, cz = 8, top = 150, armY = 132, armZ0 = 10.0F, armZ1 = 13.0F, z = (armZ0 + armZ1) / 2;
+        pole(cx, cz, 0, top, 8, 2.0F, false, 140);
+        timber(-12, armY, armZ0, 28, armY + 4, armZ1);
+        swatchBox(7.5F, armY + 1.5F, 7.0F, 8.5F, armY + 2.5F, armZ1 + 0.6F, GALV0 + 7);
+        vBrace(cx, armY - 18, 10.7F, armY, 11.5F, 10.0F, 1.2F, 0.6F, true, true);
+        riserDown(new float[] { -8, 1, 24 }, armY + 4, z, armY, 2.4F);
+        tag(cx, 40, cz + 2.41F, true);
+    }
+
+    private void riserMv() {
+        float cx = 8, cz = 8, top = 222, face = cz + 3.62F, upperY = 196, lowerY = 166;
+        pole(cx, cz, 0, top, 8, 3.0F, true, 260);
+        timber(-12, upperY, face - 0.4F, 14, upperY + 4, face + 3.6F);
+        timber(-20, lowerY, face - 0.4F, 36, lowerY + 4, face + 3.6F);
+        for (float armY : new float[] { upperY, lowerY }) {
+            swatchBox(7.4F, armY + 1.4F, cz - 4.2F, 8.6F, armY + 2.6F, face + 4.2F, GALV0 + 7);
+        }
+        vBrace(cx, upperY - 20, face + 0.6F, upperY, face + 1.6F, 14.0F, 1.6F, 0.8F, true, false);
+        vBrace(cx, lowerY - 20, face + 0.6F, lowerY, face + 1.6F, 16.0F, 1.6F, 0.8F, true, true);
+        float az = face + 1.6F;
+        postInsulator(-8, upperY + 4, az, 12);
+        postInsulator(-16, lowerY + 4, az, 12);
+        postInsulator(32, lowerY + 4, az, 12);
+        // Each termination's cable down from its foot to the conduit's head under the lower arm.
+        float head = lowerY - 4, conduitZ = face + 4.6F;
+        for (float[] p : new float[][] { { -8, upperY + 4 }, { -16, lowerY + 4 }, { 32, lowerY + 4 } }) {
+            rod(new float[] { p[0], p[1] - 0.4F, az }, new float[] { p[0], p[1] - 3.0F, az }, 1.2F, BLACK);
+            rod(new float[] { p[0], p[1] - 3.0F, az }, new float[] { cx, head, conduitZ }, 1.2F, BLACK);
+        }
+        conduit(cx, head, conduitZ);
+        shieldPeak(cx, top, cz, 16);
+    }
+
+    // LV: potheads at xs on the arm (y, z), cables to the conduit's head below the arm, the conduit down to the box.
+    private void riserDown(float[] xs, float y, float z, float armY, float headDrop) {
+        float head = armY - 6, conduitZ = RISER_CONDUIT_Z;
+        for (float x : xs) {
+            postInsulator(x, y, z, 7.6F);
+            rod(new float[] { x, y - 0.4F, z }, new float[] { x, y - headDrop, z }, 1.0F, BLACK);
+            rod(new float[] { x, y - headDrop, z }, new float[] { 8, head, conduitZ }, 1.0F, BLACK);
+        }
+        conduit(8, head, conduitZ);
+    }
+
+    // The conduit: a galvanized pipe from its head down a pole's face to the cable box at its foot, strapped.
+    private void conduit(float x, float head, float z) {
+        member(new float[] { x, RISER_BOX_Y, z }, new float[] { x, head + 1, z }, 2.0F, 2.0F, new float[] { 0, 0, 1 }, Mat.GALV, true);
+        swatchBox(x - 1.4F, head + 1, z - 1.4F, x + 1.4F, head + 2.4F, z + 1.4F, GALV0 + 6);
+        for (float y = 20; y < head; y += 24) {
+            swatchBox(x - 1.4F, y, z - 1.2F, x + 1.4F, y + 0.6F, z + 1.4F, GALV0 + 7);
+        }
+        plateBox(x - 4, 0, z - 1.5F, x + 4, RISER_BOX_Y, z + 2.5F, Mat.GALV);
+        frame.add(new float[] { x - 4, 0, z - 1.5F, x + 4, RISER_BOX_Y, z + 2.5F });
+        frame.add(new float[] { x - 1, RISER_BOX_Y, z - 1, x + 1, head + 2.4F, z + 1 });
+    }
+
+    // Riser (HV, EHV): a galvanized stand (four legs and a deck), on it three outdoor cable terminations (tall porcelain
+    // with sheds on a stress-cone base, its top the overhead terminal), each cable dropping through the deck to a cable
+    // box on the ground (the cable terminal on its top).
+    public static final float[] RISER_DECK = { 0, 0, 20, 28 }, RISER_POST = { 0, 0, 22, 32 }, RISER_SPACING = { 0, 0, 12, 16 };
+
+    private void riserStand(int tier) {
+        float c = 8, deck = RISER_DECK[tier], sp = RISER_SPACING[tier], hx = sp + 5, hz = 5;
+        for (float x : new float[] { c - hx, c + hx }) {
+            for (float z : new float[] { c - hz, c + hz }) {
+                concrete(x - 2, 0, z - 2, x + 2, 1, z + 2);
+                member(new float[] { x, 1, z }, new float[] { x, deck, z }, 2.0F, 2.0F, new float[] { 1, 0, 0 }, Mat.GALV, true);
+            }
+        }
+        plateBox(c - hx - 1, deck, c - hz - 1, c + hx + 1, deck + 1.5F, c + hz + 1, Mat.GALV);
+        frame.add(new float[] { c - hx - 1, 0, c - hz - 1, c + hx + 1, deck + 1.5F, c + hz + 1 });
+        for (int i = -1; i <= 1; i++) {
+            float x = c + i * sp;
+            turned(x, c, new float[][] { { deck + 1.5F, 3.0F }, { deck + 5.0F, 3.0F }, { deck + 7.0F, 1.8F } }, 8, Ramp.CAN, false, false);
+            postInsulator(x, deck + 7.0F, c, RISER_POST[tier], Ramp.GLASS);
+            rod(new float[] { x, deck, c }, new float[] { x, RISER_BOX_Y, c }, 1.6F, BLACK);
+            plateBox(x - 2.5F, 0, c - 2.5F, x + 2.5F, RISER_BOX_Y, c + 2.5F, Mat.GALV);
+        }
+    }
+
+    // Sectionalizer (MV): a small galvanized tank on feet with three bushings each side (line north, load south), a
+    // counter cabinet with its yellow band and window on the east, and its position flag (red closed, green open).
+    private void sectionalizer(boolean open) {
+        Breaker b = new Breaker(1, 6, 6, 8, 6.0F);
+        float c = 8, y0 = Breaker.FEET, y1 = y0 + b.height();
+        for (float x : new float[] { c - b.halfX() + 1, c + b.halfX() - 3 }) {
+            plateBox(x, 0, c - b.halfZ() + 1, x + 2, y0, c + b.halfZ() - 1, Mat.GALV);
+        }
+        turned(c, c, new float[][] { { y0, b.halfX() - 0.5F }, { y1, b.halfX() - 0.5F } }, 8, Ramp.CAN, true, true);
+        plateBox(c - b.halfX() - 0.5F, y1, c - b.halfZ() - 0.5F, c + b.halfX() + 0.5F, b.top(), c + b.halfZ() + 0.5F, Mat.GALV);
+        plateBox(c + b.halfX(), y0 + 1, c - 3, c + b.halfX() + 3, y1 - 1, c + 3, Mat.GALV);
+        swatchBox(c + b.halfX() + 3, y0 + 2, c - 3, c + b.halfX() + 3.4F, y0 + 3, c + 3, HAZARD);
+        swatchBox(c + b.halfX() + 3, y1 - 4, c - 1.5F, c + b.halfX() + 3.4F, y1 - 2.4F, c + 1.5F, BLACK);
+        swatchBox(c + b.halfX() + 3, y0 + 4, c - 0.8F, c + b.halfX() + 3.6F, y0 + 5.6F, c + 0.8F, open ? MARKER : RED);
+        frame.add(new float[] { c - b.halfX() - 0.5F, 0, c - b.halfZ() - 0.5F, c + b.halfX() + 3.6F, b.top(), c + b.halfZ() + 0.5F });
+        for (int i = -1; i <= 1; i++) {
+            bushing(1, c + i * b.spacing(), b.top(), c - b.halfZ() + 2.5F, true);
+            bushing(1, c + i * b.spacing(), b.top(), c + b.halfZ() - 2.5F, true);
+        }
+    }
+
+    // Automatic Transfer Switch (LV, MV): a green pad-mounted cabinet on a concrete pad with three rows of bushings on its
+    // roof: the preferred feeder (north row), the load (south row) and the alternate feeder (middle row), each A B C west
+    // to east; two position lamps on its front (green: on the preferred; amber: on the alternate).
+    public static final float[] ATS_HALF = { 9, 12, 0, 0 }, ATS_H = { 12, 16, 0, 0 }, ATS_SPACING = { 6.0F, 7.5F, 0, 0 };
+
+    public static float atsRowZ(int tier, int row) {
+        return 8 + row * (ATS_HALF[tier] - 2.5F);
+    }
+
+    private void ats(int tier, boolean alternate) {
+        float c = 8, h = ATS_HALF[tier], height = ATS_H[tier];
+        concrete(c - h - 2, 0, c - h - 2, c + h + 2, 1, c + h + 2);
+        plateBox(c - h, 1, c - h, c + h, 1 + height, c + h, Mat.GALV);
+        float green = GREEN0 + 1;
+        for (int side = -1; side <= 1; side += 2) {
+            swatchBox(c - h + 1, 2, c + side * h - (side > 0 ? 0 : 0.3F), c + h - 1, height, c + side * h + (side > 0 ? 0.3F : 0), (int) green);
+            swatchBox(c + side * h - (side > 0 ? 0 : 0.3F), 2, c - h + 1, c + side * h + (side > 0 ? 0.3F : 0), height, c + h - 1, GREEN0 + 2);
+        }
+        swatchBox(c - h, 1 + height, c - h, c + h, 1.6F + height, c + h, GREEN0);
+        swatchBox(c - 3, height - 3, c - h - 0.6F, c - 1.6F, height - 1.6F, c - h - 0.3F, alternate ? BLACK : MARKER);
+        swatchBox(c + 1.6F, height - 3, c - h - 0.6F, c + 3, height - 1.6F, c - h - 0.3F, alternate ? HAZARD : BLACK);
+        frame.add(new float[] { c - h - 2, 0, c - h - 2, c + h + 2, 1.6F + height, c + h + 2 });
+        float roof = 1.6F + height;
+        for (int row = -1; row <= 1; row++) {
+            for (int i = -1; i <= 1; i++) {
+                bushing(tier, c + i * ATS_SPACING[tier], roof, atsRowZ(tier, row), true);
+            }
+        }
     }
 
     // ================================================================================================================

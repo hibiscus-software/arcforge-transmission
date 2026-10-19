@@ -1,0 +1,37 @@
+{
+  "model": "hv_ground_switch",
+  "units": "px in the model's north-facing frame: x across the line, y up from the base block's bottom, z along the line; origin the centre column's base block's minimum corner",
+  "groups": [
+    {
+      "name": "line",
+      "circuit": "three_phase",
+      "terminals": [
+        {
+          "label": "A",
+          "pos": [
+            -1,
+            13,
+            8
+          ]
+        },
+        {
+          "label": "B",
+          "pos": [
+            8,
+            13,
+            8
+          ]
+        },
+        {
+          "label": "C",
+          "pos": [
+            17,
+            13,
+            8
+          ]
+        }
+      ]
+    }
+  ],
+  "reserved": []
+}

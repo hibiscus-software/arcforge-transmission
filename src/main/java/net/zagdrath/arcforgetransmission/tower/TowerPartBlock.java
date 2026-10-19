@@ -158,12 +158,14 @@ public class TowerPartBlock extends BaseEntityBlock {
     // Empty-handed: a recloser, breaker or disconnect switch opens or closes by hand (GridInteractions has the Wrench).
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
-        if (WireCoilItem.endpointAt(level, pos) instanceof TowerBlockEntity tower && tower.tier().isDevice()) {
+        if (WireCoilItem.endpointAt(level, pos) instanceof TowerBlockEntity tower && (tower.tier().switched()
+                || tower.tier().kind() == TowerTier.Kind.RELAY)) {
             if (level instanceof net.minecraft.server.level.ServerLevel server) {
                 net.minecraft.network.chat.Component now = tower.operate(server);
-                if (now != null) {
-                    player.sendOverlayMessage(now);
+                if (now == null) {
+                    return InteractionResult.PASS;
                 }
+                player.sendOverlayMessage(now);
             }
             return InteractionResult.SUCCESS;
         }
@@ -180,6 +182,8 @@ public class TowerPartBlock extends BaseEntityBlock {
                 return result;
             }
         }
-        return InteractionResult.TRY_WITH_EMPTY_HAND;
+        // Anything else in hand (a coil, the clamp meter, a fuse link, a guy wire) is the item's to use; only an empty
+        // hand works a breaker or switch.
+        return stack.isEmpty() ? InteractionResult.TRY_WITH_EMPTY_HAND : InteractionResult.PASS;
     }
 }

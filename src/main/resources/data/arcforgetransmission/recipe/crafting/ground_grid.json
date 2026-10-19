@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "key": {
+    "C": "#c:rods/copper"
+  },
+  "pattern": [
+    "C C",
+    " C ",
+    "C C"
+  ],
+  "result": {
+    "count": 8,
+    "id": "arcforgetransmission:ground_grid"
+  }
+}

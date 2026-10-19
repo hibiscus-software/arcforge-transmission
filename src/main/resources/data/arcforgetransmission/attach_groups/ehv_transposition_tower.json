@@ -1,0 +1,141 @@
+{
+  "model": "ehv_transposition_tower",
+  "units": "px in the model's north-facing frame: x across the line, y up from the base block's bottom, z along the line; origin the centre column's base block's minimum corner",
+  "groups": [
+    {
+      "name": "west_north",
+      "circuit": "three_phase",
+      "terminals": [
+        {
+          "label": "C",
+          "pos": [
+            -55.0,
+            302.0,
+            -22.5
+          ]
+        },
+        {
+          "label": "B",
+          "pos": [
+            -71.0,
+            366.0,
+            -22.5
+          ]
+        },
+        {
+          "label": "A",
+          "pos": [
+            -47.0,
+            430.0,
+            -22.5
+          ]
+        }
+      ]
+    },
+    {
+      "name": "west_south",
+      "circuit": "three_phase",
+      "terminals": [
+        {
+          "label": "C",
+          "pos": [
+            -71.0,
+            366.0,
+            38.5
+          ]
+        },
+        {
+          "label": "B",
+          "pos": [
+            -47.0,
+            430.0,
+            38.5
+          ]
+        },
+        {
+          "label": "A",
+          "pos": [
+            -55.0,
+            302.0,
+            38.5
+          ]
+        }
+      ]
+    },
+    {
+      "name": "east_north",
+      "circuit": "three_phase",
+      "terminals": [
+        {
+          "label": "C",
+          "pos": [
+            71.0,
+            302.0,
+            -22.5
+          ]
+        },
+        {
+          "label": "B",
+          "pos": [
+            87.0,
+            366.0,
+            -22.5
+          ]
+        },
+        {
+          "label": "A",
+          "pos": [
+            63.0,
+            430.0,
+            -22.5
+          ]
+        }
+      ]
+    },
+    {
+      "name": "east_south",
+      "circuit": "three_phase",
+      "terminals": [
+        {
+          "label": "C",
+          "pos": [
+            87.0,
+            366.0,
+            38.5
+          ]
+        },
+        {
+          "label": "B",
+          "pos": [
+            63.0,
+            430.0,
+            38.5
+          ]
+        },
+        {
+          "label": "A",
+          "pos": [
+            71.0,
+            302.0,
+            38.5
+          ]
+        }
+      ]
+    },
+    {
+      "name": "shield",
+      "circuit": "ground",
+      "terminals": [
+        {
+          "label": "G",
+          "pos": [
+            8,
+            510,
+            8
+          ]
+        }
+      ]
+    }
+  ],
+  "reserved": []
+}

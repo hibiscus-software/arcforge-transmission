@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "key": {
+    "I": "arcforgetransmission:ehv_pin_insulator",
+    "A": "#c:ingots/arcforged_alloy",
+    "R": "#c:rods/steel",
+    "C": "#c:rods/copper"
+  },
+  "pattern": [
+    "IAI",
+    "CRC",
+    "R R"
+  ],
+  "result": {
+    "id": "arcforgetransmission:ehv_transposition_tower"
+  }
+}

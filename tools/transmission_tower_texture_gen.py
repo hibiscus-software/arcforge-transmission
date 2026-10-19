@@ -58,6 +58,8 @@ ALU = [hx(c) for c in ("#3A3F44", "#9AA1A6", "#C8CDD0")]
 HAZ_YELLOW, HAZ_BLACK = hx("#E0B020"), hx("#1A1A1A")
 RED, RED_DARK = hx("#E5483C"), hx("#8E231C")
 MARKER = hx("#5FD4C4")
+# Pad-mount green (the transfer switch's cabinet): its top, faces and shaded faces.
+GREEN = [hx(c) for c in ("#8DAE7C", "#78996A", "#628257")]
 
 # Flat swatches, in order (TowerMesh's swatch indices match this list; "marker" is unused for now).
 SWATCHES = (
@@ -70,6 +72,7 @@ SWATCHES = (
     + [("conc", i, c) for i, c in enumerate(CONC)]
     + [("alu", i, c) for i, c in enumerate(ALU)]
     + [("hazard", 0, HAZ_YELLOW), ("black", 0, HAZ_BLACK), ("red", 0, RED), ("marker", 0, MARKER)]
+    + [("green", i, c) for i, c in enumerate(GREEN)]
 )
 
 img = Image.new("RGBA", (W, H), (0, 0, 0, 0))
@@ -536,6 +539,173 @@ for tier, size, name in (("lv", 0, "recloser"), ("mv", 1, "recloser"), ("hv", 2,
 ITEMS["lv_dead_end_pole"] = dead_end_sprite(False)
 ITEMS["mv_dead_end_pole"] = dead_end_sprite(True)
 ITEMS["service_meter"] = service_sprite()
+
+
+# --- Phase 4: the yard and the line's heavy hardware --------------------------------------------------------------
+
+CL, CM, CD = CAN[5], CAN[3], CAN[1]
+KL, KD = COPPER[3], COPPER[1]
+NL, NM, ND = GREEN
+
+
+def glass_or_porcelain(glass, k):
+    lit, mid = bushing_tones(glass)
+    return lit if k % 2 else mid
+
+
+def bus_sprite(ehv):
+    """A Bus section: three pedestals with glass station posts, each carrying its pipe across the top."""
+    shapes = []
+    for x in (2, 7, 12):
+        shapes += vbar(x, 10, 15, GL, GD)
+        shapes += [(x, y, glass_or_porcelain(True, y)) for y in range(4 if ehv else 5, 10)]
+        shapes += [(x + 1, y, glass_or_porcelain(True, y + 1)) for y in range(4 if ehv else 5, 10)]
+        shapes += [(xx, 3 if ehv else 4, GL) for xx in range(x - 2, x + 4)]
+    return sprite(shapes)
+
+
+def gantry_sprite(ehv):
+    """A Dead-End Gantry: two A-frame legs, the girder across their tops, glass strings off it and the jumpers down."""
+    shapes = line(0, 15, 2, 3, GL) + line(4, 15, 2, 3, GM) + line(11, 15, 13, 3, GL) + line(15, 15, 13, 3, GM)
+    shapes += box(0, 2, 15, 3, GL, GD, GM) + [(2, 0, GL), (2, 1, GM), (13, 0, GL), (13, 1, GD)]
+    for x in (4, 8, 11) if not ehv else (4, 7, 10):
+        shapes += [(x, 4, TL), (x, 5, TM), (x, 6, TL), (x, 7, TM)] + [(x, y, KD) for y in range(8, 10 if ehv else 9)]
+    return sprite(shapes)
+
+
+def regulator_sprite(hv):
+    """A Voltage Regulator: three round tanks on a platform, each with its two bushings, and the control cabinet."""
+    shapes = box(0, 12, 13, 13, GL, GD, GM) + [(1, 14, GD), (1, 15, GD), (12, 14, GD), (12, 15, GD)] + box(13, 7, 15, 11, GL, GD, GM)
+    for x in (1, 5, 9):
+        shapes += box(x, 6, x + 3, 11, CL, CD, CM)
+        for bx in (x, x + 3):
+            shapes += [(bx, y, glass_or_porcelain(hv, y)) for y in range(2 if hv else 3, 6)]
+    return sprite(shapes)
+
+
+def relay_sprite():
+    """A Relay Panel: the cabinet on its plinth, two meters, the red and green lamps and the handle."""
+    shapes = box(3, 1, 12, 14, GL, GD, GM) + box(2, 14, 13, 15, CONC[3], CONC[1], CONC[2])
+    shapes += box(4, 3, 6, 5, HAZ_BLACK, HAZ_BLACK) + box(8, 3, 10, 5, HAZ_BLACK, HAZ_BLACK) + [(5, 4, MARKER), (9, 4, MARKER)]
+    shapes += [(5, 8, RED), (7, 8, MARKER), (9, 8, HAZ_BLACK), (10, 10, GL), (10, 11, GL)]
+    return sprite(shapes)
+
+
+def ground_switch_sprite(size, glass):
+    """A Ground Switch: the base, and per phase its post and the grounding blade leaning up against it."""
+    shapes = box(0, 13, 15, 14, GL, GD, GM)
+    h = 4 + size
+    for x in (2, 7, 12):
+        shapes += [(x, 12 - k, glass_or_porcelain(glass, k)) for k in range(h)]
+        shapes += line(x + 2, 12, x + 1, 12 - h + 1, GM) + [(x + 2, 12, KL)]
+    return sprite(shapes)
+
+
+def capacitor_sprite(hv):
+    """A Capacitor Bank: the rack, its shelves of stainless units, and the bushings on top."""
+    rows = 3 if hv else 2
+    top = 15 - 4 * rows
+    shapes = vbar(0, top, 15, GL, GD) + vbar(14, top, 15, GL, GD)
+    for r in range(rows + 1):
+        shapes += [(x, top + 4 * r, GM) for x in range(2, 14)]
+    for r in range(rows):
+        for x in (2, 5, 8, 11):
+            shapes += box(x, top + 4 * r + 1, x + 2, top + 4 * r + 3, ALU[2], ALU[0], ALU[1])
+    for x in (3, 7, 11):
+        shapes += [(x, top - 1, glass_or_porcelain(hv, 0)), (x, top - 2, glass_or_porcelain(hv, 1)), (x, top - 3, glass_or_porcelain(hv, 0))]
+    return sprite(shapes)
+
+
+def reactor_sprite(ehv):
+    """A Shunt Reactor: the tank on its pad, its radiator fins, and three glass bushings."""
+    shapes = box(0, 14, 14, 15, CONC[3], CONC[1], CONC[2]) + box(2, 6, 10, 13, GL, GD, GM)
+    shapes += [(x, y, GD if x % 2 else GM) for x in range(11, 15) for y in range(7, 13)]
+    for x in (3, 6, 9):
+        shapes += [(x, 5 - k, glass_or_porcelain(True, k)) for k in range(4 if ehv else 3)]
+    return sprite(shapes)
+
+
+def dead_end_tower_sprite(transpose):
+    """An HV Dead-End or Transposition Tower: the H-frame's poles, the doubled beam, glass strings off both faces, and
+    the jumpers under it (crossing on the transposition tower)."""
+    shapes = vbar(3, 2, 15, WL, WD) + vbar(11, 2, 15, WL, WD) + box(0, 3, 15, 5, WL, WD)
+    for x in (1, 7, 14):
+        shapes += [(x, 1, TL), (x, 2, TM), (x, 6, TL), (x, 7, TM)]
+    if transpose:
+        shapes += line(1, 8, 7, 10, KL) + line(7, 8, 14, 10, KL) + line(14, 8, 1, 11, KD)
+    else:
+        shapes += [(x, 8, KL) for x in (1, 7, 14)]
+    shapes += [(3, 0, GL), (12, 0, GD)]
+    return sprite(shapes)
+
+
+def lattice_dead_end_sprite(transpose):
+    """An EHV Dead-End or Transposition Tower: the lattice, glass strings off each arm tip both ways, the jumpers."""
+    shapes = list(ehv)
+    for x, y in ((1, 5), (14, 5), (2, 8), (13, 8), (3, 3), (12, 3)):
+        shapes += [(x, y - 1, TL), (x, y + 1, TM)]
+    if transpose:
+        shapes += line(1, 6, 2, 9, KL) + line(14, 6, 13, 9, KL)
+    return sprite(shapes, exterior=True)
+
+
+def riser_sprite(tier):
+    """A Cable Riser: LV / MV, the pole and its crossarm with the terminations and the black cables down the conduit to
+    the cable box; HV / EHV, the stand with tall glass terminations and the cables dropping to the ground."""
+    if tier < 2:
+        shapes = vbar(7, 2, 15, WL, WD) + box(0, 5, 15, 6, WL, WD) + [(9, y, GM) for y in range(7, 14)] + box(8, 13, 12, 15, GL, GD, GM)
+        for x in (1, 5, 12):
+            shapes += [(x, 3, PL), (x, 4, PM)]
+        shapes += line(1, 7, 9, 7, HAZ_BLACK) + line(12, 7, 9, 7, HAZ_BLACK)
+        if tier == 1:
+            shapes += [(7, 0, GL), (8, 0, GM), (7, 1, GM), (8, 1, GD)]
+        return sprite(shapes)
+    shapes = box(0, 8, 15, 9, GL, GD, GM) + vbar(0, 10, 15, GL, GD) + vbar(14, 10, 15, GL, GD)
+    for x in (3, 7, 11):
+        shapes += [(x, y, glass_or_porcelain(True, y)) for y in range(1 if tier == 3 else 2, 7)] + [(x, 7, CM)]
+        shapes += [(x, y, HAZ_BLACK) for y in range(10, 14)] + [(x - 1, 14, GM), (x, 14, GM), (x + 1, 14, GD)]
+    return sprite(shapes)
+
+
+def sectionalizer_sprite():
+    """A Sectionalizer: the round tank on its feet, its yellow-banded counter cabinet and its two rows of bushings."""
+    shapes = box(3, 7, 10, 13, CL, CD, CM) + box(11, 8, 13, 12, GL, GD, GM) + [(11, 11, HAZ_YELLOW), (12, 11, HAZ_YELLOW), (12, 9, HAZ_BLACK)]
+    shapes += [(4, 14, GD), (9, 14, GD)]
+    for x in (4, 6, 8):
+        shapes += [(x, y, PL if y % 2 else PM) for y in range(3, 7)]
+    return sprite(shapes)
+
+
+def ats_sprite(mv):
+    """An Automatic Transfer Switch: the green pad-mounted cabinet on its pad and its three rows of bushings."""
+    shapes = box(1, 14, 14, 15, CONC[3], CONC[1], CONC[2]) + box(2, 7, 13, 13, NL, ND, NM) + [(5, 10, MARKER), (10, 10, HAZ_YELLOW)]
+    for x in (4, 7, 10):
+        shapes += [(x, y, PL if y % 2 else PM) for y in range(3 if mv else 4, 7)]
+        shapes += [(x + 1, 6, PM)]
+    return sprite(shapes)
+
+
+for tier, ehv_ in (("hv", False), ("ehv", True)):
+    ITEMS[tier + "_bus"] = bus_sprite(ehv_)
+    ITEMS[tier + "_dead_end_gantry"] = gantry_sprite(ehv_)
+ITEMS["mv_voltage_regulator"] = regulator_sprite(False)
+ITEMS["hv_voltage_regulator"] = regulator_sprite(True)
+ITEMS["relay_panel"] = relay_sprite()
+for tier, size in (("mv", 1), ("hv", 2), ("ehv", 3)):
+    ITEMS[tier + "_ground_switch"] = ground_switch_sprite(size, size >= 2)
+ITEMS["mv_capacitor_bank"] = capacitor_sprite(False)
+ITEMS["hv_capacitor_bank"] = capacitor_sprite(True)
+ITEMS["hv_shunt_reactor"] = reactor_sprite(False)
+ITEMS["ehv_shunt_reactor"] = reactor_sprite(True)
+ITEMS["hv_dead_end_tower"] = dead_end_tower_sprite(False)
+ITEMS["hv_transposition_tower"] = dead_end_tower_sprite(True)
+ITEMS["ehv_dead_end_tower"] = lattice_dead_end_sprite(False)
+ITEMS["ehv_transposition_tower"] = lattice_dead_end_sprite(True)
+for tier, t in (("lv", 0), ("mv", 1), ("hv", 2), ("ehv", 3)):
+    ITEMS[tier + "_cable_riser"] = riser_sprite(t)
+ITEMS["mv_sectionalizer"] = sectionalizer_sprite()
+ITEMS["lv_transfer_switch"] = ats_sprite(False)
+ITEMS["mv_transfer_switch"] = ats_sprite(True)
 
 
 def main():

@@ -25,7 +25,9 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.zagdrath.arcforgetransmission.ArcforgeTransmission;
 import net.zagdrath.arcforgetransmission.grid.Catenary;
+import net.zagdrath.arcforgetransmission.grid.FaultEvent;
 import net.zagdrath.arcforgetransmission.grid.GridEdge;
+import net.zagdrath.arcforgetransmission.grid.GridFaults;
 import net.zagdrath.arcforgetransmission.grid.GridNetwork;
 import net.zagdrath.arcforgetransmission.grid.block.GridContent;
 import net.zagdrath.arcforgetransmission.grid.block.GridEndpointBlockEntity;
@@ -129,56 +131,41 @@ public final class GridLightning {
         return best;
     }
 
-    // A fault on the struck conductor's network: its protection operates, or the wire burns; its transformers take the
-    // surge.
+    // A strike on a conductor: a flashover to ground at the wire's nearer end (GridManager.fault: the protection nearest it
+    // clears it, or the wire burns if nothing does), and the surge reaches every transformer on its network: one without a
+    // Surge Arrester near is destroyed, unless a Relay Panel's differential protection (a CT fitted) trips it out first.
     private static void fault(ServerLevel level, GridData.Dimension dimension, Hit hit) {
         GridNetwork network = dimension.graph().networkOf(hit.edge().a());
         if (network == null) {
             return;
         }
+        GridFaults.raise(FaultEvent.edge(hit.edge().id(), FaultEvent.Cause.LIGHTNING, 0));
+        GridData.NodeRecord a = dimension.node(hit.edge().a()), b = dimension.node(hit.edge().b());
+        long node = a == null || b != null && b.at().distanceTo(hit.point()) < a.at().distanceTo(hit.point()) ? hit.edge().b() : hit.edge().a();
+        GridManager.fault(level, node, hit.edge().id(), FaultEvent.Cause.LIGHTNING, true);
+        Vec3 p = hit.point();
+        level.sendParticles(ParticleTypes.ELECTRIC_SPARK, p.x, p.y, p.z, 40, 0.5, 0.5, 0.5, 0.4);
+        if (!GridConfig.LIGHTNING_DAMAGE.getAsBoolean()) {
+            return;
+        }
         long id = network.id();
-        List<TowerBlockEntity> breakers = new ArrayList<>(), fuses = new ArrayList<>();
-        List<GridEndpointBlockEntity> transformers = new ArrayList<>();
         for (GridEndpointBlockEntity endpoint : new ArrayList<>(GridManager.loadedIn(level))) {
             if (endpoint.isRemoved() || !onNetwork(dimension, endpoint, id)) {
                 continue;
             }
-            if (endpoint instanceof TowerBlockEntity tower) {
-                TowerTier.Kind kind = tower.tier().kind();
-                if (kind == TowerTier.Kind.BREAKER && tower.closed()) {
-                    breakers.add(tower);
-                } else if (kind == TowerTier.Kind.FUSE && tower.closed()) {
-                    fuses.add(tower);
-                } else if (tower.tier().isTransformer() || kind == TowerTier.Kind.SERVICE) {
-                    transformers.add(tower);
-                }
-            } else if (endpoint instanceof PoleTransformerBlockEntity) {
-                transformers.add(endpoint);
+            boolean transformer = endpoint instanceof PoleTransformerBlockEntity
+                    || endpoint instanceof TowerBlockEntity tower && (tower.tier().isTransformer() || tower.tier().kind() == TowerTier.Kind.SERVICE);
+            if (!transformer || arrested(level, endpoint.getBlockPos())) {
+                continue;
             }
-        }
-        boolean protectedLine = false;
-        for (TowerBlockEntity breaker : breakers) {
-            protectedLine |= breaker.surge(level);
-        }
-        if (!protectedLine) {
-            for (TowerBlockEntity fuse : fuses) {
-                protectedLine |= fuse.surge(level);
+            BlockPos at = endpoint.getBlockPos();
+            if (endpoint instanceof TowerBlockEntity tower && tower.differentialTrip(level)) {
+                level.sendParticles(ParticleTypes.ELECTRIC_SPARK, at.getX() + 0.5, at.getY() + 1.5, at.getZ() + 0.5, 30, 0.6, 0.6, 0.6, 0.3);
+                continue;
             }
-        }
-        Vec3 p = hit.point();
-        level.sendParticles(ParticleTypes.ELECTRIC_SPARK, p.x, p.y, p.z, 40, 0.5, 0.5, 0.5, 0.4);
-        if (!protectedLine) {
-            GridManager.burnOut(level, dimension, hit.edge());
-        }
-        if (GridConfig.LIGHTNING_DAMAGE.getAsBoolean()) {
-            for (GridEndpointBlockEntity transformer : transformers) {
-                if (!arrested(level, transformer.getBlockPos())) {
-                    BlockPos at = transformer.getBlockPos();
-                    level.playSound(null, at, SoundEvents.GENERIC_EXPLODE.value(), SoundSource.BLOCKS, 1.0F, 1.2F);
-                    level.sendParticles(ParticleTypes.LARGE_SMOKE, at.getX() + 0.5, at.getY() + 1.0, at.getZ() + 0.5, 20, 0.4, 0.6, 0.4, 0.02);
-                    level.destroyBlock(at, true);
-                }
-            }
+            level.playSound(null, at, SoundEvents.GENERIC_EXPLODE.value(), SoundSource.BLOCKS, 1.0F, 1.2F);
+            level.sendParticles(ParticleTypes.LARGE_SMOKE, at.getX() + 0.5, at.getY() + 1.0, at.getZ() + 0.5, 20, 0.4, 0.6, 0.4, 0.02);
+            level.destroyBlock(at, true);
         }
     }
 

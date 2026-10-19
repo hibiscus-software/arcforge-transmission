@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 
 // One grid tick for a whole world: the ports (Port: pin insulators on a block, a transformer's sides) give their supply and
@@ -28,6 +29,28 @@ public final class GridTicker {
         // Moves the tick's energy, by port id: takes the draws from the sources and gives the deliveries to the sinks
         // (whole FE; draws are rounded up and deliveries down, so rounding never makes energy).
         void commit(Map<Long, Integer> draws, Map<Long, Integer> deliveries);
+
+        // The transformers (links between circuits), capacitor banks and reactors, grounded nodes (closed ground
+        // switches) and protective links (breakers, reclosers, fuses) this tick; and what carries over between ticks.
+        default Collection<Coupling> couplings() {
+            return List.of();
+        }
+
+        default Collection<Shunt> shunts() {
+            return List.of();
+        }
+
+        default Set<Long> grounded() {
+            return Set.of();
+        }
+
+        default Set<Long> protective() {
+            return Set.of();
+        }
+
+        default FlowSolver.State state() {
+            return new FlowSolver.State();
+        }
     }
 
     public record Report(FlowSolver.Result result, List<GridEdge> burnt) {}
@@ -42,7 +65,8 @@ public final class GridTicker {
             }
             return new Report(FlowSolver.Result.EMPTY, List.of());
         }
-        FlowSolver.Result result = FlowSolver.solve(graph, ports, settings);
+        FlowSolver.Result result = FlowSolver.solve(graph, ports, terminals.couplings(), terminals.shunts(), terminals.grounded(), terminals.protective(),
+                settings, terminals.state());
         Map<Long, Double> offer = new TreeMap<>();
         for (Port port : ports) {
             offer.merge(port.id(), Math.max(0.0, port.offer()), Math::max);

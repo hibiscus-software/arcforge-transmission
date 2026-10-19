@@ -35,6 +35,7 @@ public class ArcforgeTransmission {
         TowerContent.register(modEventBus);
         GridContent.register(modEventBus);
         MaterialContent.register(modEventBus);
+        net.zagdrath.arcforgetransmission.gametest.TransmissionGameTests.register(modEventBus);
         modContainer.registerConfig(localConfigType(), GridConfig.SPEC, MODID + "-common.toml");
         modEventBus.addListener(ArcforgeTransmission::commonSetup);
     }

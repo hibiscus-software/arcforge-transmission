@@ -10,11 +10,23 @@ import java.util.Locale;
 
 import com.mojang.serialization.Codec;
 
-// Which way a pin insulator's block moves FE: not at all, from the block into the grid, or from the grid into the block.
+// Which way a pin insulator's block (or a unit transformer's) moves FE: not at all, from the block into the grid, from the
+// grid into the block, or as storage (a battery: it gives only what the grid's other sources can't cover, and takes only
+// what they have spare).
 public enum PinInsulatorMode {
     OFF,
     INPUT,
-    OUTPUT;
+    OUTPUT,
+    STORAGE;
+
+    // Whether FE can leave the block for the grid / enter it from the grid in this mode.
+    public boolean gives() {
+        return this == INPUT || this == STORAGE;
+    }
+
+    public boolean takes() {
+        return this == OUTPUT || this == STORAGE;
+    }
 
     public static final Codec<PinInsulatorMode> CODEC = Codec.STRING.xmap(PinInsulatorMode::byId, PinInsulatorMode::id);
 

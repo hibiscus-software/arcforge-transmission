@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/fence_post",
+  "textures": {
+    "texture": "arcforgetransmission:block/station_fence"
+  },
+  "render_type": "minecraft:cutout"
+}

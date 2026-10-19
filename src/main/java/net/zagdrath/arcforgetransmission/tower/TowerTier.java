@@ -39,7 +39,32 @@ public enum TowerTier {
     EHV_DISCONNECT("ehv_disconnect_switch", Kind.DISCONNECT, VoltageTier.EHV, null, TowerMesh.Design.DISCONNECT_EHV),
     LV_DEAD_END("lv_dead_end_pole", Kind.DEAD_END, VoltageTier.LV, null, TowerMesh.Design.DEAD_END_LV),
     MV_DEAD_END("mv_dead_end_pole", Kind.DEAD_END, VoltageTier.MV, null, TowerMesh.Design.DEAD_END_MV),
-    SERVICE_METER("service_meter", Kind.SERVICE, VoltageTier.LV, null, TowerMesh.Design.SERVICE);
+    SERVICE_METER("service_meter", Kind.SERVICE, VoltageTier.LV, null, TowerMesh.Design.SERVICE),
+    HV_BUS("hv_bus", Kind.BUS, VoltageTier.HV, null, TowerMesh.Design.BUS_HV),
+    EHV_BUS("ehv_bus", Kind.BUS, VoltageTier.EHV, null, TowerMesh.Design.BUS_EHV),
+    HV_GANTRY("hv_dead_end_gantry", Kind.DEAD_END, VoltageTier.HV, null, TowerMesh.Design.GANTRY_HV),
+    EHV_GANTRY("ehv_dead_end_gantry", Kind.DEAD_END, VoltageTier.EHV, null, TowerMesh.Design.GANTRY_EHV),
+    MV_REGULATOR("mv_voltage_regulator", Kind.REGULATOR, VoltageTier.MV, null, TowerMesh.Design.REGULATOR_MV),
+    HV_REGULATOR("hv_voltage_regulator", Kind.REGULATOR, VoltageTier.HV, null, TowerMesh.Design.REGULATOR_HV),
+    RELAY_PANEL("relay_panel", Kind.RELAY, VoltageTier.LV, null, TowerMesh.Design.RELAY_PANEL),
+    MV_GROUND_SWITCH("mv_ground_switch", Kind.GROUND, VoltageTier.MV, null, TowerMesh.Design.GROUND_SWITCH_MV),
+    HV_GROUND_SWITCH("hv_ground_switch", Kind.GROUND, VoltageTier.HV, null, TowerMesh.Design.GROUND_SWITCH_HV),
+    EHV_GROUND_SWITCH("ehv_ground_switch", Kind.GROUND, VoltageTier.EHV, null, TowerMesh.Design.GROUND_SWITCH_EHV),
+    MV_CAPACITOR("mv_capacitor_bank", Kind.SHUNT, VoltageTier.MV, null, TowerMesh.Design.CAPACITOR_MV),
+    HV_CAPACITOR("hv_capacitor_bank", Kind.SHUNT, VoltageTier.HV, null, TowerMesh.Design.CAPACITOR_HV),
+    HV_REACTOR("hv_shunt_reactor", Kind.SHUNT, VoltageTier.HV, null, TowerMesh.Design.REACTOR_HV),
+    EHV_REACTOR("ehv_shunt_reactor", Kind.SHUNT, VoltageTier.EHV, null, TowerMesh.Design.REACTOR_EHV),
+    HV_DEAD_END_TOWER("hv_dead_end_tower", Kind.DEAD_END, VoltageTier.HV, null, TowerMesh.Design.DEAD_END_HV),
+    EHV_DEAD_END_TOWER("ehv_dead_end_tower", Kind.DEAD_END, VoltageTier.EHV, null, TowerMesh.Design.DEAD_END_EHV),
+    HV_TRANSPOSITION("hv_transposition_tower", Kind.DEAD_END, VoltageTier.HV, null, TowerMesh.Design.TRANSPOSITION_HV),
+    EHV_TRANSPOSITION("ehv_transposition_tower", Kind.DEAD_END, VoltageTier.EHV, null, TowerMesh.Design.TRANSPOSITION_EHV),
+    LV_RISER("lv_cable_riser", Kind.DEAD_END, VoltageTier.LV, null, TowerMesh.Design.RISER_LV),
+    MV_RISER("mv_cable_riser", Kind.DEAD_END, VoltageTier.MV, null, TowerMesh.Design.RISER_MV),
+    HV_RISER("hv_cable_riser", Kind.DEAD_END, VoltageTier.HV, null, TowerMesh.Design.RISER_HV),
+    EHV_RISER("ehv_cable_riser", Kind.DEAD_END, VoltageTier.EHV, null, TowerMesh.Design.RISER_EHV),
+    MV_SECTIONALIZER("mv_sectionalizer", Kind.SECTIONALIZER, VoltageTier.MV, null, TowerMesh.Design.SECTIONALIZER_MV),
+    LV_ATS("lv_transfer_switch", Kind.ATS, VoltageTier.LV, null, TowerMesh.Design.ATS_LV),
+    MV_ATS("mv_transfer_switch", Kind.ATS, VoltageTier.MV, null, TowerMesh.Design.ATS_MV);
 
     // A tower carries a line; a substation transformer joins a line of its tier (primary) to one a tier down (secondary)
     // through an FE buffer, stepping down or up; a unit transformer joins a line to the FE block in front of it. The
@@ -47,8 +72,15 @@ public enum TowerTier {
     // blows on overcurrent), a recloser or circuit breaker (three; trips and recloses), a disconnect switch (three; by
     // hand). A dead-end pole ends lines both ways, each conductor jumpered through. A service meter feeds a building's
     // FE block from a split-phase service drop, counting what it delivers.
+    //
+    // Phase 4: a bus section (rigid pipe bus, one node a phase, joining the sections in line with it); a voltage
+    // regulator (its source side joined to its load side through its boost); a relay panel (no insulators: it protects
+    // the breakers it's linked to); a ground switch (grounds its line while closed); a shunt (a capacitor bank or
+    // reactor, switched in and out); a sectionalizer (counts the recloser's operations, opens in the dead time); an
+    // automatic transfer switch (its load joined to its preferred feeder or its alternate). Dead-end gantries, dead-end
+    // and transposition towers and cable risers are dead-ends: each conductor joined through.
     public enum Kind {
-        TOWER, SUBSTATION, UNIT, FUSE, BREAKER, DISCONNECT, DEAD_END, SERVICE
+        TOWER, SUBSTATION, UNIT, FUSE, BREAKER, DISCONNECT, DEAD_END, SERVICE, BUS, REGULATOR, RELAY, GROUND, SHUNT, SECTIONALIZER, ATS
     }
 
     private final String id;
@@ -80,12 +112,29 @@ public enum TowerTier {
 
     // A fuse cutout, recloser / breaker or disconnect switch: its line side joined to its load side while closed.
     public boolean isDevice() {
-        return kind == Kind.FUSE || kind == Kind.BREAKER || kind == Kind.DISCONNECT;
+        return kind == Kind.FUSE || kind == Kind.BREAKER || kind == Kind.DISCONNECT || kind == Kind.SECTIONALIZER;
     }
 
-    // Whether its groups come in pairs joined through it (devices while closed, dead-ends always).
+    // Whether its groups come in pairs joined through it (devices while closed, dead-ends and regulators always, a
+    // transfer switch its load to one feeder).
     public boolean linked() {
-        return isDevice() || kind == Kind.DEAD_END;
+        return isDevice() || kind == Kind.DEAD_END || kind == Kind.REGULATOR || kind == Kind.ATS;
+    }
+
+    // A protective device: one whose links count toward grading (the device nearest the trouble trips first).
+    public boolean protective() {
+        return kind == Kind.FUSE || kind == Kind.BREAKER;
+    }
+
+    // Whether it has an open and a closed state it's drawn in (the model's other state while open; a ground switch's and
+    // a shunt's while out, a transfer switch's while on its alternate).
+    public boolean switched() {
+        return isDevice() || kind == Kind.GROUND || kind == Kind.SHUNT || kind == Kind.ATS;
+    }
+
+    // A shunt reactor (not a capacitor bank).
+    public boolean reactor() {
+        return this == HV_REACTOR || this == EHV_REACTOR;
     }
 
     // Whether the Wrench on Rotate turns it (everything placed but the lines' own towers and poles).
@@ -119,7 +168,10 @@ public enum TowerTier {
 
     // Galvanized steel (a pickaxe takes it, steel particles), not treated wood.
     public boolean steel() {
-        return this != LV && this != MV && this != HV && this != LV_DEAD_END && this != MV_DEAD_END;
+        return switch (this) {
+            case LV, MV, HV, LV_DEAD_END, MV_DEAD_END, HV_DEAD_END_TOWER, HV_TRANSPOSITION, LV_RISER, MV_RISER -> false;
+            default -> true;
+        };
     }
 
     public TowerMesh.Design design() {
