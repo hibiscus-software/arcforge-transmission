@@ -9,7 +9,8 @@ package net.zagdrath.arcforgetransmission.grid.protection;
 import org.jspecify.annotations.Nullable;
 
 // What a switching device may do, so no one opens a line under load or closes onto a fault:
-//  - a disconnect switch only operates with every breaker it's interlocked with open;
+//  - a disconnect switch only operates with every breaker it's interlocked with open (one in an unloaded chunk counts
+//    as closed: it can't be seen to be open), and never closes onto a grounded line;
 //  - a ground switch only closes on a dead line (opening it is always allowed);
 //  - a breaker refuses to close while a ground switch is closed on either side of it.
 public final class Interlocks {
@@ -31,7 +32,14 @@ public final class Interlocks {
     private Interlocks() {}
 
     public static @Nullable Refusal disconnect(boolean anyLinkedBreakerClosed) {
-        return anyLinkedBreakerClosed ? Refusal.BREAKER_CLOSED : null;
+        return disconnect(anyLinkedBreakerClosed, false, false);
+    }
+
+    public static @Nullable Refusal disconnect(boolean anyLinkedBreakerClosed, boolean closing, boolean groundedEitherSide) {
+        if (anyLinkedBreakerClosed) {
+            return Refusal.BREAKER_CLOSED;
+        }
+        return closing && groundedEitherSide ? Refusal.LINE_GROUNDED : null;
     }
 
     public static @Nullable Refusal groundSwitch(boolean closing, boolean lineLive) {

@@ -52,6 +52,7 @@
     "arcforgetransmission:lv_transfer_switch",
     "arcforgetransmission:mv_transfer_switch",
     "arcforgetransmission:mv_distribution_transformer",
-    "arcforgetransmission:station_fence"
+    "arcforgetransmission:station_fence",
+    "arcforgetransmission:ground_grid"
   ]
 }

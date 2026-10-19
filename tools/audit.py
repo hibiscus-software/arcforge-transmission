@@ -13,14 +13,24 @@ Exits non-zero (listing every problem) when anything fails. Checks:
   models      element models: UVs inside the sheet; every face laid at 1 texel per px (its UV rect the face's size);
               no face samples a clear texel; no two faces facing the same way overlapping in one plane (z-fighting)
   attach      each pin insulator's attach point is its model's top, centred
+  registry    every block the code registers has a blockstate, a loot table (but the tower's invisible parts) and a
+              name; every item an item definition and a name
+  references  every model, texture and parent a blockstate, item definition or model names exists (this addon's own;
+              Arcforge's and vanilla's against their jars when they're at hand)
+  lang        every complete translation key in the code is in en_us.json, and every key in en_us.json is used
+  recipes     every item a recipe names is registered (this addon's) or exists (Arcforge's, vanilla's), every shaped
+              key symbol is used in its pattern and every pattern symbol has a key
 """
 import filecmp
+import glob
 import hashlib
 import json
 import os
+import re
 import subprocess
 import sys
 import tempfile
+import zipfile
 
 from PIL import Image
 
@@ -200,18 +210,253 @@ def check_attach(repo):
             problem(f"attach: pin_insulator_{tier} attaches at {point}, its model's top is (8, {top}, 8)")
 
 
+TIERS = ["lv", "mv", "hv", "ehv"]
+# VoltageTier.insulatable(): LV and MV.
+INSULATABLE = ["lv", "mv"]
+
+
+def java_sources(repo):
+    out = {}
+    for path in glob.glob(os.path.join(repo, "src/main/java/**/*.java"), recursive=True):
+        out[path] = open(path, encoding="utf-8").read()
+    return out
+
+
+def registered(repo, sources):
+    """The blocks and items the code registers: (blocks, items)."""
+    blocks, items = set(), set()
+    for text in sources.values():
+        blocks.update(re.findall(r'register(?:Simple)?Block\("([a-z0-9_]+)"', text))
+        items.update(re.findall(r'register(?:Simple)?Item\("([a-z0-9_]+)"', text))
+        for suffix in re.findall(r'BLOCKS\.registerBlock\(tier\.id\(\) \+ "([a-z0-9_]+)"', text):
+            blocks.update(t + suffix for t in TIERS)
+        for suffix in re.findall(r'ITEMS\.registerItem\(tier\.id\(\) \+ "([a-z0-9_]+)"', text):
+            items.update(t + suffix for t in (INSULATABLE if "insulated" in suffix else TIERS))
+    tiers = open(os.path.join(repo, "src/main/java/net/zagdrath/arcforgetransmission/tower/TowerTier.java"), encoding="utf-8").read()
+    towers = re.findall(r'^    [A-Z0-9_]+\("([a-z0-9_]+)", Kind\.', tiers, re.M)
+    blocks.update(towers)
+    # Every block has its item, but the tower's invisible parts.
+    items.update(b for b in blocks if b != "transmission_tower_part")
+    return blocks, items
+
+
+def check_registry(repo, blocks, items, lang):
+    assets = os.path.join(repo, "src/main/resources/assets", NS)
+    data = os.path.join(repo, "src/main/resources/data", NS)
+    for block in sorted(blocks):
+        if not os.path.exists(os.path.join(assets, "blockstates", block + ".json")):
+            problem(f"registry: block {block} has no blockstate")
+        if block != "transmission_tower_part" and not os.path.exists(os.path.join(data, "loot_table/blocks", block + ".json")):
+            problem(f"registry: block {block} has no loot table")
+        if f"block.{NS}.{block}" not in lang:
+            problem(f"registry: block {block} has no name (block.{NS}.{block})")
+    for item in sorted(items):
+        if not os.path.exists(os.path.join(assets, "items", item + ".json")):
+            problem(f"registry: item {item} has no item definition (items/{item}.json)")
+        if f"item.{NS}.{item}" not in lang and f"block.{NS}.{item}" not in lang:
+            problem(f"registry: item {item} has no name")
+    for path in glob.glob(os.path.join(assets, "blockstates", "*.json")) + glob.glob(os.path.join(assets, "items", "*.json")):
+        name = os.path.splitext(os.path.basename(path))[0]
+        if name not in (blocks if "blockstates" in path else items):
+            problem(f"registry: {os.path.relpath(path, assets)} is for nothing registered")
+
+
+class Jars:
+    """Arcforge's and vanilla's assets, from their jars when they're at hand (None when not: those checks are skipped)."""
+
+    def __init__(self, repo):
+        self.names = {}
+        for ns, patterns in (("arcforge", ["libs/arcforge-*.jar"]), ("minecraft", [".gradle/caches/minecraft/versions/*/client.jar"])):
+            for pattern in patterns:
+                for jar in glob.glob(os.path.join(repo, pattern)):
+                    with zipfile.ZipFile(jar) as z:
+                        self.names.setdefault(ns, set()).update(z.namelist())
+
+    def has(self, ns, path):
+        names = self.names.get(ns)
+        return None if names is None else path in names
+
+
+def resource(repo, jars, ns, kind, path):
+    """Whether assets/<ns>/<kind>/<path> exists (True/False), or None when it can't be told."""
+    rel = f"assets/{ns}/{kind}/{path}"
+    if ns == NS:
+        return os.path.exists(os.path.join(repo, "src/main/resources", rel))
+    return jars.has(ns, rel)
+
+
+def split(ref, default="minecraft"):
+    ns, _, path = ref.partition(":") if ":" in ref else (default, "", ref)
+    return ns, path
+
+
+def check_references(repo, jars):
+    assets = os.path.join(repo, "src/main/resources/assets", NS)
+
+    def model_exists(ref, where):
+        if ref.startswith("builtin/"):
+            return
+        ns, path = split(ref)
+        if resource(repo, jars, ns, "models", path + ".json") is False:
+            problem(f"references: {where} names model {ref}, which doesn't exist")
+
+    def walk_models(node, where):
+        if isinstance(node, dict):
+            for key, value in node.items():
+                if key == "model" and isinstance(value, str):
+                    model_exists(value, where)
+                else:
+                    walk_models(value, where)
+        elif isinstance(node, list):
+            for value in node:
+                walk_models(value, where)
+
+    for path in glob.glob(os.path.join(assets, "blockstates", "*.json")) + glob.glob(os.path.join(assets, "items", "*.json")):
+        walk_models(json.load(open(path)), os.path.relpath(path, assets).replace(os.sep, "/"))
+    for path in glob.glob(os.path.join(assets, "models", "**", "*.json"), recursive=True):
+        where = os.path.relpath(path, assets).replace(os.sep, "/")
+        model = json.load(open(path))
+        if "parent" in model:
+            model_exists(model["parent"], where)
+        for key, ref in model.get("textures", {}).items():
+            if ref.startswith("#"):
+                continue
+            ns, tex = split(ref)
+            if resource(repo, jars, ns, "textures", tex + ".png") is False:
+                problem(f"references: {where} texture {key} is {ref}, which doesn't exist")
+
+
+def check_lang(repo, sources, lang, blocks, items):
+    literal = re.compile(r'"((?:block|item|message|hud|tooltip|port_status|pin_insulator_mode|itemGroup|death\.attack|subtitles)\.' + NS + r'\.[a-z0-9_.]+)"')
+    joined = re.compile(r'"([a-zA-Z_]+)\.?" \+ (?:m|MODID|ArcforgeTransmission\.MODID) \+ "\.([a-z0-9_.]+)"\s*[,)]')
+    fragments = set()
+    for path, text in sources.items():
+        for key in literal.findall(text):
+            if key not in lang and not key.endswith("."):
+                problem(f"lang: {os.path.basename(path)} uses {key}, which en_us.json doesn't have")
+        for prefix, rest in joined.findall(text):
+            key = f"{prefix.rstrip('.')}.{NS}.{rest}"
+            if key not in lang:
+                problem(f"lang: {os.path.basename(path)} uses {key}, which en_us.json doesn't have")
+        fragments.update(re.findall(r'"([^"\\]*)"', text))
+    # Keys the code builds from an enum: every port status has its words.
+    solver = re.sub(r"//[^\n]*", "", open(os.path.join(repo, "src/main/java/net/zagdrath/arcforgetransmission/grid/FlowSolver.java"), encoding="utf-8").read())
+    statuses = re.search(r"enum PortStatus \{([^}]*)\}", solver).group(1)
+    for status in re.findall(r"\b([A-Z][A-Z0-9_]*)\b", statuses):
+        if f"port_status.{NS}.{status.lower()}" not in lang:
+            problem(f"lang: port status {status} has no port_status.{NS}.{status.lower()}")
+    pieces = set()
+    for f in fragments:
+        pieces.update(p for p in re.split(r"[.]", f) if p)
+    for key in lang:
+        prefix, _, rest = key.partition("." + NS + ".")
+        if not rest:
+            problem(f"lang: {key} isn't in this addon's namespace")
+            continue
+        if prefix == "block" and rest in blocks or prefix == "item" and rest in items:
+            continue
+        # A death message's ".player" form (the game adds it), and an item's info tooltip (ItemInfoTooltips: by its id,
+        # tiered ones without the tier).
+        if rest.endswith(".player") and f"{prefix}.{NS}.{rest[:-len('.player')]}" in lang:
+            continue
+        if prefix == "tooltip" and rest.startswith("info."):
+            name = rest[len("info."):]
+            if any(i == name or i.endswith("_" + name) for i in items):
+                continue
+        # Used if the code spells it out, or builds it: every dotted part of its name is a piece of some string in the code
+        # (an enum's or a tier's name counts: the code lower-cases those).
+        parts = rest.split(".")
+        if rest in fragments or any(f.endswith("." + rest) or f.endswith(rest) and f.startswith(".") for f in fragments):
+            continue
+        if all(p in pieces or p in ENUM_WORDS for p in parts):
+            continue
+        problem(f"lang: {key} isn't used anywhere in the code")
+
+
+ENUM_WORDS = set()
+
+
+def enum_words(sources):
+    for text in sources.values():
+        text = re.sub(r"//[^\n]*", "", text)
+        for body in re.findall(r"enum \w+[^{]*\{([^;}]*)", text):
+            for name in re.findall(r"\b([A-Z][A-Z0-9_]+)\b", body):
+                ENUM_WORDS.add(name.lower())
+
+
+def check_recipes(repo, jars, items):
+    root = os.path.join(repo, "src/main/resources/data", NS, "recipe")
+
+    def item_exists(ref, where):
+        if ref.startswith("#"):
+            ns, tag = split(ref[1:])
+            if ns == NS and not glob.glob(os.path.join(repo, "src/main/resources/data", NS, "tags/item", tag + ".json")):
+                problem(f"recipes: {where} names tag {ref}, which doesn't exist")
+            return
+        ns, path = split(ref)
+        if ns == NS:
+            if path not in items:
+                problem(f"recipes: {where} names {ref}, which isn't registered")
+        elif jars.has(ns, f"assets/{ns}/items/{path}.json") is False:
+            problem(f"recipes: {where} names {ref}, which {ns} doesn't have")
+
+    def ingredients(node, where):
+        if isinstance(node, str):
+            item_exists(node, where)
+        elif isinstance(node, list):
+            for value in node:
+                ingredients(value, where)
+        elif isinstance(node, dict):
+            for key in ("item", "id"):
+                if isinstance(node.get(key), str):
+                    item_exists(node[key], where)
+            if isinstance(node.get("tag"), str):
+                item_exists("#" + node["tag"], where)
+
+    for path in glob.glob(os.path.join(root, "**", "*.json"), recursive=True):
+        where = os.path.relpath(path, root).replace(os.sep, "/")
+        recipe = json.load(open(path))
+        for key in ("ingredient", "ingredients", "base", "addition", "template"):
+            if key in recipe:
+                ingredients(recipe[key], where)
+        if "key" in recipe:
+            used = set("".join(recipe.get("pattern", []))) - {" "}
+            keys = set(recipe["key"])
+            for symbol in sorted(keys - used):
+                problem(f"recipes: {where} key {symbol!r} isn't in its pattern")
+            for symbol in sorted(used - keys):
+                problem(f"recipes: {where} pattern symbol {symbol!r} has no key")
+            for value in recipe["key"].values():
+                ingredients(value, where)
+        result = recipe.get("result")
+        if isinstance(result, dict) and isinstance(result.get("id"), str):
+            item_exists(result["id"], where)
+        elif isinstance(result, str):
+            item_exists(result, where)
+
+
 def main():
     repo = os.path.abspath(sys.argv[1] if len(sys.argv) > 1 else ".")
     written = rebuild(repo)
     check_textures(repo, written)
     check_models(repo)
     check_attach(repo)
+    sources = java_sources(repo)
+    enum_words(sources)
+    lang = json.load(open(os.path.join(repo, "src/main/resources/assets", NS, "lang/en_us.json"), encoding="utf-8"))
+    blocks, items = registered(repo, sources)
+    jars = Jars(repo)
+    check_registry(repo, blocks, items, lang)
+    check_references(repo, jars)
+    check_lang(repo, sources, lang, blocks, items)
+    check_recipes(repo, jars, items)
     if problems:
         print(f"audit: {len(problems)} problem(s)")
         for p in problems:
             print("  " + p)
         sys.exit(1)
-    print(f"audit: OK ({len(GENERATORS)} generators rebuilt identically, {len(written)} files)")
+    print(f"audit: OK ({len(GENERATORS)} generators rebuilt identically, {len(written)} files; {len(blocks)} blocks, {len(items)} items, "
+          f"{len(lang)} lang keys)")
 
 
 if __name__ == "__main__":

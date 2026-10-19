@@ -32,6 +32,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import net.zagdrath.arcforgetransmission.grid.world.GridManager;
 import net.zagdrath.arcforgetransmission.grid.block.GridInteractions;
 import net.zagdrath.arcforgetransmission.grid.item.WireCoilItem;
 
@@ -130,6 +131,7 @@ public class TowerPartBlock extends BaseEntityBlock {
         BlockPos main = mainOf(level, pos);
         BlockState tower = mainState(level, pos);
         if (main != null && tower != null) {
+            GridManager.breaking(level, main, player);
             TowerBlock.breakTower(level, main,
                     !player.isCreative() && (!tower.requiresCorrectToolForDrops() || player.hasCorrectToolForDrops(tower)));
         }
@@ -160,6 +162,9 @@ public class TowerPartBlock extends BaseEntityBlock {
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
         if (WireCoilItem.endpointAt(level, pos) instanceof TowerBlockEntity tower && (tower.tier().switched()
                 || tower.tier().kind() == TowerTier.Kind.RELAY)) {
+            if (!GridInteractions.mayChange(player, level, pos)) {
+                return InteractionResult.FAIL;
+            }
             if (level instanceof net.minecraft.server.level.ServerLevel server) {
                 net.minecraft.network.chat.Component now = tower.operate(server);
                 if (now == null) {

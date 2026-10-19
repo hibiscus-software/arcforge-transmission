@@ -129,7 +129,8 @@ class ProtectionTest {
         // Fuse-saving: the recloser's first shot is fast, before the fuse melts.
         Overcurrent recloser = new Overcurrent();
         FuseElement fuse = new FuseElement();
-        assertTrue(recloser.tick(fault, 1, 0, saving), "fast trip");
+        FlowSolver.Beyond fuseBeyond = new FlowSolver.Beyond(1, true, rating);
+        assertTrue(recloser.tick(fault, fuseBeyond, 0, saving, melt), "fast trip");
         assertTrue(fuse.tick(fault / rating, melt, 0.1) == false, "the fuse only warmed in that tick");
         // ...and on its next shot it's slow (graded behind the fuse), so the fuse clears a fault that's still there.
         int recloserTick = -1, fuseTick = -1;
@@ -137,7 +138,7 @@ class ProtectionTest {
             if (fuse.tick(fault / rating, melt, 0.1)) {
                 fuseTick = tick;
             }
-            if (recloser.tick(fault, 1, 1, saving)) {
+            if (recloser.tick(fault, fuseBeyond, 1, saving, melt)) {
                 recloserTick = tick;
             }
         }
@@ -145,19 +146,20 @@ class ProtectionTest {
         // Fuse-blowing: the recloser never goes fast; the fuse blows first.
         Overcurrent slow = new Overcurrent();
         FuseElement fuse2 = new FuseElement();
-        assertFalse(slow.tick(fault, 1, 0, blowing));
+        assertFalse(slow.tick(fault, fuseBeyond, 0, blowing, melt));
         boolean blown = false;
         for (int tick = 0; tick < 400 && !blown; tick++) {
             blown = fuse2.tick(fault / rating, melt, 0.1);
-            assertFalse(!blown && slow.tick(fault, 1, 0, blowing), "the recloser waited");
+            assertFalse(!blown && slow.tick(fault, fuseBeyond, 0, blowing, melt), "the recloser waited");
         }
         assertTrue(blown);
     }
 
     @Test
     void theDifferentialSeesOnlyInternalFaults() {
-        assertFalse(Differential.trips(8000, 7990, 200, 0.2), "load through it");
-        assertFalse(Differential.trips(40000, 40000, 200, 0.2), "a fault beyond it");
+        // Both sides counted into the transformer: through load and through faults cancel.
+        assertFalse(Differential.trips(8000, -7990, 200, 0.2), "load through it");
+        assertFalse(Differential.trips(40000, -40000, 200, 0.2), "a fault beyond it");
         assertTrue(Differential.trips(30000, 2000, 200, 0.2), "a fault inside it");
     }
 

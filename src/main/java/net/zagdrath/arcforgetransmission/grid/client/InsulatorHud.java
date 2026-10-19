@@ -143,7 +143,12 @@ public final class InsulatorHud {
                 FlowSolver.PortStatus status = port.status();
                 MutableComponent statusText = Component.translatable("port_status." + m + "." + status.name().toLowerCase(Locale.ROOT));
                 lines.add((port.lastFlow() >= 1 ? Component.translatable("hud." + m + ".pin_insulator.flow", statusText, Math.round(port.lastFlow()))
-                        : statusText).withStyle(status == FlowSolver.PortStatus.OK ? ChatFormatting.GREEN : ChatFormatting.RED));
+                        : statusText).withStyle(switch (status) {
+                    case OK -> ChatFormatting.GREEN;
+                    // Wired up and live, waiting on the other end: not a fault.
+                    case NO_PARTNER -> ChatFormatting.GOLD;
+                    default -> ChatFormatting.RED;
+                }));
             }
         }
         int width = 0;

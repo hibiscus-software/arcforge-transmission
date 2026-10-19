@@ -35,6 +35,7 @@ import net.zagdrath.arcforgetransmission.grid.GridNode;
 import net.zagdrath.arcforgetransmission.grid.Phase;
 import net.zagdrath.arcforgetransmission.grid.world.GridData;
 import net.zagdrath.arcforgetransmission.grid.world.GridManager;
+import net.zagdrath.arcforgetransmission.grid.world.GridPayloads;
 import net.zagdrath.arcforgetransmission.grid.world.Insulator;
 import net.zagdrath.arcforgetransmission.grid.world.WireView;
 
@@ -140,7 +141,7 @@ public abstract class GridEndpointBlockEntity extends BlockEntity {
             sentPermille = permille;
             sentAt = level.getGameTime();
             hudSent();
-            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS);
+            GridPayloads.sendHud(level, this);
         }
     }
 
@@ -212,12 +213,13 @@ public abstract class GridEndpointBlockEntity extends BlockEntity {
         }
     }
 
-    // The block is going (broken, blown up, replaced): its wires go with it, dropping their coils here.
+    // The block is going (broken, blown up, replaced): its wires go with it, dropping their coils here (not when a
+    // creative player broke it).
     @Override
     public void preRemoveSideEffects(BlockPos pos, BlockState state) {
         super.preRemoveSideEffects(pos, state);
         if (level instanceof ServerLevel server) {
-            GridManager.detach(server, pos, true);
+            GridManager.detach(server, pos, GridManager.dropsAt(server, pos));
         }
     }
 
@@ -230,8 +232,11 @@ public abstract class GridEndpointBlockEntity extends BlockEntity {
     @Override
     protected void loadAdditional(ValueInput input) {
         super.loadAdditional(input);
-        wires = input.read("wires", WireView.LIST_CODEC).orElse(List.of());
-        wireBoxKnown = false;
+        // A HUD update (GridPayloads.Hud) comes without the wires: they stay as they were.
+        input.read("wires", WireView.LIST_CODEC).ifPresent(read -> {
+            wires = read;
+            wireBoxKnown = false;
+        });
         input.read("hud_phases", Codec.STRING).ifPresent(text -> {
             List<Phase> phases = new ArrayList<>();
             for (String id : text.split(",")) {

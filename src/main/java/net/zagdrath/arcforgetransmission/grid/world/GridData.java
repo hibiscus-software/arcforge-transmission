@@ -39,8 +39,9 @@ import net.zagdrath.arcforgetransmission.grid.VoltageTier;
 public class GridData extends SavedData {
     private static final Codec<Phase> PHASE = Codec.STRING.xmap(Phase::byId, Phase::id);
 
-    // An insulator as saved.
-    record NodeRecord(long id, BlockPos pos, int index, VoltageTier tier, Phase phase, Vec3 at, int group) {
+    // An insulator as saved: by its block and its stable key (Insulator.key; empty in a save from before keys, matched by
+    // its place in the block's list, index, until it takes one).
+    public record NodeRecord(long id, BlockPos pos, int index, VoltageTier tier, Phase phase, Vec3 at, int group, String key) {
         static final Codec<NodeRecord> CODEC = RecordCodecBuilder.create(i -> i.group(
                 Codec.LONG.fieldOf("id").forGetter(NodeRecord::id),
                 BlockPos.CODEC.fieldOf("pos").forGetter(NodeRecord::pos),
@@ -48,19 +49,20 @@ public class GridData extends SavedData {
                 WireView.TIER.fieldOf("tier").forGetter(NodeRecord::tier),
                 PHASE.fieldOf("phase").forGetter(NodeRecord::phase),
                 WireView.VEC.fieldOf("at").forGetter(NodeRecord::at),
-                Codec.INT.optionalFieldOf("group", 0).forGetter(NodeRecord::group)).apply(i, NodeRecord::new));
+                Codec.INT.optionalFieldOf("group", 0).forGetter(NodeRecord::group),
+                Codec.STRING.optionalFieldOf("key", "").forGetter(NodeRecord::key)).apply(i, NodeRecord::new));
     }
 
-    // A wire as saved (wires saved before insulation load as bare).
-    record EdgeRecord(long id, long a, long b, VoltageTier tier, double length, GridEdge.Kind kind) {
+    // A wire as saved (wires saved before insulation load as bare), and a regulator's boost through a link.
+    public record EdgeRecord(long id, long a, long b, VoltageTier tier, double length, GridEdge.Kind kind, double boost) {
         static final Codec<EdgeRecord> CODEC = RecordCodecBuilder.create(i -> i.group(
                 Codec.LONG.fieldOf("id").forGetter(EdgeRecord::id),
                 Codec.LONG.fieldOf("a").forGetter(EdgeRecord::a),
                 Codec.LONG.fieldOf("b").forGetter(EdgeRecord::b),
                 WireView.TIER.fieldOf("tier").forGetter(EdgeRecord::tier),
                 Codec.DOUBLE.fieldOf("length").forGetter(EdgeRecord::length),
-                Codec.STRING.xmap(GridEdge.Kind::byId, GridEdge.Kind::id).optionalFieldOf("kind", GridEdge.Kind.BARE).forGetter(EdgeRecord::kind))
-                .apply(i, EdgeRecord::new));
+                Codec.STRING.xmap(GridEdge.Kind::byId, GridEdge.Kind::id).optionalFieldOf("kind", GridEdge.Kind.BARE).forGetter(EdgeRecord::kind),
+                Codec.DOUBLE.optionalFieldOf("boost", 0.0).forGetter(EdgeRecord::boost)).apply(i, EdgeRecord::new));
     }
 
     record DimensionRecord(String dimension, long nextId, List<NodeRecord> nodes, List<EdgeRecord> edges) {
@@ -146,11 +148,11 @@ public class GridData extends SavedData {
             for (NodeRecord record : nodes.values()) {
                 GridNode node = graph.node(record.id());
                 nodeList.add(node == null ? record
-                        : new NodeRecord(record.id(), record.pos(), record.index(), record.tier(), node.phase(), record.at(), record.group()));
+                        : new NodeRecord(record.id(), record.pos(), record.index(), record.tier(), node.phase(), record.at(), record.group(), record.key()));
             }
             List<EdgeRecord> edgeList = new ArrayList<>();
             for (GridEdge edge : graph.edges()) {
-                edgeList.add(new EdgeRecord(edge.id(), edge.a(), edge.b(), edge.tier(), edge.length(), edge.kind()));
+                edgeList.add(new EdgeRecord(edge.id(), edge.a(), edge.b(), edge.tier(), edge.length(), edge.kind(), edge.boost()));
             }
             return new DimensionRecord(dimension, nextId, nodeList, edgeList);
         }
@@ -170,7 +172,9 @@ public class GridData extends SavedData {
             for (EdgeRecord edge : record.edges()) {
                 if (dimension.graph.node(edge.a()) != null && dimension.graph.node(edge.b()) != null) {
                     GridNode a = dimension.graph.node(edge.a());
-                    dimension.graph.addEdge(new GridEdge(edge.id(), edge.a(), edge.b(), edge.tier(), a.circuit(), edge.length(), edge.kind()));
+                    GridEdge loaded = new GridEdge(edge.id(), edge.a(), edge.b(), edge.tier(), a.circuit(), edge.length(), edge.kind());
+                    loaded.setBoost(edge.boost());
+                    dimension.graph.addEdge(loaded);
                 }
             }
             dimensions.put(record.dimension(), dimension);
@@ -181,6 +185,16 @@ public class GridData extends SavedData {
         List<DimensionRecord> out = new ArrayList<>();
         dimensions.forEach((name, dimension) -> out.add(dimension.save(name)));
         return out;
+    }
+
+    // A dimension's grid by its name, or null (a test reads a reloaded save through it).
+    public @Nullable Dimension dimension(String name) {
+        return dimensions.get(name);
+    }
+
+    // Every wire's saved form (a test compares a reloaded save with it).
+    public static List<EdgeRecord> edgesOf(Dimension dimension) {
+        return dimension.save("").edges();
     }
 
     public static GridData get(MinecraftServer server) {

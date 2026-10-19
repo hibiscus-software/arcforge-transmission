@@ -21,6 +21,8 @@ import net.minecraft.world.level.block.state.properties.NoteBlockInstrument;
 import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.level.material.PushReaction;
 import net.neoforged.bus.api.IEventBus;
+import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.registries.DeferredBlock;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredItem;
@@ -29,9 +31,11 @@ import net.zagdrath.arcforgetransmission.ArcforgeTransmission;
 import net.zagdrath.arcforgetransmission.grid.block.GridContent;
 import net.zagdrath.arcforgetransmission.material.MaterialContent;
 
-// Everything the transmission towers register: the four tower blocks and their items, the invisible part block, the two
-// block entity types and a creative tab (which also shows the grid's items, GridContent). Call register(modEventBus) from
-// the mod's constructor. The towers carry wires through their insulators (TowerBlockEntity); they have no recipes yet.
+// Everything placed whole: a block and item for each TowerTier (towers, transformers, protection and switching, line
+// hardware, the yard's devices, the service meter), the invisible part block, the two block entity types, the unit
+// transformer's energy capability (on its main and part blocks), and the six creative tabs (which hold the grid's and the
+// materials' items too). Call register(modEventBus) from the mod's constructor. Each carries wires through its
+// insulators (TowerBlockEntity); recipes are data (recipe/crafting/).
 public final class TowerContent {
     // The addon's mod id.
     public static final String MODID = ArcforgeTransmission.MODID;
@@ -46,7 +50,7 @@ public final class TowerContent {
     public static final DeferredBlock<TowerBlock> MV_SUB_TRANSMISSION_POLE = tower(TowerTier.MV, false);
     public static final DeferredBlock<TowerBlock> HV_H_FRAME_TOWER = tower(TowerTier.HV, false);
     public static final DeferredBlock<TowerBlock> EHV_LATTICE_TOWER = tower(TowerTier.EHV, true);
-    // The transformers: three substations (LV/MV, MV/HV, HV/EHV) and a unit transformer per tier, galvanized steel.
+    // The transformers: three substations (MV to LV, HV to MV, EHV to HV) and a unit transformer per tier, galvanized steel.
     public static final DeferredBlock<TowerBlock> MV_SUBSTATION_TRANSFORMER = tower(TowerTier.MV_SUBSTATION, true);
     public static final DeferredBlock<TowerBlock> HV_SUBSTATION_TRANSFORMER = tower(TowerTier.HV_SUBSTATION, true);
     public static final DeferredBlock<TowerBlock> EHV_SUBSTATION_TRANSFORMER = tower(TowerTier.EHV_SUBSTATION, true);
@@ -223,5 +227,15 @@ public final class TowerContent {
         ITEMS.register(modEventBus);
         BLOCK_ENTITY_TYPES.register(modEventBus);
         CREATIVE_MODE_TABS.register(modEventBus);
+        modEventBus.addListener(TowerContent::registerCapabilities);
+    }
+
+    // A unit transformer takes pushed FE (a generator beside it) through any of its blocks.
+    private static void registerCapabilities(RegisterCapabilitiesEvent event) {
+        event.registerBlockEntity(Capabilities.Energy.BLOCK, TOWER_ENTITY.get(), (tower, side) -> tower.energyCapability());
+        event.registerBlockEntity(Capabilities.Energy.BLOCK, TOWER_PART_ENTITY.get(), (part, side) -> {
+            TowerBlockEntity main = part.main();
+            return main == null ? null : main.energyCapability();
+        });
     }
 }

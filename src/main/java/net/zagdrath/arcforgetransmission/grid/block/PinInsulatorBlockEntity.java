@@ -26,9 +26,11 @@ import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.capabilities.BlockCapabilityCache;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.transfer.energy.EnergyHandler;
 import net.neoforged.neoforge.transfer.transaction.Transaction;
+import net.neoforged.neoforge.transfer.transaction.TransactionContext;
 import net.zagdrath.arcforgetransmission.ArcforgeTransmission;
 import net.zagdrath.arcforgetransmission.grid.FaultEvent;
 import net.zagdrath.arcforgetransmission.grid.FlowSolver;
@@ -94,7 +96,7 @@ public class PinInsulatorBlockEntity extends GridEndpointBlockEntity implements 
         Direction facing = facing();
         double off = (height(tier) - 8.0) / 16.0;
         Vec3 at = Vec3.atCenterOf(worldPosition).add(facing.getStepX() * off, facing.getStepY() * off, facing.getStepZ() * off);
-        return List.of(new Insulator(tier, Phase.A, at, 0));
+        return List.of(new Insulator(tier, Phase.A, at, 0, "pin"));
     }
 
     public PinInsulatorMode mode() {
@@ -247,7 +249,10 @@ public class PinInsulatorBlockEntity extends GridEndpointBlockEntity implements 
         }
         BlockPos mount = mountPos();
         Direction side = facing();
-        EnergyHandler handler = level.isLoaded(mount) ? level.getCapability(Capabilities.Energy.BLOCK, mount, side) : null;
+        if (mountCache == null || !mountCache.pos().equals(mount) || mountCache.context() != side) {
+            mountCache = BlockCapabilityCache.create(Capabilities.Energy.BLOCK, level, mount, side);
+        }
+        EnergyHandler handler = level.isLoaded(mount) ? mountCache.getCapability() : null;
         VoltageTier tier = tier();
         // Overvoltage once it's live: switched on, against a foreign block, with a wire on any of its conductors.
         boolean wired = nodes.stream().anyMatch(id -> dimension.graph().networkOf(id) != null);
@@ -272,6 +277,9 @@ public class PinInsulatorBlockEntity extends GridEndpointBlockEntity implements 
             case NONE -> {}
         }
     }
+
+    // The mounted block's energy capability, cached (rebuilt if the insulator turns).
+    private @Nullable BlockCapabilityCache<EnergyHandler, @Nullable Direction> mountCache;
 
     // A block's pin insulators as a port: its FE handler in or out, at up to the tier's voltage times the limit.
     private static final class PinInsulatorPort implements GridManager.PortHandler {
@@ -316,33 +324,22 @@ public class PinInsulatorBlockEntity extends GridEndpointBlockEntity implements 
         }
 
         @Override
-        public int draw(int fe) {
-            if (handler == null || !mode.gives()) {
-                return 0;
-            }
-            try (Transaction tx = Transaction.openRoot()) {
-                int got = handler.extract(fe, tx);
-                tx.commit();
-                return got;
-            }
+        public int draw(int fe, TransactionContext tx) {
+            return handler == null || !mode.gives() ? 0 : handler.extract(fe, tx);
         }
 
         @Override
-        public int deliver(int fe) {
-            if (handler == null || !mode.takes()) {
-                return 0;
-            }
-            try (Transaction tx = Transaction.openRoot()) {
-                int got = handler.insert(fe, tx);
-                tx.commit();
-                return got;
-            }
+        public int deliver(int fe, TransactionContext tx) {
+            return handler == null || !mode.takes() ? 0 : handler.insert(fe, tx);
         }
 
         @Override
         public void report(FlowSolver.PortStatus status, double drawn, double delivered) {
+            // No FE block where it's mounted: says so rather than looking wired up and idle.
+            FlowSolver.PortStatus shown = handler == null && mode != PinInsulatorMode.OFF && status != FlowSolver.PortStatus.UNWIRED
+                    ? FlowSolver.PortStatus.NO_FE_BLOCK : status;
             for (PinInsulatorBlockEntity pinInsulator : pinInsulators) {
-                pinInsulator.status = status;
+                pinInsulator.status = shown;
                 pinInsulator.lastFlow = drawn > 0 ? drawn : delivered;
             }
         }

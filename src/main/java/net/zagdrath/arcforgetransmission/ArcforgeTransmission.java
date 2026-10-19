@@ -23,6 +23,7 @@ import net.zagdrath.arcforgetransmission.grid.data.AttachGroups;
 import net.zagdrath.arcforgetransmission.tower.TowerTier;
 import net.zagdrath.arcforgetransmission.grid.block.GridContent;
 import net.zagdrath.arcforgetransmission.grid.world.GridConfig;
+import net.zagdrath.arcforgetransmission.grid.world.GridPayloads;
 import net.zagdrath.arcforgetransmission.material.MaterialContent;
 import net.zagdrath.arcforgetransmission.tower.TowerContent;
 
@@ -35,9 +36,9 @@ public class ArcforgeTransmission {
         TowerContent.register(modEventBus);
         GridContent.register(modEventBus);
         MaterialContent.register(modEventBus);
-        net.zagdrath.arcforgetransmission.gametest.TransmissionGameTests.register(modEventBus);
         modContainer.registerConfig(localConfigType(), GridConfig.SPEC, MODID + "-common.toml");
         modEventBus.addListener(ArcforgeTransmission::commonSetup);
+        GridPayloads.register(modEventBus);
     }
 
     // Every attach file read up front, so a block never reads one from the jar mid-game.

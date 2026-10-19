@@ -40,6 +40,7 @@ import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import net.zagdrath.arcforgetransmission.grid.world.GridManager;
 import net.zagdrath.arcforgetransmission.ArcforgeTransmission;
 import net.zagdrath.arcforgetransmission.grid.VoltageTier;
 
@@ -154,6 +155,13 @@ public class PinInsulatorBlock extends BaseEntityBlock {
                     GridInteractions.format(Math.round(pinInsulator.lastFlow()))));
         }
         return InteractionResult.SUCCESS;
+    }
+
+    // Broken by a creative player: its wires' coils don't drop.
+    @Override
+    public BlockState playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
+        GridManager.breaking(level, pos, player);
+        return super.playerWillDestroy(level, pos, state, player);
     }
 
     @Override

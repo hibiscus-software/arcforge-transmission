@@ -49,10 +49,19 @@ public final class GridInteractions {
     }
 
     // Handles a wrench on an endpoint (a tower's main block for any of its parts). Null if the stack isn't a wrench.
+    // Whether a player may change the grid at a block: able to build (not in adventure mode) and allowed there (spawn
+    // protection, a claim). No player (a dispenser, a test) may.
+    public static boolean mayChange(@Nullable Player player, Level level, BlockPos pos) {
+        return player == null || player.mayBuild() && level.mayInteract(player, pos);
+    }
+
     public static @Nullable InteractionResult wrench(ItemStack stack, Level level, GridEndpointBlockEntity endpoint, Player player, Vec3 hit,
             boolean dismantleable) {
         if (!isWrench(stack)) {
             return null;
+        }
+        if (!mayChange(player, level, endpoint.getBlockPos())) {
+            return InteractionResult.FAIL;
         }
         if (!(level instanceof ServerLevel server)) {
             return InteractionResult.SUCCESS;

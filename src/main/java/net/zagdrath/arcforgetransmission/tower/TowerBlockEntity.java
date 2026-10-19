@@ -32,9 +32,12 @@ import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.capabilities.BlockCapabilityCache;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.transfer.energy.EnergyHandler;
+import net.neoforged.neoforge.transfer.energy.SimpleEnergyHandler;
 import net.neoforged.neoforge.transfer.transaction.Transaction;
+import net.neoforged.neoforge.transfer.transaction.TransactionContext;
 import net.zagdrath.arcforgetransmission.ArcforgeTransmission;
 import net.zagdrath.arcforgetransmission.grid.Coupling;
 import net.zagdrath.arcforgetransmission.grid.FaultEvent;
@@ -48,13 +51,16 @@ import net.zagdrath.arcforgetransmission.grid.block.GridEndpointBlockEntity;
 import net.zagdrath.arcforgetransmission.grid.block.PinInsulatorMode;
 import net.zagdrath.arcforgetransmission.grid.block.PortHud;
 import net.zagdrath.arcforgetransmission.grid.data.AttachGroups;
+import net.zagdrath.arcforgetransmission.grid.protection.Differential;
 import net.zagdrath.arcforgetransmission.grid.protection.FuseElement;
 import net.zagdrath.arcforgetransmission.grid.protection.Interlocks;
 import net.zagdrath.arcforgetransmission.grid.protection.Overcurrent;
+import net.zagdrath.arcforgetransmission.grid.protection.Reclosing;
 import net.zagdrath.arcforgetransmission.grid.protection.Sectionalizer;
 import net.zagdrath.arcforgetransmission.grid.protection.TapControl;
 import net.zagdrath.arcforgetransmission.grid.protection.TransferSwitch;
 import net.zagdrath.arcforgetransmission.grid.protection.Unbalance;
+import net.zagdrath.arcforgetransmission.grid.protection.UnbalanceWatch;
 import net.zagdrath.arcforgetransmission.grid.world.GridConfig;
 import net.zagdrath.arcforgetransmission.grid.world.GridData;
 import net.zagdrath.arcforgetransmission.grid.world.GridManager;
@@ -90,16 +96,16 @@ public class TowerBlockEntity extends GridEndpointBlockEntity implements GridMan
     private int renderEighths = -1;
     // A unit transformer's mode.
     private PinInsulatorMode mode = PinInsulatorMode.OFF;
-    // Switching: closed (a fuse intact, a breaker or switch closed, a ground switch grounding, a shunt switched in),
-    // locked out after a breaker's last reclose, the trips since it last held, when it recloses (game time, 0 for never),
-    // when it last closed, and its trip setting in eighths of the tier's rating. A service meter's count of FE delivered.
-    private boolean closed, lockout;
-    private int shots, tripEighths = 8;
-    private long recloseAt, closedAt;
+    // Switching: closed (a fuse intact, a breaker or switch closed, a ground switch grounding, a shunt switched in), a
+    // breaker's reclosing (its shots, lockout and when it recloses), and its trip setting in eighths of the tier's rating.
+    // A service meter's count of FE delivered.
+    private boolean closed;
+    private int tripEighths = 8;
+    private final Reclosing reclosing = new Reclosing();
     private long delivered;
     // Protection and control: the fuse's element, the overcurrent timer, the sectionalizer's count, the transfer switch's
     // position, the tap changer's or regulator's tap (and whether it runs itself), CT and PT fitted, a relay panel's or
-    // disconnect's links (Control Cable), the panel's time dial and fuse-saving, and ticks of unbalance or a lost phase.
+    // disconnect's links (Control Cable), the panel's time dial and fuse-saving, and its watch for unbalance or a lost phase.
     private final FuseElement fuse = new FuseElement();
     private final Overcurrent overcurrent = new Overcurrent();
     private final Sectionalizer sectionalizer = new Sectionalizer();
@@ -107,8 +113,8 @@ public class TowerBlockEntity extends GridEndpointBlockEntity implements GridMan
     private final TapControl tap = new TapControl();
     private boolean auto = true, ct, pt, fuseSaving = true, lastPowered;
     private List<BlockPos> controls = new ArrayList<>();
-    private int dial = 1, unbalancedTicks;
-    private boolean unbalanceTold;
+    private int dial = 1;
+    private final UnbalanceWatch unbalance = new UnbalanceWatch();
     // What its insulators watch (per unit), for the HUD: a regulator's or tap changer's load side, a shunt's bus.
     private double watchedVolts;
     // Its guy wires' ground anchors (blocks).
@@ -122,6 +128,36 @@ public class TowerBlockEntity extends GridEndpointBlockEntity implements GridMan
     private FlowSolver.@Nullable PortStatus sentStatus;
     private @Nullable PinInsulatorMode sentMode;
     private long sentFlow = -1, sentWatched = -1;
+    // A unit transformer's push buffer: what generators push into it (on Input, up to a tick's rated power), put onto the
+    // line with what its front face's blocks give; the energy capability its blocks show (taking nothing on Output or
+    // Storage, giving nothing); and its front face's FE blocks, by capability cache (built per orientation).
+    private final SimpleEnergyHandler pushed;
+    // What a comparator read last tick.
+    private int lastComparator;
+    private final EnergyHandler intake = new EnergyHandler() {
+        @Override
+        public long getAmountAsLong() {
+            return pushed.getAmountAsLong();
+        }
+
+        @Override
+        public long getCapacityAsLong() {
+            return pushed.getCapacityAsLong();
+        }
+
+        @Override
+        public int insert(int amount, TransactionContext transaction) {
+            return mode == PinInsulatorMode.INPUT ? pushed.insert(amount, transaction) : 0;
+        }
+
+        @Override
+        public int extract(int amount, TransactionContext transaction) {
+            return 0;
+        }
+    };
+    private @Nullable List<BlockCapabilityCache<EnergyHandler, @Nullable Direction>> face;
+    private @Nullable BlockCapabilityCache<EnergyHandler, @Nullable Direction> servedCache;
+    private int faceEighths = -1;
 
     public TowerBlockEntity(BlockPos pos, BlockState state) {
         super(TowerContent.TOWER_ENTITY.get(), pos, state);
@@ -129,6 +165,8 @@ public class TowerBlockEntity extends GridEndpointBlockEntity implements GridMan
         TowerTier tier = state.getBlock() instanceof TowerBlock tower ? tower.tier() : TowerTier.LV;
         closed = tier.kind() != TowerTier.Kind.GROUND && tier.kind() != TowerTier.Kind.SHUNT;
         sentClosed = closed;
+        int power = tier.kind() == TowerTier.Kind.UNIT ? unitPower(tier.voltage()) : 0;
+        pushed = new SimpleEnergyHandler(power, power, power);
     }
 
     public TowerTier tier() {
@@ -173,7 +211,8 @@ public class TowerBlockEntity extends GridEndpointBlockEntity implements GridMan
             for (AttachGroups.Terminal terminal : group.terminals()) {
                 double[] p = terminal.pos();
                 double[] t = TowerMesh.turnedPoint8((float) p[0], (float) p[1], (float) p[2], eighths);
-                out.add(new Insulator(voltage, terminal.phase(), new Vec3(centre.getX() + t[0], centre.getY() + t[1], centre.getZ() + t[2]), g));
+                out.add(new Insulator(voltage, terminal.phase(), new Vec3(centre.getX() + t[0], centre.getY() + t[1], centre.getZ() + t[2]), g,
+                        group.name() + "/" + terminal.label()));
             }
         }
         return out;
@@ -223,9 +262,9 @@ public class TowerBlockEntity extends GridEndpointBlockEntity implements GridMan
                     Component.translatable(m + (auto ? "auto" : "manual")));
             case UNIT -> Component.translatable("pin_insulator_mode." + ArcforgeTransmission.MODID + "." + mode.id());
             case FUSE -> closed ? Component.translatable(m + "fuse.intact", amps(fuseAmps())) : Component.translatable(m + "fuse.blown");
-            case BREAKER -> lockout ? Component.translatable(m + "breaker.lockout")
+            case BREAKER -> reclosing.lockedOut() ? Component.translatable(m + "breaker.lockout")
                     : closed ? Component.translatable(m + "breaker.closed", amps(tripAmps()), tripEighths)
-                    : Component.translatable(m + "breaker." + (recloseAt > 0 ? "reclosing" : "open"));
+                    : Component.translatable(m + "breaker." + (reclosing.recloseAt() > 0 ? "reclosing" : "open"));
             case DISCONNECT -> Component.translatable(m + "switch." + (closed ? "closed" : "open"));
             case SERVICE -> Component.translatable(m + "service.delivered", String.format(java.util.Locale.ROOT, "%,d", delivered));
             case BUS -> Component.translatable(m + "bus");
@@ -234,9 +273,10 @@ public class TowerBlockEntity extends GridEndpointBlockEntity implements GridMan
                     Component.translatable(m + (fuseSaving ? "fuse_saving" : "fuse_blowing")));
             case GROUND -> Component.translatable(m + "ground." + (closed ? "closed" : "open"));
             case SHUNT -> Component.translatable(m + (tier.reactor() ? "reactor." : "capacitor.") + (closed ? "in" : "out"), volts(watchedVolts));
-            case SECTIONALIZER -> closed ? Component.translatable(m + "sectionalizer.closed", sectionalizer.counted(), GridConfig.SECTIONALIZER_COUNT.getAsInt())
+            case SECTIONALIZER -> closed ? Component.translatable(m + "sectionalizer.closed", sectionalizer.counted(), GridConfig.sectionalizerCount())
                     : Component.translatable(m + "sectionalizer.open");
-            case ATS -> Component.translatable(m + "ats." + (transfer.position() == TransferSwitch.Position.PREFERRED ? "preferred" : "alternate"));
+            case ATS -> Component.translatable(m + "ats." + (transfer.position() == TransferSwitch.Position.PREFERRED ? "preferred" : "alternate"),
+                    Component.translatable(m + (auto ? "auto" : "manual")));
         };
         if (main == null || fitted == null) {
             return main;
@@ -255,7 +295,7 @@ public class TowerBlockEntity extends GridEndpointBlockEntity implements GridMan
 
     private String tapText() {
         int p = tap.position();
-        return (p > 0 ? "+" : "") + p + " (" + String.format(java.util.Locale.ROOT, "%+.1f%%", tap.boost(GridConfig.TAP_STEP.getAsDouble()) * 100) + ")";
+        return (p > 0 ? "+" : "") + p + " (" + String.format(java.util.Locale.ROOT, "%+.1f%%", tap.boost(GridConfig.tapStep()) * 100) + ")";
     }
 
     private static String volts(double perUnit) {
@@ -279,12 +319,17 @@ public class TowerBlockEntity extends GridEndpointBlockEntity implements GridMan
     }
 
     public boolean lockedOut() {
-        return lockout;
+        return reclosing.lockedOut();
     }
 
     // A fuse's rating (its tier's wire rating times the config's factor) and a breaker's trip setting, A per conductor.
+    // A breaker's trips since it last held closed (its reclose shots).
+    public int tripsSinceHeld() {
+        return reclosing.shots();
+    }
+
     public double fuseAmps() {
-        return GridConfig.SETTINGS.ratedAmps(tier().voltage()) * GridConfig.FUSE_FACTOR.getAsDouble();
+        return GridConfig.SETTINGS.ratedAmps(tier().voltage()) * GridConfig.fuseFactor();
     }
 
     public double tripAmps() {
@@ -367,10 +412,11 @@ public class TowerBlockEntity extends GridEndpointBlockEntity implements GridMan
         TowerTier.Kind kind = tier().kind();
         boolean changed;
         if (kind == TowerTier.Kind.ATS) {
+            // Its link is a transfer coupling (couplings), so each feeder reads live only from its own side: no jumpers (a
+            // save from before had them).
             Map<Integer, List<Integer>> byGroup = byGroup();
-            boolean alternate = transfer.position() == TransferSwitch.Position.ALTERNATE;
-            changed = GridManager.link(level, worldPosition, pairsBetween(byGroup, 0, 1), !alternate);
-            changed |= GridManager.link(level, worldPosition, pairsBetween(byGroup, 2, 1), alternate);
+            changed = GridManager.link(level, worldPosition, pairsBetween(byGroup, 0, 1), false);
+            changed |= GridManager.link(level, worldPosition, pairsBetween(byGroup, 2, 1), false);
         } else {
             changed = GridManager.link(level, worldPosition, linkPairs(), closed || kind == TowerTier.Kind.DEAD_END || kind == TowerTier.Kind.REGULATOR);
         }
@@ -404,7 +450,7 @@ public class TowerBlockEntity extends GridEndpointBlockEntity implements GridMan
     }
 
     // A breaker or switch opens: its links come off, with a spark and a bang.
-    private void open(ServerLevel level, String event) {
+    private void open(ServerLevel level) {
         closed = false;
         setChanged();
         relink(level);
@@ -416,7 +462,7 @@ public class TowerBlockEntity extends GridEndpointBlockEntity implements GridMan
 
     private void close(ServerLevel level) {
         closed = true;
-        closedAt = level.getGameTime();
+        reclosing.closed(level.getGameTime());
         overcurrent.reset();
         fuse.reset();
         setChanged();
@@ -426,25 +472,29 @@ public class TowerBlockEntity extends GridEndpointBlockEntity implements GridMan
 
     // A breaker trips: opens, and recloses after the delay unless that was its last shot (locked out).
     private void trip(ServerLevel level) {
-        shots++;
-        lockout = shots > GridConfig.RECLOSE_SHOTS.getAsInt();
-        recloseAt = lockout ? 0 : level.getGameTime() + GridConfig.RECLOSE_DELAY.getAsInt();
-        open(level, lockout ? "breaker.locked_out" : "breaker.tripped");
+        reclosing.trip(level.getGameTime(), GridConfig.RECLOSE_SHOTS.getAsInt(), GridConfig.RECLOSE_DELAY.getAsInt());
+        open(level);
     }
 
-    // A Relay Panel's differential protection: trips the breakers it's linked to. True if it's set up to (a panel linked
-    // to this transformer, with a CT fitted here); the transformer then survives the fault inside it.
-    public boolean differentialTrip(ServerLevel level) {
+    // A surge inside the transformer (lightning with no arrester near), `surge` per unit of its rating, and a Relay Panel's
+    // differential protection (87T): with both sides' currents counted into it, the load through it cancels and the surge
+    // doesn't, so past differentialPickup and differentialSlope (Differential) it trips the breakers it's linked to. True
+    // if it tripped (a panel linked to this transformer and a CT fitted here); the transformer then survives the fault.
+    public boolean differentialTrip(ServerLevel level, double surge) {
         TowerBlockEntity panel = panelFor(level, worldPosition);
         if (panel == null || !ct) {
+            return false;
+        }
+        double rating = GridConfig.SETTINGS.ratedAmps(tier().voltage()) * tier().voltage().volts() * GridConfig.SUBSTATION_RATING.getAsDouble();
+        double through = rating <= 0 ? 0 : lastFlow / rating;
+        if (!Differential.trips(through + surge, -through, GridConfig.DIFFERENTIAL_PICKUP.getAsDouble(), GridConfig.DIFFERENTIAL_SLOPE.getAsDouble())) {
             return false;
         }
         for (BlockPos pos : panel.controls) {
             if (level.isLoaded(pos) && level.getBlockEntity(pos) instanceof TowerBlockEntity breaker && breaker.tier().kind() == TowerTier.Kind.BREAKER
                     && breaker.closed) {
-                breaker.recloseAt = 0;
-                breaker.lockout = true;
-                breaker.open(level, "breaker.differential");
+                breaker.reclosing.lockOut();
+                breaker.open(level);
             }
         }
         return true;
@@ -483,18 +533,16 @@ public class TowerBlockEntity extends GridEndpointBlockEntity implements GridMan
         switch (kind) {
             case BREAKER, SECTIONALIZER, DISCONNECT -> {
                 if (kind == TowerTier.Kind.DISCONNECT) {
-                    refusal = Interlocks.disconnect(anyControlClosed(level));
+                    refusal = Interlocks.disconnect(anyControlClosed(level), !closed, !closed && groundedEitherSide(level));
                 } else if (!closed) {
                     refusal = Interlocks.closeBreaker(groundedEitherSide(level));
                 }
                 if (refusal == null) {
                     if (closed) {
-                        recloseAt = 0;
-                        open(level, "opened");
+                        reclosing.cancel();
+                        open(level);
                     } else {
-                        lockout = false;
-                        shots = 0;
-                        recloseAt = 0;
+                        reclosing.reset();
                         sectionalizer.close();
                         close(level);
                     }
@@ -536,10 +584,26 @@ public class TowerBlockEntity extends GridEndpointBlockEntity implements GridMan
     }
 
     // Whether a breaker this (a disconnect) is interlocked with is closed.
+    // Whether any breaker this disconnect is interlocked with is closed (one in an unloaded chunk can't be seen to be open,
+    // so it counts as closed).
     private boolean anyControlClosed(ServerLevel level) {
         for (BlockPos pos : controls) {
-            if (level.isLoaded(pos) && level.getBlockEntity(pos) instanceof TowerBlockEntity breaker && breaker.tier().kind() == TowerTier.Kind.BREAKER
-                    && breaker.closed) {
+            if (!level.isLoaded(pos)) {
+                return true;
+            }
+            if (level.getBlockEntity(pos) instanceof TowerBlockEntity breaker && breaker.tier().kind() == TowerTier.Kind.BREAKER && breaker.closed) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Whether either of an ATS's feeders (group 0 preferred, 2 alternate) is live from its own side.
+    private boolean feederLive(ServerLevel level, int group) {
+        GridData.Dimension dimension = GridData.of(level);
+        GridManager.TickView view = GridManager.view(level);
+        for (long node : groupNodes(dimension, group)) {
+            if (view.sourceLive(dimension.graph(), node)) {
                 return true;
             }
         }
@@ -656,7 +720,7 @@ public class TowerBlockEntity extends GridEndpointBlockEntity implements GridMan
         return tier.switched() && !closed;
     }
 
-    // The Wrench on Configure: a tap changer or regulator on its own or held, a unit's mode, a breaker's trip setting (an
+    // The Wrench on Configure: a tap changer, regulator or transfer switch on its own or held, a unit's mode, a breaker's trip setting (an
     // eighth of its rating a step), a relay panel's time dial (sneaking: fuse-saving or fuse-blowing). What it's set to
     // now, or null when there's nothing to set.
     public @Nullable Component configure(boolean sneaking) {
@@ -669,6 +733,7 @@ public class TowerBlockEntity extends GridEndpointBlockEntity implements GridMan
                 }
             }
             case UNIT -> mode = mode.next();
+            case ATS -> auto = !auto;
             case BREAKER -> tripEighths = tripEighths % 8 + 1;
             case RELAY -> {
                 if (sneaking) {
@@ -800,10 +865,8 @@ public class TowerBlockEntity extends GridEndpointBlockEntity implements GridMan
             case UNIT -> {
                 List<Long> nodes = groupNodes(dimension, 0);
                 if (nodes.size() == insulators().size()) {
-                    BlockPos served = servedPos();
-                    EnergyHandler handler = level.isLoaded(served) ? level.getCapability(Capabilities.Energy.BLOCK, served, facing().getOpposite()) : null;
                     lastFlow = 0;
-                    out.add(new UnitSide(nodes, tier.voltage(), handler));
+                    out.add(new UnitSide(nodes, tier.voltage(), faceHandlers(level)));
                 }
             }
             default -> {}
@@ -813,6 +876,15 @@ public class TowerBlockEntity extends GridEndpointBlockEntity implements GridMan
     @Override
     public void couplings(ServerLevel level, GridData.Dimension dimension, List<Coupling> out) {
         TowerTier tier = tier();
+        if (tier.kind() == TowerTier.Kind.ATS) {
+            // The load (group 1) on the feeder it's on, through a transfer link.
+            List<Long> feeder = groupNodes(dimension, transfer.position() == TransferSwitch.Position.PREFERRED ? 0 : 2), load = groupNodes(dimension, 1);
+            if (feeder.size() == 3 && load.size() == 3) {
+                double rating = GridConfig.SETTINGS.ratedAmps(tier.voltage()) * tier.voltage().volts();
+                out.add(new Coupling(worldPosition.asLong(), tier.voltage(), feeder, tier.voltage(), List.of(load), rating, 0, true, true));
+            }
+            return;
+        }
         if (tier.kind() != TowerTier.Kind.SUBSTATION) {
             return;
         }
@@ -820,7 +892,7 @@ public class TowerBlockEntity extends GridEndpointBlockEntity implements GridMan
         if (primary.size() == 3 && secondary.size() == 3) {
             double rating = GridConfig.SETTINGS.ratedAmps(tier.voltage()) * tier.voltage().volts() * GridConfig.SUBSTATION_RATING.getAsDouble();
             out.add(new Coupling(worldPosition.asLong(), tier.voltage(), primary, tier.secondary(), List.of(secondary), rating,
-                    tap.boost(GridConfig.TAP_STEP.getAsDouble()), true));
+                    tap.boost(GridConfig.tapStep()), true));
         }
     }
 
@@ -846,9 +918,13 @@ public class TowerBlockEntity extends GridEndpointBlockEntity implements GridMan
     }
 
     @Override
-    public void protective(ServerLevel level, GridData.Dimension dimension, Set<Long> out) {
+    public void protective(ServerLevel level, GridData.Dimension dimension, Map<Long, FlowSolver.Protective> out) {
         if (tier().protective() && closed) {
-            out.addAll(linkEdges(dimension));
+            boolean isFuse = tier().kind() == TowerTier.Kind.FUSE;
+            FlowSolver.Protective p = new FlowSolver.Protective(isFuse ? fuseAmps() : tripAmps(), isFuse);
+            for (long edge : linkEdges(dimension)) {
+                out.put(edge, p);
+            }
         }
     }
 
@@ -856,11 +932,21 @@ public class TowerBlockEntity extends GridEndpointBlockEntity implements GridMan
     // switches change over, banks switch.
     @Override
     public void afterTick(ServerLevel level, GridData.Dimension dimension, GridManager.TickView view) {
+        react(level, dimension, view);
+        // A comparator beside it hears when what it reads changes.
+        int reading = comparator();
+        if (reading != lastComparator) {
+            lastComparator = reading;
+            level.updateNeighbourForOutputSignal(worldPosition, getBlockState().getBlock());
+        }
+    }
+
+    private void react(ServerLevel level, GridData.Dimension dimension, GridManager.TickView view) {
         TowerTier tier = tier();
         switch (tier.kind()) {
             case FUSE -> {
                 if (closed && fuse.tick(linkAmps(dimension, view) / fuseAmps(), GridConfig.FUSE_MELT.getAsDouble(), GridConfig.FUSE_COOLING.getAsDouble())) {
-                    open(level, "fuse.blew");
+                    open(level);
                 }
             }
             case BREAKER -> breakerTick(level, dimension, view);
@@ -870,18 +956,18 @@ public class TowerBlockEntity extends GridEndpointBlockEntity implements GridMan
                 for (long node : groupNodes(dimension, 0)) {
                     live |= view.live(dimension.graph(), node);
                 }
-                if (closed && sectionalizer.tick(linkAmps(dimension, view) > actuating, live, GridConfig.SECTIONALIZER_COUNT.getAsInt(),
+                if (closed && sectionalizer.tick(linkAmps(dimension, view) > actuating, live, GridConfig.sectionalizerCount(),
                         GridConfig.SECTIONALIZER_RESET.getAsInt())) {
-                    open(level, "sectionalizer.opened");
+                    open(level);
                 }
             }
             case REGULATOR -> {
                 watchedVolts = averageVolts(dimension, view, 1);
                 if (auto && watchedVolts > 0) {
-                    tap.tick(watchedVolts, GridConfig.TAP_BAND.getAsDouble(), GridConfig.TAP_STEP.getAsDouble(), GridConfig.TAP_STEPS.getAsInt(),
+                    tap.tick(watchedVolts, GridConfig.TAP_BAND.getAsDouble(), GridConfig.tapStep(), GridConfig.TAP_STEPS.getAsInt(),
                             GridConfig.TAP_DELAY.getAsInt());
                 }
-                GridManager.boost(level, worldPosition, linkPairs(), tap.boost(GridConfig.TAP_STEP.getAsDouble()));
+                GridManager.boost(level, worldPosition, linkPairs(), tap.boost(GridConfig.tapStep()));
             }
             case SUBSTATION -> {
                 lastFlow = Math.abs(view.result().couplingFlow().getOrDefault(worldPosition.asLong(), 0.0));
@@ -889,13 +975,15 @@ public class TowerBlockEntity extends GridEndpointBlockEntity implements GridMan
                 status = groupNodes(dimension, 0).size() == 3 && groupNodes(dimension, 1).size() == 3 ? FlowSolver.PortStatus.OK
                         : FlowSolver.PortStatus.UNWIRED;
                 if (auto && watchedVolts > 0) {
-                    tap.tick(watchedVolts, GridConfig.TAP_BAND.getAsDouble(), GridConfig.TAP_STEP.getAsDouble(), GridConfig.TAP_STEPS.getAsInt(),
+                    tap.tick(watchedVolts, GridConfig.TAP_BAND.getAsDouble(), GridConfig.tapStep(), GridConfig.TAP_STEPS.getAsInt(),
                             GridConfig.TAP_DELAY.getAsInt());
                 }
             }
             case SHUNT -> shuntTick(level, dimension, view);
             case ATS -> {
-                if (transfer.tick(anyLive(level, 0), anyLive(level, 2), GridConfig.TRANSFER_TICKS.getAsInt(), GridConfig.RETRANSFER_TICKS.getAsInt())) {
+                // Automatic: each feeder judged from its own side (the load's own sources don't make the preferred look live).
+                if (auto && transfer.tick(feederLive(level, 0), feederLive(level, 2), GridConfig.TRANSFER_TICKS.getAsInt(),
+                        GridConfig.RETRANSFER_TICKS.getAsInt())) {
                     setChanged();
                     relink(level);
                     level.playSound(null, worldPosition, SoundEvents.IRON_DOOR_CLOSE, SoundSource.BLOCKS, 0.8F, 0.7F);
@@ -932,10 +1020,9 @@ public class TowerBlockEntity extends GridEndpointBlockEntity implements GridMan
     private void breakerTick(ServerLevel level, GridData.Dimension dimension, GridManager.TickView view) {
         long now = level.getGameTime();
         if (!closed) {
-            if (!lockout && recloseAt > 0 && now >= recloseAt) {
-                recloseAt = 0;
+            if (reclosing.due(now)) {
                 if (groundedEitherSide(level)) {
-                    lockout = true;
+                    reclosing.lockOut();
                     GridManager.display(level, this, true);
                     return;
                 }
@@ -946,7 +1033,7 @@ public class TowerBlockEntity extends GridEndpointBlockEntity implements GridMan
         }
         List<Long> links = linkEdges(dimension);
         double most = 0;
-        int beyond = 0;
+        FlowSolver.Beyond beyond = FlowSolver.Beyond.NONE;
         double[] each = new double[links.size()];
         for (int i = 0; i < links.size(); i++) {
             each[i] = view.amps(links.get(i));
@@ -962,25 +1049,20 @@ public class TowerBlockEntity extends GridEndpointBlockEntity implements GridMan
                 ? new Overcurrent.Settings(tripAmps(), GridConfig.INSTANT_MULTIPLE.getAsDouble() * rated, TIME_DIALS[panel.dial], true, 0,
                         GridConfig.GRADING_INTERVAL.getAsInt(), panel.fuseSaving, GridConfig.FAST_SHOTS.getAsInt())
                 : new Overcurrent.Settings(tripAmps(), 0, 0, false, GridConfig.BREAKER_TRIP_TICKS.getAsInt(), GridConfig.GRADING_INTERVAL.getAsInt(), false, 0);
-        if (overcurrent.tick(most, beyond, shots, settings)) {
+        if (overcurrent.tick(most, beyond, reclosing.shots(), settings, GridConfig.FUSE_MELT.getAsDouble())) {
             trip(level);
             return;
         }
         // Unbalance (a lost phase is the worst): told once when it starts; a relayed breaker trips on it.
-        boolean unbalanced = most > rated * 0.05 && Unbalance.of(each) > GridConfig.UNBALANCE_THRESHOLD.getAsDouble();
-        unbalancedTicks = unbalanced ? unbalancedTicks + 1 : 0;
-        if (unbalanced && !unbalanceTold) {
+        boolean tripping = unbalance.tick(each, rated, GridConfig.UNBALANCE_THRESHOLD.getAsDouble(), GridConfig.UNBALANCE_TICKS.getAsInt());
+        if (unbalance.started()) {
             GridFaults.raise(FaultEvent.edge(links.get(0), FaultEvent.Cause.UNBALANCE, Unbalance.of(each)));
         }
-        unbalanceTold = unbalanced;
-        if (relayed && unbalancedTicks >= GridConfig.UNBALANCE_TICKS.getAsInt()) {
-            unbalancedTicks = 0;
+        if (relayed && tripping) {
             trip(level);
             return;
         }
-        if (shots > 0 && now - closedAt > 600) {
-            shots = 0;
-        }
+        reclosing.forget(now);
     }
 
     // A capacitor bank or reactor: redstone switches it while it changes; a Relay Panel (a PT fitted here) on the voltage.
@@ -1021,51 +1103,54 @@ public class TowerBlockEntity extends GridEndpointBlockEntity implements GridMan
             return;
         }
         BlockPos served = servedPos();
-        EnergyHandler handler = level.isLoaded(served) ? level.getCapability(Capabilities.Energy.BLOCK, served, facing().getOpposite()) : null;
+        if (servedCache == null || !servedCache.pos().equals(served)) {
+            servedCache = BlockCapabilityCache.create(Capabilities.Energy.BLOCK, level, served, facing().getOpposite());
+        }
+        EnergyHandler handler = level.isLoaded(served) ? servedCache.getCapability() : null;
         lastFlow = 0;
-        out.add(new ServiceSide(List.of(l1, n), handler));
-        out.add(new ServiceSide(List.of(l2, n), handler));
+        // The two legs share the block's room: asked once, split between them.
+        int room = 0;
+        if (handler != null) {
+            int most = (int) Math.floor(GridConfig.SETTINGS.ratedAmps(VoltageTier.LV) * VoltageTier.LV.volts());
+            try (Transaction tx = Transaction.openRoot()) {
+                room = handler.insert(most, tx);
+            }
+        }
+        out.add(new ServiceSide(List.of(l1, n), handler, room - room / 2));
+        out.add(new ServiceSide(List.of(l2, n), handler, room / 2));
     }
 
     // One leg of the service (L1 or L2 with the neutral) into the building's block.
     private final class ServiceSide implements GridManager.PortHandler {
         private final List<Long> nodes;
         private final @Nullable EnergyHandler handler;
+        private final int room;
 
-        ServiceSide(List<Long> nodes, @Nullable EnergyHandler handler) {
+        ServiceSide(List<Long> nodes, @Nullable EnergyHandler handler, int room) {
             this.nodes = nodes;
             this.handler = handler;
+            this.room = room;
         }
 
         @Override
         public Port port(long id) {
-            double demand = 0;
-            if (handler != null) {
-                int most = (int) Math.floor(GridConfig.SETTINGS.ratedAmps(VoltageTier.LV) * VoltageTier.LV.volts() / 2.0);
-                try (Transaction tx = Transaction.openRoot()) {
-                    demand = handler.insert(most, tx);
-                }
-            }
-            return new Port(id, VoltageTier.LV, nodes, 0, demand, Double.POSITIVE_INFINITY);
+            return new Port(id, VoltageTier.LV, nodes, 0, handler == null ? 0 : room, Double.POSITIVE_INFINITY);
         }
 
         @Override
-        public int draw(int fe) {
+        public int draw(int fe, TransactionContext tx) {
             return 0;
         }
 
         @Override
-        public int deliver(int fe) {
-            if (handler == null) {
-                return 0;
-            }
-            try (Transaction tx = Transaction.openRoot()) {
-                int got = handler.insert(fe, tx);
-                tx.commit();
-                delivered += got;
-                setChanged();
-                return got;
-            }
+        public int deliver(int fe, TransactionContext tx) {
+            return handler == null ? 0 : handler.insert(fe, tx);
+        }
+
+        @Override
+        public void moved(int drawn, int deliveredNow) {
+            delivered += deliveredNow;
+            setChanged();
         }
 
         @Override
@@ -1075,69 +1160,118 @@ public class TowerBlockEntity extends GridEndpointBlockEntity implements GridMan
         }
     }
 
-    // A unit transformer's line side: the served block's FE in (Input), out (Output) or either (Storage, a battery), up to
-    // the tier's rated power.
+    // A unit transformer's rated power, FE/t: the most it puts on or takes off the line in a tick.
+    static int unitPower(VoltageTier tier) {
+        return (int) Math.min(Integer.MAX_VALUE, Math.floor(GridConfig.SETTINGS.ratedAmps(tier) * tier.volts()));
+    }
+
+    // The energy capability its blocks show (a unit transformer's: generators push into it on Input), else none.
+    public @Nullable EnergyHandler energyCapability() {
+        return tier().kind() == TowerTier.Kind.UNIT ? intake : null;
+    }
+
+    // The FE blocks touching a unit transformer's whole front face (each block of it, looking out the front), each once.
+    private List<EnergyHandler> faceHandlers(ServerLevel level) {
+        if (face == null || faceEighths != eighths()) {
+            TowerTier tier = tier();
+            Direction front = facing();
+            List<BlockPos> mine = TowerPlacement.positions(tier, eighths(), TowerPlacement.centre(tier, eighths(), worldPosition));
+            java.util.Set<BlockPos> cells = new java.util.HashSet<>(mine);
+            java.util.Set<BlockPos> seen = new java.util.HashSet<>();
+            face = new ArrayList<>();
+            for (BlockPos pos : mine) {
+                BlockPos out = pos.relative(front);
+                if (!cells.contains(out) && seen.add(out)) {
+                    face.add(BlockCapabilityCache.create(Capabilities.Energy.BLOCK, level, out, front.getOpposite()));
+                }
+            }
+            faceEighths = eighths();
+        }
+        List<EnergyHandler> out = new ArrayList<>();
+        for (BlockCapabilityCache<EnergyHandler, @Nullable Direction> cache : face) {
+            if (!level.isLoaded(cache.pos())) {
+                continue;
+            }
+            EnergyHandler handler = cache.getCapability();
+            if (handler != null && handler != intake && out.stream().noneMatch(h -> h == handler)) {
+                out.add(handler);
+            }
+        }
+        return out;
+    }
+
+    // A unit transformer's line side: its front face's FE blocks in (Input, with what generators pushed into it), out
+    // (Output) or either (Storage, a battery), up to the tier's rated power. No FE block and nothing pushed: NO_FE_BLOCK.
     private final class UnitSide implements GridManager.PortHandler {
         private final List<Long> nodes;
         private final VoltageTier tier;
-        private final @Nullable EnergyHandler handler;
+        private final List<EnergyHandler> handlers;
+        private boolean anything;
 
-        UnitSide(List<Long> nodes, VoltageTier tier, @Nullable EnergyHandler handler) {
+        UnitSide(List<Long> nodes, VoltageTier tier, List<EnergyHandler> handlers) {
             this.nodes = nodes;
             this.tier = tier;
-            this.handler = handler;
-        }
-
-        private int maxPower() {
-            return (int) Math.min(Integer.MAX_VALUE, Math.floor(GridConfig.SETTINGS.ratedAmps(tier) * tier.volts()));
+            this.handlers = handlers;
         }
 
         @Override
         public Port port(long id) {
+            int most = unitPower(tier);
             double offer = 0, demand = 0;
-            if (handler != null) {
-                // Not committed: only asking.
-                if (mode.gives()) {
-                    try (Transaction tx = Transaction.openRoot()) {
-                        offer = handler.extract(maxPower(), tx);
-                    }
-                }
-                if (mode.takes()) {
-                    try (Transaction tx = Transaction.openRoot()) {
-                        demand = handler.insert(maxPower(), tx);
+            // Not committed: only asking (all in one transaction, so a block on two faces is counted once).
+            if (mode.gives()) {
+                try (Transaction tx = Transaction.openRoot()) {
+                    offer = mode == PinInsulatorMode.INPUT ? pushed.extract(most, tx) : 0;
+                    for (EnergyHandler handler : handlers) {
+                        offer += handler.extract((int) (most - offer), tx);
                     }
                 }
             }
+            if (mode.takes()) {
+                try (Transaction tx = Transaction.openRoot()) {
+                    for (EnergyHandler handler : handlers) {
+                        demand += handler.insert((int) (most - demand), tx);
+                    }
+                }
+            }
+            anything = !handlers.isEmpty() || pushed.getAmountAsInt() > 0;
             return new Port(id, tier, nodes, offer, demand, Double.POSITIVE_INFINITY, mode == PinInsulatorMode.STORAGE, 1.0);
         }
 
         @Override
-        public int draw(int fe) {
-            if (handler == null || !mode.gives()) {
+        public int draw(int fe, TransactionContext tx) {
+            if (!mode.gives()) {
                 return 0;
             }
-            try (Transaction tx = Transaction.openRoot()) {
-                int got = handler.extract(fe, tx);
-                tx.commit();
-                return got;
+            int got = mode == PinInsulatorMode.INPUT ? pushed.extract(fe, tx) : 0;
+            for (EnergyHandler handler : handlers) {
+                if (got >= fe) {
+                    break;
+                }
+                got += handler.extract(fe - got, tx);
             }
+            return got;
         }
 
         @Override
-        public int deliver(int fe) {
-            if (handler == null || !mode.takes()) {
+        public int deliver(int fe, TransactionContext tx) {
+            if (!mode.takes()) {
                 return 0;
             }
-            try (Transaction tx = Transaction.openRoot()) {
-                int got = handler.insert(fe, tx);
-                tx.commit();
-                return got;
+            int took = 0;
+            for (EnergyHandler handler : handlers) {
+                if (took >= fe) {
+                    break;
+                }
+                took += handler.insert(fe - took, tx);
             }
+            return took;
         }
 
         @Override
         public void report(FlowSolver.PortStatus status, double drawn, double delivered) {
-            TowerBlockEntity.this.status = status;
+            TowerBlockEntity.this.status = !anything && mode != PinInsulatorMode.OFF && status != FlowSolver.PortStatus.UNWIRED ? FlowSolver.PortStatus.NO_FE_BLOCK
+                    : status;
             lastFlow = drawn > 0 ? drawn : delivered;
         }
     }
@@ -1155,7 +1289,7 @@ public class TowerBlockEntity extends GridEndpointBlockEntity implements GridMan
 
     @Override
     protected boolean hudStateChanged() {
-        return status != sentStatus || mode != sentMode || closed != sentClosed || lockout != sentLockout || tripEighths != sentTrip || ct != sentCt
+        return status != sentStatus || mode != sentMode || closed != sentClosed || reclosing.lockedOut() != sentLockout || tripEighths != sentTrip || ct != sentCt
                 || pt != sentPt || auto != sentAuto || fuseSaving != sentFuseSaving || dial != sentDial || tap.position() != sentTap
                 || transfer.position() != sentPosition || sectionalizer.counted() != sentCount;
     }
@@ -1172,7 +1306,7 @@ public class TowerBlockEntity extends GridEndpointBlockEntity implements GridMan
         sentFlow = Math.round(lastFlow);
         sentWatched = Math.round(watchedVolts * 1000);
         sentClosed = closed;
-        sentLockout = lockout;
+        sentLockout = reclosing.lockedOut();
         sentTrip = tripEighths;
         sentCt = ct;
         sentPt = pt;
@@ -1189,7 +1323,7 @@ public class TowerBlockEntity extends GridEndpointBlockEntity implements GridMan
         CompoundTag tag = super.getUpdateTag(registries);
         tag.putString("hud_status", status.name());
         tag.putLong("hud_flow", Math.round(lastFlow));
-        tag.putLong("hud_reclose", recloseAt);
+        tag.putLong("hud_reclose", reclosing.recloseAt());
         tag.putLong("hud_watched", Math.round(watchedVolts * 1000));
         tag.putInt("hud_count", sectionalizer.counted());
         return tag;
@@ -1202,8 +1336,8 @@ public class TowerBlockEntity extends GridEndpointBlockEntity implements GridMan
         if (tier().kind() != TowerTier.Kind.TOWER) {
             output.store("mode", PinInsulatorMode.CODEC, mode);
             output.store("closed", Codec.BOOL, closed);
-            output.store("lockout", Codec.BOOL, lockout);
-            output.store("shots", Codec.INT, shots);
+            output.store("lockout", Codec.BOOL, reclosing.lockedOut());
+            output.store("shots", Codec.INT, reclosing.shots());
             output.store("trip_eighths", Codec.INT, tripEighths);
             output.store("delivered", Codec.LONG, delivered);
             output.store("tap", Codec.INT, tap.position());
@@ -1216,7 +1350,9 @@ public class TowerBlockEntity extends GridEndpointBlockEntity implements GridMan
             output.store("counted", Codec.INT, sectionalizer.counted());
             output.store("alternate", Codec.BOOL, transfer.position() == TransferSwitch.Position.ALTERNATE);
             output.store("powered", Codec.BOOL, lastPowered);
-            output.store("reclose_at", Codec.LONG, recloseAt);
+            output.store("reclose_at", Codec.LONG, reclosing.recloseAt());
+            output.store("closed_at", Codec.LONG, reclosing.closedAt());
+            output.store("pushed", Codec.INT, pushed.getAmountAsInt());
         }
     }
 
@@ -1226,8 +1362,6 @@ public class TowerBlockEntity extends GridEndpointBlockEntity implements GridMan
         guys = new ArrayList<>(input.read("guys", BlockPos.CODEC.listOf()).orElse(List.of()));
         mode = input.read("mode", PinInsulatorMode.CODEC).orElse(PinInsulatorMode.OFF);
         input.read("closed", Codec.BOOL).ifPresent(value -> closed = value);
-        lockout = input.read("lockout", Codec.BOOL).orElse(false);
-        shots = input.read("shots", Codec.INT).orElse(0);
         tripEighths = Math.max(1, Math.min(8, input.read("trip_eighths", Codec.INT).orElse(8)));
         delivered = input.read("delivered", Codec.LONG).orElse(0L);
         tap.restore(input.read("tap", Codec.INT).orElse(0));
@@ -1240,8 +1374,10 @@ public class TowerBlockEntity extends GridEndpointBlockEntity implements GridMan
         sectionalizer.restore(input.read("counted", Codec.INT).orElse(0), false);
         transfer.restore(input.read("alternate", Codec.BOOL).orElse(false) ? TransferSwitch.Position.ALTERNATE : TransferSwitch.Position.PREFERRED);
         lastPowered = input.read("powered", Codec.BOOL).orElse(false);
-        recloseAt = input.read("reclose_at", Codec.LONG).orElse(0L);
-        input.read("hud_reclose", Codec.LONG).ifPresent(at -> recloseAt = at);
+        pushed.set(Math.max(0, Math.min(pushed.getCapacityAsInt(), input.read("pushed", Codec.INT).orElse(0))));
+        long recloseAt = input.read("hud_reclose", Codec.LONG).orElse(input.read("reclose_at", Codec.LONG).orElse(0L));
+        reclosing.restore(input.read("shots", Codec.INT).orElse(0), input.read("lockout", Codec.BOOL).orElse(false), recloseAt,
+                input.read("closed_at", Codec.LONG).orElse(0L));
         input.read("hud_status", Codec.STRING).ifPresent(name -> status = FlowSolver.PortStatus.valueOf(name));
         input.read("hud_flow", Codec.LONG).ifPresent(flow -> lastFlow = flow);
         input.read("hud_watched", Codec.LONG).ifPresent(v -> watchedVolts = v / 1000.0);
@@ -1254,16 +1390,17 @@ public class TowerBlockEntity extends GridEndpointBlockEntity implements GridMan
     public void preRemoveSideEffects(BlockPos pos, BlockState state) {
         removing = true;
         super.preRemoveSideEffects(pos, state);
-        if (level == null || level.isClientSide() || !(state.getBlock() instanceof TowerBlock tower)) {
+        if (!(level instanceof ServerLevel server) || !(state.getBlock() instanceof TowerBlock tower)) {
             return;
         }
-        for (BlockPos guy : guys) {
+        boolean drops = GridManager.dropsAt(server, pos);
+        for (BlockPos guy : drops ? guys : List.<BlockPos>of()) {
             Block.popResource(level, pos, new net.minecraft.world.item.ItemStack(net.zagdrath.arcforgetransmission.grid.block.GridContent.GUY_WIRE.get()));
         }
-        if (ct) {
+        if (ct && drops) {
             Block.popResource(level, pos, new net.minecraft.world.item.ItemStack(net.zagdrath.arcforgetransmission.grid.block.GridContent.CURRENT_TRANSFORMER.get()));
         }
-        if (pt) {
+        if (pt && drops) {
             Block.popResource(level, pos, new net.minecraft.world.item.ItemStack(net.zagdrath.arcforgetransmission.grid.block.GridContent.POTENTIAL_TRANSFORMER.get()));
         }
         int eighths = TowerPlacement.eighths(state);

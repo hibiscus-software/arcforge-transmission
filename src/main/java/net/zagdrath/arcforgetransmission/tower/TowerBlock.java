@@ -26,6 +26,7 @@ import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import net.zagdrath.arcforgetransmission.grid.world.GridManager;
 import net.zagdrath.arcforgetransmission.grid.block.GridInteractions;
 import net.zagdrath.arcforgetransmission.grid.item.WireCoilItem;
 
@@ -95,6 +96,13 @@ public class TowerBlock extends BaseEntityBlock {
     }
 
     // The whole tower goes, from whichever block: the item drops once, from here (in survival).
+    // Broken by a creative player: its wires' coils and fittings don't drop.
+    @Override
+    public BlockState playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
+        GridManager.breaking(level, pos, player);
+        return super.playerWillDestroy(level, pos, state, player);
+    }
+
     public static void breakTower(Level level, BlockPos main, boolean drop) {
         if (!level.isClientSide() && level.getBlockState(main).getBlock() instanceof TowerBlock) {
             level.destroyBlock(main, drop);
@@ -106,6 +114,9 @@ public class TowerBlock extends BaseEntityBlock {
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
         if (WireCoilItem.endpointAt(level, pos) instanceof TowerBlockEntity tower && (tower.tier().switched()
                 || tower.tier().kind() == TowerTier.Kind.RELAY)) {
+            if (!GridInteractions.mayChange(player, level, pos)) {
+                return InteractionResult.FAIL;
+            }
             if (level instanceof net.minecraft.server.level.ServerLevel server) {
                 net.minecraft.network.chat.Component now = tower.operate(server);
                 if (now == null) {

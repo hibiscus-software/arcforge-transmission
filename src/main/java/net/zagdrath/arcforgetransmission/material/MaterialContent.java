@@ -50,7 +50,7 @@ public final class MaterialContent {
 
     private MaterialContent() {}
 
-    // For the addon's creative tab, ore to ingot.
+    // For the Materials creative tab, ore to ingot.
     public static List<DeferredItem<? extends Item>> tabItems() {
         return List.of(BAUXITE_ORE_ITEM, DEEPSLATE_BAUXITE_ORE_ITEM, RAW_BAUXITE, RAW_BAUXITE_BLOCK_ITEM, ALUMINIUM_DUST, ALUMINIUM_INGOT,
                 ALUMINIUM_BLOCK_ITEM);

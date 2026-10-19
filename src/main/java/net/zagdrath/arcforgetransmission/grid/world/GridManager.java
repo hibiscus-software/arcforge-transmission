@@ -27,9 +27,12 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.BaseFireBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.transfer.transaction.Transaction;
+import net.neoforged.neoforge.transfer.transaction.TransactionContext;
 import net.zagdrath.arcforgetransmission.grid.Catenary;
 import net.zagdrath.arcforgetransmission.grid.ConnectionRules;
 import net.zagdrath.arcforgetransmission.grid.Coupling;
+import net.zagdrath.arcforgetransmission.grid.EnergyCommit;
 import net.zagdrath.arcforgetransmission.grid.FaultEvent;
 import net.zagdrath.arcforgetransmission.grid.FlowSolver;
 import net.zagdrath.arcforgetransmission.grid.GridEdge;
@@ -39,11 +42,13 @@ import net.zagdrath.arcforgetransmission.grid.GridNetwork;
 import net.zagdrath.arcforgetransmission.grid.GridNode;
 import net.zagdrath.arcforgetransmission.grid.Shunt;
 import net.zagdrath.arcforgetransmission.grid.GridTicker;
+import net.zagdrath.arcforgetransmission.grid.InsulatorMatch;
 import net.zagdrath.arcforgetransmission.grid.Phase;
 import net.zagdrath.arcforgetransmission.grid.Port;
 import net.zagdrath.arcforgetransmission.grid.VoltageTier;
 import net.zagdrath.arcforgetransmission.grid.block.GridContent;
 import net.zagdrath.arcforgetransmission.grid.block.GridEndpointBlockEntity;
+import net.zagdrath.arcforgetransmission.grid.block.GridInteractions;
 import net.zagdrath.arcforgetransmission.grid.block.PinInsulatorBlockEntity;
 import net.zagdrath.arcforgetransmission.grid.block.WallBushingBlock;
 
@@ -55,11 +60,14 @@ public final class GridManager {
     public interface PortHandler {
         Port port(long id);
 
-        // Takes up to fe from the source; returns what it took.
-        int draw(int fe);
+        // Takes up to fe from the source within tx (kept only if tx commits); returns what it took.
+        int draw(int fe, TransactionContext tx);
 
-        // Gives up to fe to the sink; returns what it took.
-        int deliver(int fe);
+        // Gives up to fe to the sink within tx (kept only if tx commits); returns what it took.
+        int deliver(int fe, TransactionContext tx);
+
+        // What was moved for it this tick, once committed.
+        default void moved(int drawn, int delivered) {}
 
         // How the tick went for it.
         default void report(FlowSolver.PortStatus status, double drawn, double delivered) {}
@@ -78,7 +86,7 @@ public final class GridManager {
 
         default void grounded(ServerLevel level, GridData.Dimension dimension, Set<Long> out) {}
 
-        default void protective(ServerLevel level, GridData.Dimension dimension, Set<Long> out) {}
+        default void protective(ServerLevel level, GridData.Dimension dimension, Map<Long, FlowSolver.Protective> out) {}
 
         default void afterTick(ServerLevel level, GridData.Dimension dimension, TickView view) {}
     }
@@ -86,7 +94,7 @@ public final class GridManager {
     // What a tick came to, for the blocks reacting to it (and between ticks, for interlocks and the HUD): the solve, the
     // fault current on each wire and link (and how many protective devices lie between each and its fault), each
     // network's voltage (the average of its nodes' that power passed; per unit) and the grounded networks.
-    public record TickView(FlowSolver.Result result, Map<Long, Double> faultAmps, Map<Long, Integer> faultBeyond, Map<Long, Double> networkVolts,
+    public record TickView(FlowSolver.Result result, Map<Long, Double> faultAmps, Map<Long, FlowSolver.Beyond> faultBeyond, Map<Long, Double> networkVolts,
             Set<Long> groundedNetworks) {
         public static final TickView EMPTY = new TickView(FlowSolver.Result.EMPTY, Map.of(), Map.of(), Map.of(), Set.of());
 
@@ -100,13 +108,19 @@ public final class GridManager {
         }
 
         // Protective devices between a link and the trouble through it (its fault's, else its loads').
-        public int beyond(long edge) {
-            return faulted(edge) ? faultBeyond.getOrDefault(edge, 0) : result.beyond(edge);
+        public FlowSolver.Beyond beyond(long edge) {
+            return faulted(edge) ? faultBeyond.getOrDefault(edge, FlowSolver.Beyond.NONE) : result.beyond(edge, FlowSolver.Beyond.NONE);
         }
 
         public boolean live(GridGraph graph, long node) {
             GridNetwork network = graph.networkOf(node);
             return network != null && result.liveNetworks().contains(network.id());
+        }
+
+        // Live from its own side: fed without counting a transfer switch's link (what an ATS watches each feeder by).
+        public boolean sourceLive(GridGraph graph, long node) {
+            GridNetwork network = graph.networkOf(node);
+            return network != null && result.sourceLive().contains(network.id());
         }
 
         public boolean grounded(GridGraph graph, long node) {
@@ -273,6 +287,21 @@ public final class GridManager {
         endpoint.refreshDisplay(level, LAST_AMPS.getOrDefault(level, Map.of()), view(level), force);
     }
 
+    // Blocks a creative player is breaking this tick: their wires' coils and fittings don't drop.
+    private static final Map<ServerLevel, Set<Long>> CREATIVE_BREAKS = new WeakHashMap<>();
+
+    public static void breaking(net.minecraft.world.level.Level level, BlockPos pos, net.minecraft.world.entity.player.Player player) {
+        if (level instanceof ServerLevel server && player.hasInfiniteMaterials()) {
+            CREATIVE_BREAKS.computeIfAbsent(server, k -> new java.util.HashSet<>()).add(pos.asLong());
+        }
+    }
+
+    // Whether what a block leaves behind drops (not when a creative player broke it).
+    public static boolean dropsAt(ServerLevel level, BlockPos pos) {
+        Set<Long> creative = CREATIVE_BREAKS.get(level);
+        return creative == null || !creative.contains(pos.asLong());
+    }
+
     public static Collection<GridEndpointBlockEntity> loadedIn(ServerLevel level) {
         return Collections.unmodifiableCollection(LOADED.getOrDefault(level, Set.of()));
     }
@@ -284,32 +313,48 @@ public final class GridManager {
     public static void attach(ServerLevel level, BlockPos pos, List<Insulator> insulators, GridEndpointBlockEntity endpoint) {
         GridData.Dimension dimension = GridData.of(level);
         List<Long> existing = new ArrayList<>(dimension.nodesAt(pos));
+        // Each insulator's saved node, by its key (or its place, in a save from before keys: InsulatorMatch).
+        List<String> savedKeys = new ArrayList<>(existing.size());
+        for (long id : existing) {
+            GridData.NodeRecord record = id < 0 ? null : dimension.node(id);
+            savedKeys.add(record == null ? null : record.key());
+        }
+        List<String> keys = new ArrayList<>(insulators.size());
+        insulators.forEach(insulator -> keys.add(insulator.key()));
+        int[] match = InsulatorMatch.match(savedKeys, keys);
+        boolean[] kept = new boolean[existing.size()];
+        List<GridData.NodeRecord> next = new ArrayList<>(insulators.size());
         for (int i = 0; i < insulators.size(); i++) {
             Insulator insulator = insulators.get(i);
-            Long id = i < existing.size() && existing.get(i) >= 0 ? existing.get(i) : null;
-            GridData.NodeRecord record = id == null ? null : dimension.node(id);
+            GridData.NodeRecord record = match[i] < 0 ? null : dimension.node(existing.get(match[i]));
             if (record != null && record.tier() == insulator.tier()) {
-                if (!record.at().equals(insulator.at()) || record.group() != insulator.group()) {
-                    GridNode node = dimension.graph().node(record.id());
-                    dimension.putNode(new GridData.NodeRecord(record.id(), pos, i, record.tier(), node != null ? node.phase() : record.phase(),
-                            insulator.at(), insulator.group()));
-                }
-                continue;
+                kept[match[i]] = true;
+                GridNode node = dimension.graph().node(record.id());
+                next.add(new GridData.NodeRecord(record.id(), pos, i, record.tier(), node != null ? node.phase() : record.phase(), insulator.at(),
+                        insulator.group(), insulator.key()));
+            } else {
+                next.add(new GridData.NodeRecord(dimension.newId(), pos, i, insulator.tier(), insulator.phase(), insulator.at(), insulator.group(),
+                        insulator.key()));
             }
-            if (record != null) {
-                dropWires(level, dimension, pos, record.id());
-                dimension.nodes.remove(record.id());
-            }
-            dimension.putNode(new GridData.NodeRecord(dimension.newId(), pos, i, insulator.tier(), insulator.phase(), insulator.at(), insulator.group()));
         }
-        for (int i = insulators.size(); i < existing.size(); i++) {
+        // Nodes no insulator is any more: their wires drop.
+        for (int i = 0; i < existing.size(); i++) {
             long id = existing.get(i);
-            if (id >= 0) {
+            if (id >= 0 && !kept[i]) {
                 dropWires(level, dimension, pos, id);
                 dimension.nodes.remove(id);
-                dimension.byPos.get(pos.asLong()).set(i, -1L);
-                dimension.markDirty();
+                dimension.graph().removeNode(id);
             }
+        }
+        boolean changed = existing.size() != next.size();
+        for (int i = 0; i < next.size() && !changed; i++) {
+            GridData.NodeRecord was = dimension.node(existing.get(i));
+            changed = !next.get(i).equals(was);
+        }
+        if (changed) {
+            dimension.byPos.remove(pos.asLong());
+            next.forEach(dimension::putNode);
+            dimension.markDirty();
         }
         // Only told again when they've changed (a far end went while this was unloaded): its chunk's data went out with
         // what it had saved.
@@ -515,15 +560,38 @@ public final class GridManager {
     // A wire a ray passes near: its edge, the point on it nearest the ray, and how far along the ray that is.
     public record WireHit(long edge, Vec3 at, double along) {}
 
-    // Cuts one wire (the Wire Cutters): off the graph, its coil dropped at `drop`, both ends told. False if it's gone.
+    // Whether a player may cut a wire: may change things at both its ends (GridInteractions.mayChange).
+    public static boolean mayCut(ServerLevel level, net.minecraft.world.entity.player.Player player, long edgeId) {
+        GridData.Dimension dimension = GridData.of(level);
+        GridEdge edge = dimension.graph().edge(edgeId);
+        if (edge == null) {
+            return false;
+        }
+        for (long node : new long[] { edge.a(), edge.b() }) {
+            GridData.NodeRecord record = dimension.node(node);
+            if (record != null && !GridInteractions.mayChange(player, level, record.pos())) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    // Cuts one wire (the Wire Cutters): off the graph, its coil dropped at `drop` (unless in creative), both ends told.
+    // False if it's gone.
     public static boolean cut(ServerLevel level, long edgeId, Vec3 drop) {
+        return cut(level, edgeId, drop, true);
+    }
+
+    public static boolean cut(ServerLevel level, long edgeId, Vec3 drop, boolean dropCoil) {
         GridData.Dimension dimension = GridData.of(level);
         GridEdge existing = dimension.graph().edge(edgeId);
         if (existing == null || existing.isJumper()) {
             return false;
         }
         GridEdge edge = dimension.graph().removeEdge(edgeId);
-        Block.popResource(level, BlockPos.containing(drop), GridContent.coilFor(edge));
+        if (dropCoil) {
+            Block.popResource(level, BlockPos.containing(drop), GridContent.coilFor(edge));
+        }
         dimension.markDirty();
         for (long node : new long[] { edge.a(), edge.b() }) {
             GridData.NodeRecord record = dimension.node(node);
@@ -636,6 +704,7 @@ public final class GridManager {
     // --- Ticking ----------------------------------------------------------------------------------------------------
 
     public static void tick(ServerLevel level) {
+        CREATIVE_BREAKS.remove(level);
         GridData.Dimension dimension = GridData.of(level);
         if (dimension.graph().edges().isEmpty()) {
             return;
@@ -643,7 +712,8 @@ public final class GridManager {
         List<PortHandler> handlers = new ArrayList<>();
         List<Coupling> couplings = new ArrayList<>();
         List<Shunt> shunts = new ArrayList<>();
-        Set<Long> grounded = new java.util.TreeSet<>(), protective = new java.util.HashSet<>();
+        Set<Long> grounded = new java.util.TreeSet<>();
+        Map<Long, FlowSolver.Protective> protective = new HashMap<>();
         List<PortSource> sources = new ArrayList<>();
         for (GridEndpointBlockEntity endpoint : new ArrayList<>(loadedIn(level))) {
             if (!endpoint.isRemoved() && endpoint instanceof PortSource source) {
@@ -686,7 +756,7 @@ public final class GridManager {
             }
 
             @Override
-            public Set<Long> protective() {
+            public Map<Long, FlowSolver.Protective> protective() {
                 return protective;
             }
 
@@ -697,23 +767,17 @@ public final class GridManager {
 
             @Override
             public void commit(Map<Long, Integer> draws, Map<Long, Integer> deliveries) {
-                // Draw first; if a source gave less than it offered (it changed since), the deliveries in its part of
-                // the grid (the ports joined through any network or transformer) shrink to match, so nothing is made.
+                // In one transaction, tried again until every sink took what it was given (EnergyCommit): a source that
+                // gave less than it offered shrinks the deliveries in its part of the grid (the ports joined through any
+                // network or transformer), and FE a sink refuses is never drawn.
                 Map<Long, Long> group = groups(dimension, ports, couplings);
-                Map<Long, long[]> plannedGot = new HashMap<>();
-                for (Map.Entry<Long, Integer> draw : draws.entrySet()) {
-                    long[] pg = plannedGot.computeIfAbsent(group.get(draw.getKey()), k -> new long[2]);
-                    pg[0] += draw.getValue();
-                    pg[1] += byId.get(draw.getKey()).draw(draw.getValue());
-                }
-                for (Map.Entry<Long, Integer> delivery : deliveries.entrySet()) {
-                    long[] pg = plannedGot.get(group.get(delivery.getKey()));
-                    double share = pg == null || pg[0] <= 0 ? 0.0 : Math.min(1.0, (double) pg[1] / pg[0]);
-                    int fe = (int) Math.floor(delivery.getValue() * share);
-                    if (fe > 0) {
-                        byId.get(delivery.getKey()).deliver(fe);
+                EnergyCommit.Moved moved = EnergyCommit.run(draws, deliveries, group, () -> attempt(byId));
+                byId.forEach((id, handler) -> {
+                    int drawn = moved.drawn().getOrDefault(id, 0), delivered = moved.delivered().getOrDefault(id, 0);
+                    if (drawn > 0 || delivered > 0) {
+                        handler.moved(drawn, delivered);
                     }
-                }
+                });
             }
         }, GridConfig.SETTINGS);
         FlowSolver.Result result = report.result();
@@ -736,7 +800,7 @@ public final class GridManager {
             }
         }
         Map<Long, Double> faultAmps = new TreeMap<>();
-        Map<Long, Integer> faultBeyond = new TreeMap<>();
+        Map<Long, FlowSolver.Beyond> faultBeyond = new TreeMap<>();
         for (Fault fault : new ArrayList<>(faults.values())) {
             // A lasting fault is a grounded line: it's over once the line is no longer grounded and live.
             if (!fault.temporary()) {
@@ -758,7 +822,7 @@ public final class GridManager {
                 GridFaults.raise(FaultEvent.node(fault.node(), FaultEvent.Cause.GROUND_FAULT, flow.amps()));
             }
             flow.edgeAmps().forEach((edge, amps) -> faultAmps.merge(edge, amps, Math::max));
-            flow.beyond().forEach((edge, beyond) -> faultBeyond.merge(edge, beyond, Math::min));
+            flow.beyondInfo().forEach((edge, beyond) -> faultBeyond.merge(edge, beyond, (a, b) -> a.count() <= b.count() ? a : b));
             if (fault.temporary() && level.getGameTime() - fault.since() >= GridConfig.FLASHOVER_TICKS.getAsInt()) {
                 // Nothing cleared it: the wire burns.
                 GridEdge edge = fault.edge() >= 0 ? dimension.graph().edge(fault.edge()) : null;
@@ -822,6 +886,32 @@ public final class GridManager {
 
     // Ports joined through any network or transformer share a group (union-find over their nodes' networks, each
     // transformer joining its sides'): a port's group id.
+    // One try at moving the tick's energy: a root transaction the handlers draw and deliver within.
+    private static EnergyCommit.Attempt attempt(Map<Long, PortHandler> byId) {
+        Transaction tx = Transaction.openRoot();
+        return new EnergyCommit.Attempt() {
+            @Override
+            public int draw(long port, int fe) {
+                return byId.get(port).draw(fe, tx);
+            }
+
+            @Override
+            public int deliver(long port, int fe) {
+                return byId.get(port).deliver(fe, tx);
+            }
+
+            @Override
+            public void commit() {
+                tx.commit();
+            }
+
+            @Override
+            public void close() {
+                tx.close();
+            }
+        };
+    }
+
     private static Map<Long, Long> groups(GridData.Dimension dimension, List<Port> ports, List<Coupling> couplings) {
         Map<Long, Long> parent = new HashMap<>();
         Map<Long, Long> byNetwork = new HashMap<>();

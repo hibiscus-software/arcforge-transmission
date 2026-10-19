@@ -11,11 +11,17 @@ import java.util.List;
 // A transformer as the solver sees it: an electrical link from its primary (a whole circuit of nodes at one tier) to each
 // of its secondaries (whole circuits a tier down, or a split-phase can's two legs), carrying power either way as the
 // grid needs, up to rating FE/t in all, holding no energy. tap raises the secondaries' voltage over the primary's, per
-// unit (a tap changer's setting; 0 for none). Out of service, it links nothing.
+// unit (a tap changer's setting; 0 for none). Out of service, it links nothing. A transfer switch's link (transfer) is one
+// too, but a feeder isn't counted live through it from the other side (FlowSolver.Result.sourceLive).
 public record Coupling(long id, VoltageTier primaryTier, List<Long> primary, VoltageTier secondaryTier, List<List<Long>> secondaries,
-        double rating, double tap, boolean inService) {
+        double rating, double tap, boolean inService, boolean transfer) {
     public Coupling {
         primary = List.copyOf(primary);
         secondaries = secondaries.stream().map(List::copyOf).toList();
+    }
+
+    public Coupling(long id, VoltageTier primaryTier, List<Long> primary, VoltageTier secondaryTier, List<List<Long>> secondaries, double rating,
+            double tap, boolean inService) {
+        this(id, primaryTier, primary, secondaryTier, secondaries, rating, tap, inService, false);
     }
 }

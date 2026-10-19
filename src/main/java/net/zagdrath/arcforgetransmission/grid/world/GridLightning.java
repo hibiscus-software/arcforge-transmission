@@ -159,7 +159,7 @@ public final class GridLightning {
                 continue;
             }
             BlockPos at = endpoint.getBlockPos();
-            if (endpoint instanceof TowerBlockEntity tower && tower.differentialTrip(level)) {
+            if (endpoint instanceof TowerBlockEntity tower && tower.differentialTrip(level, GridConfig.SETTINGS.faultMultiple())) {
                 level.sendParticles(ParticleTypes.ELECTRIC_SPARK, at.getX() + 0.5, at.getY() + 1.5, at.getZ() + 0.5, 30, 0.6, 0.6, 0.6, 0.3);
                 continue;
             }

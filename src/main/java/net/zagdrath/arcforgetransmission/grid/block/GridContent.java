@@ -23,8 +23,6 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.level.material.PushReaction;
 import net.neoforged.bus.api.IEventBus;
-import net.neoforged.neoforge.capabilities.Capabilities;
-import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.registries.DeferredBlock;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredItem;
@@ -41,9 +39,11 @@ import net.zagdrath.arcforgetransmission.grid.item.GuyWireItem;
 import net.zagdrath.arcforgetransmission.grid.item.WireCoilItem;
 import net.zagdrath.arcforgetransmission.grid.item.WireCuttersItem;
 
-// Everything the grid registers: per tier a Pin Insulator, and a Wire Coil; Wire Cutters; the Pole-Mount
-// Transformer; Burnt Wire; their block entity types; and the coil's loose-end component
-// capability. Call register(modEventBus) from the mod's constructor.
+// Everything the grid registers but the structures (TowerContent): per tier a Pin Insulator, a Wire Coil and Underground
+// Cable (and LV and MV insulated coils); Shield Wire; the Pole-Mount and MV Distribution Transformers; the Wall Bushing,
+// Surge Arrester, Station Fence and Ground Grid; the CT, PT, Control Cable, Fuse Link, Clamp Meter, Guy Wire and Wire
+// Cutters; Burnt Wire; their block entity types; and the coil's loose-end component. Call register(modEventBus) from the
+// mod's constructor.
 public final class GridContent {
     private static final String MODID = ArcforgeTransmission.MODID;
 
@@ -172,7 +172,7 @@ public final class GridContent {
         };
     }
 
-    // Everything for the addon's creative tab, after the towers.
+    // The grid's items, for the creative tabs (TowerContent sorts them into theirs by id).
     public static List<DeferredItem<? extends Item>> tabItems() {
         return TAB_ITEMS;
     }

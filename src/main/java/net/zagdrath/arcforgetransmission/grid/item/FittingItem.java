@@ -13,6 +13,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.context.UseOnContext;
+import net.zagdrath.arcforgetransmission.grid.block.GridInteractions;
 import net.zagdrath.arcforgetransmission.ArcforgeTransmission;
 import net.zagdrath.arcforgetransmission.tower.TowerBlockEntity;
 
@@ -31,6 +32,9 @@ public class FittingItem extends Item {
     public InteractionResult useOn(UseOnContext context) {
         if (!(WireCoilItem.endpointAt(context.getLevel(), context.getClickedPos()) instanceof TowerBlockEntity tower)) {
             return InteractionResult.PASS;
+        }
+        if (!GridInteractions.mayChange(context.getPlayer(), context.getLevel(), context.getClickedPos())) {
+            return InteractionResult.FAIL;
         }
         if (!(context.getLevel() instanceof ServerLevel level)) {
             return InteractionResult.SUCCESS;

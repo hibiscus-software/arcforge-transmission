@@ -40,6 +40,7 @@ import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import net.zagdrath.arcforgetransmission.grid.world.GridManager;
 import net.zagdrath.arcforgetransmission.ArcforgeTransmission;
 import net.zagdrath.arcforgetransmission.grid.VoltageTier;
 import net.zagdrath.arcforgetransmission.tower.TowerPlacement;
@@ -123,6 +124,17 @@ public class PoleTransformerBlock extends BaseEntityBlock {
         return SHAPES.get(state.getValue(FACING));
     }
 
+    // A comparator reads the can's load.
+    @Override
+    protected boolean hasAnalogOutputSignal(BlockState state) {
+        return true;
+    }
+
+    @Override
+    protected int getAnalogOutputSignal(BlockState state, Level level, BlockPos pos, Direction direction) {
+        return level.getBlockEntity(pos) instanceof PoleTransformerBlockEntity can ? can.comparator() : 0;
+    }
+
     @Override
     protected RenderShape getRenderShape(BlockState state) {
         return RenderShape.INVISIBLE;
@@ -150,6 +162,13 @@ public class PoleTransformerBlock extends BaseEntityBlock {
                     GridInteractions.format(Math.round(transformer.lastFlow()))));
         }
         return InteractionResult.SUCCESS;
+    }
+
+    // Broken by a creative player: its wires' coils don't drop.
+    @Override
+    public BlockState playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
+        GridManager.breaking(level, pos, player);
+        return super.playerWillDestroy(level, pos, state, player);
     }
 
     @Override

@@ -42,6 +42,47 @@
 - **Lightning** strikes now cause a flashover fault that protection clears (the span burns only if nothing does), instead
   of tripping devices directly.
 - Wire shocks follow the live networks (through transformers too); a grounded line is dead.
+- **Unit Transformers** serve every FE block touching their whole front face, and on Input take FE pushed into any of
+  their blocks (a Steam Turbine Array's energy port beside one feeds it).
+- **Automatic Transfer Switches** link through a transfer link, not jumpers, and judge each feeder by its own side's
+  sources; Wrench on Configure holds one (manual) or lets it run (automatic).
+- Port statuses say why nothing moves: **No FE block**, **Line dead** and **Nothing to trade with** (live, but nothing
+  at the other end); only a port that trades power reads **Circuit complete**.
+- The HUD is sent to the players with the block's chunk loaded as its own small message, not a block update (no chunk
+  redraw, no wires resent each time a current changes). Clients show the server's wire ratings and spans, fuse factor,
+  tap step and sectionalizer count.
+- Wires' tubes are worked out once and cached, not every frame.
+- A load's voltage share follows the load (its first node), never falls below `voltage.minShare` (1%), and recovers
+  once the sag ends or it has no reading.
+- The grid's save keys each node by its group and label (old saves are matched by place and take keys as they load),
+  and keeps a regulator's boost.
+- The game tests live in their own source set (`src/gametest`) and are never in the jar. Arcforge's version range is
+  pinned to `[2.8.1,2.9)`.
+- Burnt Wire smelts (or blasts) to a copper nugget. Ground Grid takes a pickaxe.
+- A comparator by a device, transformer or Pole-Mount Transformer updates as soon as its reading changes.
+
+### Fixed
+- A limited port capped every pair on its line; now only its own traffic.
+- A source's reactive losses were billed to islands it isn't joined to; now per island.
+- Parallel transformers and looped lines put everything on one path (one burnt, the other idle); they share by impedance.
+- A fault fed from several sources could exceed the fault limit on a wire; every source is scaled by the same ratio,
+  and reactance now limits fault current.
+- A capacitor bank's own voltage skewed the node voltages near it.
+- Coupling side ids could overflow, and shunt ids could collide with port ids; losses went unbilled when the voltage
+  rounds ran out.
+- A 200-tower line with about 200 ports took 150 ms a tick; it's under 5 ms.
+- FE a sink refused after being promised was lost (two service-meter legs both counted one block's room): energy now
+  moves in one transaction, retried until every sink takes what it's given, so nothing drawn goes unplaced.
+- Grading ignored fuses' curves: a recloser or breaker past a fuse waits for the fuse to melt at the measured current,
+  plus `protection.gradingInterval`. Fuse-saving's fast shot only when what's beyond is fuses. Overload grading counts
+  the devices on the branch carrying the overcurrent, not the deepest branch.
+- The transformer differential compared magnitudes; it compares |I_in + I_out| with both counted in, against
+  `differentialPickup` and `differentialSlope`, so through load and through faults never trip it.
+- A sectionalizer counted a fault a fuse past it cleared (the line stayed live) toward its count.
+- A disconnect could close onto a grounded line, and treated a breaker in an unloaded chunk as open.
+- Players could change the grid where they may not build (adventure mode, spawn protection, claims); creative players
+  got coils and fittings back when breaking or cutting.
+- The voltage game test left lossy wire in the config if it failed; it's restored however the test ends.
 
 ## Unreleased: Phase 3, protection and the field
 

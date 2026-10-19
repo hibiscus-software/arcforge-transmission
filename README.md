@@ -22,16 +22,23 @@ Engineering style.
    - **Port** switches a pin insulator between three-phase and single-phase labels (only while it has no wires).
 4. **Set the pin insulators' mode** with the Wrench on Configure:
    - **input:** FE from the block into the grid;
-   - **output:** FE from the grid into the block.
+   - **output:** FE from the grid into the block;
+   - **storage:** the block is a grid-tied battery: it covers what the grid's sources can't and charges from what they
+     have spare (the sources give first, then storage).
 
-   Sneak + Configure sets the current limit. Keep each wire's current under its rating, or it burns out.
+   Sneak + Configure sets the current limit. Keep each wire's current under its rating, or it burns out. Look at an
+   insulator to see its status: *Circuit complete* once it trades power, *Nothing to trade with* (live, but nothing at
+   the other end wants or offers FE), *Line dead*, *No FE block* (nothing it can serve where it's mounted), or what's
+   wrong with the wiring.
 5. **Watch the voltage.** Other mods' machines are LV only: MV and above destroys them.
 
 The **Pole-Mount Transformer** hangs on a pole. It takes three phases in on its lid and gives US split phase (L1, N, L2)
 out on its front.
 
-**Changing voltage.** A **Unit Transformer** links a generator or machine (the block its cable box faces) to a line of its
-tier. A **Substation Transformer** joins one tier's line to the next tier down, stepping down or (Wrench on Configure)
+**Changing voltage.** A **Unit Transformer** links generators and machines to a line of its tier: everything touching its
+front face (the side its cable box faces), and on **Input** anything that pushes FE into any of its blocks (a Steam
+Turbine Array's energy port beside it). **Output** feeds the blocks at its front; **Storage** makes them a battery, as
+above. A **Substation Transformer** joins one tier's line to the next tier down, stepping down or (Wrench on Configure)
 up, so a power plant can send EHV across the map and step it back down at the other end.
 
 **Wire Cutters** cut the wire you look at, or every wire on the insulator you use them on; the coil drops.
@@ -61,7 +68,7 @@ load to its alternate feeder when the preferred one dies, and back when it retur
 **Heavy lines.** **Dead-End Towers** (HV, EHV) end lines or turn corners under tension (place them at 45 degrees);
 **Transposition Towers** rotate the phases. **Cable Risers** (every tier) take an overhead line underground on
 **Underground Cable** (now HV and EHV too). A Unit Transformer (or Pin Insulators) set to **Storage** makes a battery
-behind it grid-tied: it covers what the grid's sources can't and charges from what they have spare.
+behind it grid-tied.
 
 **Placing.** Towers and devices face the way you look, to the nearest 45 degrees (as a sign), for corners; the Wrench on
 Rotate turns them an eighth at a time. **Dead-End Poles** end or turn a line, and **Guy Wire** anchors them.
@@ -71,15 +78,24 @@ trips, recloses, and locks out after its last try; open or close it by hand, and
 Configure. A **Disconnect Switch** opens a line by hand, so the wire past it is safe to work on. Devices, transformers and
 the Service Meter give a comparator signal with their load.
 
+**Interlocks, in full.** A disconnect won't operate while any breaker it's linked to is closed (one in an unloaded chunk
+counts as closed), nor close onto a grounded line. An **Automatic Transfer Switch** judges its preferred feeder by that
+feeder's own sources (power coming back through the switch from the load side doesn't count); the Wrench on Configure
+holds it where it is (manual) or lets it run itself (automatic).
+
 **Lightning** strikes exposed spans in storms and faults the line. String **Shield Wire** between the towers' peaks (G) to
 catch it, and put a **Surge Arrester** near each transformer so a surge doesn't destroy it.
 
 **At the end of the line.** A **Service Meter** takes L1, N and L2 from a Pole-Mount Transformer and feeds the block it
 faces. **Underground Cable** runs unseen and safe, and the **Clamp Meter** reads any wire's current and loss.
 
+**Creative tabs.** Everything is in six tabs: **Towers & Lines**, **Transformers**, **Protection & Switching**,
+**Substation Yard**, **Wiring & Tools** and **Materials**.
+
 ## Config
 
-Settings are in `arcforgetransmission-common.toml`. Admins (permission level 3) can put them back to their defaults from in
+Settings are in `arcforgetransmission-common.toml`. On a server, clients show the server's wire ratings and spans, fuse
+factor, tap step and sectionalizer count (sent when they join and when the config reloads), not their own. Admins (permission level 3) can put them back to their defaults from in
 game or the server console, as with Arcforge's `/arcforge config reset`:
 
 ```
@@ -93,26 +109,41 @@ game or the server console, as with Arcforge's `/arcforge config reset`:
 ```
 ./gradlew build          # the mod (compiles against libs/arcforge-<version>+<mc>.jar)
 ./gradlew test           # the grid's unit tests, attach points and texel density (plain Java)
-./gradlew runGameTestServer   # the game tests: real blocks in a running world (with Arcforge's own)
+./gradlew runGameTestServer   # the game tests (src/gametest, never in the jar): real blocks in a running world, with Arcforge's own
 ./gradlew renderPreviews      # renders every structure's model to build/previews (-Pdesigns=NAME,NAME~ALT,NAME@lo:hi)
 python tools/audit.py    # the art: rebuilds every generator and checks the output
 ```
 
-The textures, models and attach points all come from the generators in `tools/`. Change a generator, run it, then run the
-audit. Don't edit the generated files by hand.
+Generated files come from the generators in `tools/`. Change a generator, run it, then run the audit. Don't edit them
+by hand:
+
+| Generator | Writes |
+|---|---|
+| `transmission_tower_texture_gen.py` | `textures/block/transmission_tower/` (the towers' model sheet and particles), the tower item sprites |
+| `tower_attach_groups_gen.py` | `data/.../attach_groups/` for every tower, transformer and device |
+| `grid_block_model_gen.py` | the Pin Insulators', Pole-Mount Transformer's, Wall Bushing's and Surge Arrester's models, textures and attach groups |
+| `wire_texture_gen.py` | `textures/block/wire/`, the coil and cable sprites, the Wire Cutters, Burnt Wire |
+| `material_texture_gen.py` | the bauxite and aluminium textures (recoloured from Arcforge's nickel) |
+
+Everything else (blockstates, item definitions, other models, recipes, loot tables, tags, lang) is written by hand, and
+the audit checks it: every registered block and item has its files and name, every model and texture named exists,
+every translation key is both defined and used, and every recipe's items resolve.
 
 ## Code
 
 | Package | What's in it |
 |---|---|
-| `grid` | The pure-Java core: tiers, phases, the graph and its networks, the flow solver (transformers as links, voltage drop, capacitor banks and reactors, storage, grounding, fault currents), burnout. Unit tested. |
-| `grid.protection` | Curves, the fuse element, graded overcurrent, differential, interlocks, sectionalizer, transfer switch, tap control, unbalance. Unit tested. |
+| (root) | `ArcforgeTransmission`: the mod's entry point (registries, config, payloads). |
+| `client` | Client-only extras: the items' info tooltips. |
+| `grid` | The pure-Java core: tiers, phases, the graph and its networks (and their cached shapes), the flow solver (transformers as links, parallel paths, voltage drop, capacitor banks and reactors, storage, grounding, fault currents), moving the energy without losing any, matching saved nodes to insulators, burnout. Unit tested. |
+| `grid.protection` | Curves, the fuse element, graded overcurrent, reclosing and lockout, differential, interlocks, sectionalizer, transfer switch, tap control, unbalance and its watch. Unit tested. |
 | `grid.data` | Attach points, read from the generated JSON. |
-| `grid.world` | The saved grid, the per-dimension tick (ports, transformers, shunts, grounding, faults, then each block's reaction), shocks, lightning, yards, the config. |
+| `grid.world` | The saved grid, the per-dimension tick (ports, transformers, shunts, grounding, faults, then each block's reaction), shocks, lightning, yards, the config, the HUD and settings payloads. |
 | `grid.block` | Pin Insulators, the pole-mount transformers, the Wall Bushing, the Surge Arrester, Station Fence and Ground Grid. |
 | `grid.item` | Wire coils and cable, the tools, Control Cable, CT and PT. |
-| `grid.client` | Wire and transformer rendering, the insulator HUD. |
-| `tower` | Everything placed whole: towers, transformers, devices, line hardware, the yard. |
+| `grid.client` | Wire and transformer rendering, the insulator HUD, the payloads' client side. |
+| `tower` | Everything placed whole: towers, transformers, devices, line hardware, the yard; the creative tabs. |
 | `tower.model` | The structures' models, built in code (`ModelPreview` in the test sources renders them). |
 | `tower.client` | Structure rendering and outlines. |
-| `gametest` | Game tests: the grid built from real blocks in a running world. |
+| `material` | Bauxite and aluminium: ore, raw ore, dust, ingot, blocks, and their world generation. |
+| `gametest` (src/gametest) | Game tests: the grid built from real blocks in a running world. Its own source set, run by `runGameTestServer`, never shipped. |

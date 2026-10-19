@@ -9,6 +9,8 @@ package net.zagdrath.arcforgetransmission.grid.world;
 import java.util.EnumMap;
 import java.util.Map;
 
+import org.jspecify.annotations.Nullable;
+
 import net.neoforged.neoforge.common.ModConfigSpec;
 import net.zagdrath.arcforgetransmission.grid.GridSettings;
 import net.zagdrath.arcforgetransmission.grid.VoltageTier;
@@ -65,7 +67,7 @@ public final class GridConfig {
     public static final ModConfigSpec.EnumValue<Overvoltage> OVERVOLTAGE;
     public static final ModConfigSpec.IntValue POLE_TRANSFORMER_RATING;
     public static final ModConfigSpec.DoubleValue SUBSTATION_RATING;
-    public static final ModConfigSpec.DoubleValue FULL_POWER_VOLTAGE, CUTOFF_VOLTAGE, LOAD_POWER_FACTOR;
+    public static final ModConfigSpec.DoubleValue FULL_POWER_VOLTAGE, CUTOFF_VOLTAGE, LOAD_POWER_FACTOR, MIN_SHARE;
     public static final ModConfigSpec.IntValue VOLTAGE_ROUNDS;
     public static final ModConfigSpec.DoubleValue TAP_STEP, TAP_BAND;
     public static final ModConfigSpec.IntValue TAP_STEPS, TAP_DELAY;
@@ -110,6 +112,8 @@ public final class GridConfig {
         BUILDER.comment("Voltage: each wire drops R I + X I; loads below fullPower get less, none at cutoff (per unit of nominal).").push("voltage");
         FULL_POWER_VOLTAGE = BUILDER.comment("At and above this voltage a load gets all it asks for.").defineInRange("fullPower", 0.9, 0.0, 2.0);
         CUTOFF_VOLTAGE = BUILDER.comment("At and below this, nothing (a share rising straight between the two).").defineInRange("cutoff", 0.7, 0.0, 2.0);
+        MIN_SHARE = BUILDER.comment("The least share of what it asks a sagging load keeps asking for, so it stays a load and its voltage",
+                "can recover.").defineInRange("minShare", 0.01, 0.0, 1.0);
         LOAD_POWER_FACTOR = BUILDER.comment("Loads' power factor (1: no reactive current; lower draws more current for the same power).")
                 .defineInRange("loadPowerFactor", 1.0, 0.1, 1.0);
         VOLTAGE_ROUNDS = BUILDER.comment("Rounds a tick of matching loads to their voltage (it carries over, so it settles over a few ticks).")
@@ -182,12 +186,14 @@ public final class GridConfig {
 
         @Override
         public double ratedAmps(VoltageTier tier) {
-            return RATED_AMPS.get(tier).getAsDouble();
+            Synced s = synced;
+            return s != null ? s.ratedAmps()[tier.ordinal()] : RATED_AMPS.get(tier).getAsDouble();
         }
 
         @Override
         public double maxSpan(VoltageTier tier) {
-            return MAX_SPAN.get(tier).getAsInt();
+            Synced s = synced;
+            return s != null ? s.maxSpan()[tier.ordinal()] : MAX_SPAN.get(tier).getAsInt();
         }
 
         @Override
@@ -216,6 +222,11 @@ public final class GridConfig {
         }
 
         @Override
+        public double minShare() {
+            return MIN_SHARE.getAsDouble();
+        }
+
+        @Override
         public int voltageRounds() {
             return VOLTAGE_ROUNDS.getAsInt();
         }
@@ -225,6 +236,44 @@ public final class GridConfig {
             return FAULT_MULTIPLE.getAsDouble();
         }
     };
+
+    // The settings a client shows, as the server it's on has them (GridPayloads.Settings): each tier's wire rating and
+    // span, the fuse factor, the tap step and the sectionalizer's count. Null: its own config (single player, or before
+    // the server says).
+    public record Synced(double[] ratedAmps, int[] maxSpan, double fuseFactor, double tapStep, int sectionalizerCount) {}
+
+    private static volatile @Nullable Synced synced;
+
+    public static void sync(@Nullable Synced settings) {
+        synced = settings;
+    }
+
+    // This side's own config, to send.
+    public static Synced local() {
+        int n = VoltageTier.values().length;
+        double[] rated = new double[n];
+        int[] span = new int[n];
+        for (VoltageTier tier : VoltageTier.values()) {
+            rated[tier.ordinal()] = RATED_AMPS.get(tier).getAsDouble();
+            span[tier.ordinal()] = MAX_SPAN.get(tier).getAsInt();
+        }
+        return new Synced(rated, span, FUSE_FACTOR.getAsDouble(), TAP_STEP.getAsDouble(), SECTIONALIZER_COUNT.getAsInt());
+    }
+
+    public static double fuseFactor() {
+        Synced s = synced;
+        return s != null ? s.fuseFactor() : FUSE_FACTOR.getAsDouble();
+    }
+
+    public static double tapStep() {
+        Synced s = synced;
+        return s != null ? s.tapStep() : TAP_STEP.getAsDouble();
+    }
+
+    public static int sectionalizerCount() {
+        Synced s = synced;
+        return s != null ? s.sectionalizerCount() : SECTIONALIZER_COUNT.getAsInt();
+    }
 
     private GridConfig() {}
 }

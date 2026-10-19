@@ -44,8 +44,9 @@ public final class GridTicker {
             return Set.of();
         }
 
-        default Set<Long> protective() {
-            return Set.of();
+        // Each protective link's pickup (a breaker's trip setting, a fuse's rating) and whether it's a fuse.
+        default Map<Long, FlowSolver.Protective> protective() {
+            return Map.of();
         }
 
         default FlowSolver.State state() {

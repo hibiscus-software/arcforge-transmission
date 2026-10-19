@@ -36,6 +36,7 @@ public class PoleTransformerBlockEntity extends GridEndpointBlockEntity implemen
     private static final int L1 = 3, N = 4, L2 = 5;
 
     private double lastFlow;
+    private int lastComparator;
 
     public PoleTransformerBlockEntity(BlockPos pos, BlockState state) {
         super(GridContent.POLE_TRANSFORMER_ENTITY.get(), pos, state);
@@ -75,11 +76,12 @@ public class PoleTransformerBlockEntity extends GridEndpointBlockEntity implemen
         List<Insulator> out = new ArrayList<>();
         List<AttachGroups.Group> groups = AttachGroups.get(primary == VoltageTier.MV ? "mv_distribution_transformer" : "pole_transformer").groups();
         for (int g = 0; g < groups.size(); g++) {
-            for (AttachGroups.Terminal terminal : groups.get(g).terminals()) {
+            AttachGroups.Group group = groups.get(g);
+            for (AttachGroups.Terminal terminal : group.terminals()) {
                 double[] p = terminal.pos();
                 double[] t = TowerMesh.turnedPoint((float) p[0], (float) p[1], (float) p[2], turns);
                 out.add(new Insulator(g == 0 ? primary : VoltageTier.LV, terminal.phase(),
-                        new Vec3(worldPosition.getX() + t[0], worldPosition.getY() + t[1], worldPosition.getZ() + t[2]), g));
+                        new Vec3(worldPosition.getX() + t[0], worldPosition.getY() + t[1], worldPosition.getZ() + t[2]), g, group.name() + "/" + terminal.label()));
             }
         }
         return out;
@@ -104,6 +106,17 @@ public class PoleTransformerBlockEntity extends GridEndpointBlockEntity implemen
     @Override
     public void afterTick(ServerLevel level, GridData.Dimension dimension, GridManager.TickView view) {
         lastFlow = Math.abs(view.result().couplingFlow().getOrDefault(worldPosition.asLong(), 0.0));
+        int reading = comparator();
+        if (reading != lastComparator) {
+            lastComparator = reading;
+            level.updateNeighbourForOutputSignal(worldPosition, getBlockState().getBlock());
+        }
+    }
+
+    // What a comparator reads off the can: its load, 0 to 15 of its rating.
+    public int comparator() {
+        int rating = GridConfig.POLE_TRANSFORMER_RATING.getAsInt();
+        return rating <= 0 ? 0 : (int) Math.round(15 * Math.min(1.0, lastFlow / rating));
     }
 
     // The can, its brackets reaching into the pole's block, and its wires.

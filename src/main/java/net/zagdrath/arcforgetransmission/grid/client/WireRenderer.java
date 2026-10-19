@@ -35,12 +35,14 @@ import net.zagdrath.arcforgetransmission.grid.world.WireView;
 // pixel more, in its black rubber), in segments of at most
 // half a block, its four sides lit by their own normals and coloured from the tier's flat sprite (block/wire/<tier>), so
 // nothing on it shimmers at a distance. The EHV superconductor glows full-bright over its dark sheath
-// (block/wire/ehv_wire_glow).
+// (block/wire/ehv_wire_glow). A wire's tube is worked out once (its quads cached by wire and drawing block) and only
+// drawn each frame.
 public final class WireRenderer {
     public static final Identifier GLOW = Identifier.fromNamespaceAndPath(ArcforgeTransmission.MODID, "block/wire/ehv_wire_glow");
 
-    // A wire ready to draw: its ends relative to the block drawing it, its tier, what it is (WireView.kind), its light.
-    public record Prepared(float[] from, float[] to, VoltageTier tier, String kind, int light) {
+    // A wire ready to draw: its ends relative to the block drawing it, its tier, what it is (WireView.kind), its light,
+    // and its tube's quads (QUAD floats each: the normal, then four corners of x, y, z, u side, v side).
+    public record Prepared(float[] from, float[] to, VoltageTier tier, String kind, int light, float[] mesh) {
         boolean insulated() {
             return kind.equals("insulated");
         }
@@ -55,6 +57,19 @@ public final class WireRenderer {
 
     private WireRenderer() {}
 
+    private static final int QUAD = 3 + 4 * 5;
+
+    // Tubes already worked out, by wire and the block drawing it (the least recently used dropped past CACHE).
+    private record Key(WireView wire, long origin) {}
+
+    private static final int CACHE = 8192;
+    private static final java.util.Map<Key, float[]> MESHES = new java.util.LinkedHashMap<>(256, 0.75F, true) {
+        @Override
+        protected boolean removeEldestEntry(java.util.Map.Entry<Key, float[]> eldest) {
+            return size() > CACHE;
+        }
+    };
+
     public static Identifier sprite(VoltageTier tier, boolean insulated) {
         return Identifier.fromNamespaceAndPath(ArcforgeTransmission.MODID, "block/wire/" + tier.id() + (insulated ? "_insulated" : ""));
     }
@@ -67,7 +82,9 @@ public final class WireRenderer {
             float[] to = { (float) (wire.to().x - origin.getX()), (float) (wire.to().y - origin.getY()), (float) (wire.to().z - origin.getZ()) };
             double[] mid = Catenary.point(new double[] { wire.from().x, wire.from().y, wire.from().z }, new double[] { wire.to().x, wire.to().y, wire.to().z }, 0.5);
             int light = level != null ? LightCoordsUtil.getLightCoords(level, BlockPos.containing(mid[0], mid[1], mid[2])) : LightCoordsUtil.FULL_BRIGHT;
-            out.add(new Prepared(from, to, wire.tier(), wire.kind(), light));
+            String kind = wire.kind();
+            float[] mesh = MESHES.computeIfAbsent(new Key(wire, origin.asLong()), k -> mesh(from, to, wire.tier(), kind));
+            out.add(new Prepared(from, to, wire.tier(), kind, light, mesh));
         }
         return out;
     }
@@ -81,7 +98,7 @@ public final class WireRenderer {
         Identifier location = glow.atlasLocation();
         collector.submitCustomGeometry(poseStack, RenderTypes.entityCutout(location), (pose, buffer) -> {
             for (Prepared wire : wires) {
-                draw(pose, buffer, wire, atlas.getSprite(wire.steel() ? STEEL : sprite(wire.tier(), wire.insulated())), wire.light());
+                draw(pose, buffer, wire.mesh(), atlas.getSprite(wire.steel() ? STEEL : sprite(wire.tier(), wire.insulated())), wire.light());
             }
         });
         boolean anyEv = wires.stream().anyMatch(w -> w.tier() == VoltageTier.EHV && !w.steel());
@@ -89,19 +106,39 @@ public final class WireRenderer {
             collector.submitCustomGeometry(poseStack, RenderTypes.eyes(location), (pose, buffer) -> {
                 for (Prepared wire : wires) {
                     if (wire.tier() == VoltageTier.EHV && !wire.steel()) {
-                        draw(pose, buffer, wire, glow, LightCoordsUtil.FULL_BRIGHT);
+                        draw(pose, buffer, wire.mesh(), glow, LightCoordsUtil.FULL_BRIGHT);
                     }
                 }
             });
         }
     }
 
-    private static void draw(PoseStack.Pose pose, VertexConsumer buffer, Prepared wire, TextureAtlasSprite sprite, int light) {
-        double[] a = { wire.from()[0], wire.from()[1], wire.from()[2] }, b = { wire.to()[0], wire.to()[1], wire.to()[2] };
+    // Draws a worked-out tube in a sprite (both sprites are one flat tone, nothing finer than a pixel, nothing to shimmer:
+    // sampled in their middle).
+    private static void draw(PoseStack.Pose pose, VertexConsumer buffer, float[] mesh, TextureAtlasSprite sprite, int light) {
+        float u0 = sprite.getU(0.25F), u1 = sprite.getU(0.75F), v0 = sprite.getV(0.25F), v1 = sprite.getV(0.75F);
+        for (int q = 0; q < mesh.length; q += QUAD) {
+            float nx = mesh[q], ny = mesh[q + 1], nz = mesh[q + 2];
+            for (int c = 0; c < 4; c++) {
+                int at = q + 3 + c * 5;
+                buffer.addVertex(pose, mesh[at], mesh[at + 1], mesh[at + 2])
+                        .setColor(0xFFFFFFFF)
+                        .setUv(mesh[at + 3] == 0 ? u0 : u1, mesh[at + 4] == 0 ? v0 : v1)
+                        .setOverlay(OverlayTexture.NO_OVERLAY)
+                        .setLight(light)
+                        .setNormal(pose, nx, ny, nz);
+            }
+        }
+    }
+
+    // A wire's tube: segments of at most half a block, four sides each.
+    private static float[] mesh(float[] from, float[] to, VoltageTier tier, String kind) {
+        boolean steel = kind.equals("shield") || kind.equals(WireView.GUY), insulated = kind.equals("insulated");
+        double[] a = { from[0], from[1], from[2] }, b = { to[0], to[1], to[2] };
         double length = Catenary.length(a, b);
         int segments = Math.max(4, (int) Math.ceil(length * 2.0));
         // The rubber sheath adds half a pixel round an insulated conductor.
-        double half = (wire.steel() ? 1.0 : wire.tier().wireWidthPx() + (wire.insulated() ? 0.5 : 0.0)) / 32.0;
+        double half = (steel ? 1.0 : tier.wireWidthPx() + (insulated ? 0.5 : 0.0)) / 32.0;
         double[][] points = new double[segments + 1][];
         for (int i = 0; i <= segments; i++) {
             points[i] = Catenary.point(a, b, (double) i / segments);
@@ -127,8 +164,8 @@ public final class WireRenderer {
             flats[i] = flat;
             ups[i] = up;
         }
-        // Both sprites are one flat tone (nothing finer than a pixel, nothing to shimmer): sampled in their middle.
-        float u0 = sprite.getU(0.25F), u1 = sprite.getU(0.75F), v0 = sprite.getV(0.25F), v1 = sprite.getV(0.75F);
+        float[] mesh = new float[segments * 4 * QUAD];
+        int at = 0;
         for (int i = 0; i < segments; i++) {
             // The four sides: up, flat, down, -flat, each the side's normal and its two edges either side of it.
             for (int side = 0; side < 4; side++) {
@@ -137,9 +174,10 @@ public final class WireRenderer {
                 double[] e0 = side % 2 == 0 ? flats[i] : ups[i], e1 = side % 2 == 0 ? flats[i + 1] : ups[i + 1];
                 double[] c0 = corner(points[i], n0, e0, half, 1), c1 = corner(points[i], n0, e0, half, -1);
                 double[] c2 = corner(points[i + 1], n1, e1, half, -1), c3 = corner(points[i + 1], n1, e1, half, 1);
-                face(pose, buffer, c0, c1, c2, c3, n0, u0, u1, v0, v1, light);
+                at = face(mesh, at, c0, c1, c2, c3, n0);
             }
         }
+        return mesh;
     }
 
     private static double[] scaled(double[] v, double s) {
@@ -151,31 +189,23 @@ public final class WireRenderer {
         return new double[] { p[0] + (n[0] + e[0] * sign) * half, p[1] + (n[1] + e[1] * sign) * half, p[2] + (n[2] + e[2] * sign) * half };
     }
 
-    // One side of a segment, wound to face out along n (front faces are counter-clockwise seen from outside).
-    private static void face(PoseStack.Pose pose, VertexConsumer buffer, double[] c0, double[] c1, double[] c2, double[] c3, double[] n, float u0,
-            float u1, float v0, float v1, int light) {
+    // One side of a segment, wound to face out along n (front faces are counter-clockwise seen from outside), into the
+    // mesh at `at`; returns where the next goes.
+    private static int face(float[] mesh, int at, double[] c0, double[] c1, double[] c2, double[] c3, double[] n) {
         double ax = c1[0] - c0[0], ay = c1[1] - c0[1], az = c1[2] - c0[2], bx = c2[0] - c1[0], by = c2[1] - c1[1], bz = c2[2] - c1[2];
         double facing = (ay * bz - az * by) * n[0] + (az * bx - ax * bz) * n[1] + (ax * by - ay * bx) * n[2];
-        float nx = (float) n[0], ny = (float) n[1], nz = (float) n[2];
-        if (facing >= 0) {
-            vertex(pose, buffer, c0, u0, v0, nx, ny, nz, light);
-            vertex(pose, buffer, c1, u0, v1, nx, ny, nz, light);
-            vertex(pose, buffer, c2, u1, v1, nx, ny, nz, light);
-            vertex(pose, buffer, c3, u1, v0, nx, ny, nz, light);
-        } else {
-            vertex(pose, buffer, c3, u1, v0, nx, ny, nz, light);
-            vertex(pose, buffer, c2, u1, v1, nx, ny, nz, light);
-            vertex(pose, buffer, c1, u0, v1, nx, ny, nz, light);
-            vertex(pose, buffer, c0, u0, v0, nx, ny, nz, light);
+        mesh[at++] = (float) n[0];
+        mesh[at++] = (float) n[1];
+        mesh[at++] = (float) n[2];
+        double[][] corners = facing >= 0 ? new double[][] { c0, c1, c2, c3 } : new double[][] { c3, c2, c1, c0 };
+        int[][] uv = facing >= 0 ? new int[][] { { 0, 0 }, { 0, 1 }, { 1, 1 }, { 1, 0 } } : new int[][] { { 1, 0 }, { 1, 1 }, { 0, 1 }, { 0, 0 } };
+        for (int c = 0; c < 4; c++) {
+            mesh[at++] = (float) corners[c][0];
+            mesh[at++] = (float) corners[c][1];
+            mesh[at++] = (float) corners[c][2];
+            mesh[at++] = uv[c][0];
+            mesh[at++] = uv[c][1];
         }
-    }
-
-    private static void vertex(PoseStack.Pose pose, VertexConsumer buffer, double[] p, float u, float v, float nx, float ny, float nz, int light) {
-        buffer.addVertex(pose, (float) p[0], (float) p[1], (float) p[2])
-                .setColor(0xFFFFFFFF)
-                .setUv(u, v)
-                .setOverlay(OverlayTexture.NO_OVERLAY)
-                .setLight(light)
-                .setNormal(pose, nx, ny, nz);
+        return at;
     }
 }

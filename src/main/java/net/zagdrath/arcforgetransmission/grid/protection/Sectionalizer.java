@@ -55,6 +55,8 @@ public final class Sectionalizer {
             }
             return false;
         }
+        // Live again with no fault current: whatever fault passed it was cleared past it, not by the recloser.
+        sawFault = false;
         if (counted > 0 && ++quiet >= resetTicks) {
             counted = 0;
             quiet = 0;

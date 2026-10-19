@@ -52,6 +52,11 @@ public interface GridSettings {
         return tier.volts() / (faultMultiple() * ratedAmps(tier));
     }
 
+    // The least share of its demand a load is asked for, however low its voltage (so it stays a load, and recovers).
+    default double minShare() {
+        return 0.01;
+    }
+
     // Rounds per tick of matching loads to their voltage (each tick starts from the last one's, so it settles over a few).
     default int voltageRounds() {
         return 3;

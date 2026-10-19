@@ -15,6 +15,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.UseOnContext;
+import net.zagdrath.arcforgetransmission.grid.block.GridInteractions;
 import net.zagdrath.arcforgetransmission.ArcforgeTransmission;
 import net.zagdrath.arcforgetransmission.grid.block.GridContent;
 import net.zagdrath.arcforgetransmission.tower.TowerBlockEntity;
@@ -36,6 +37,9 @@ public class ControlCableItem extends Item {
     public InteractionResult useOn(UseOnContext context) {
         if (!(WireCoilItem.endpointAt(context.getLevel(), context.getClickedPos()) instanceof TowerBlockEntity tower)) {
             return InteractionResult.PASS;
+        }
+        if (!GridInteractions.mayChange(context.getPlayer(), context.getLevel(), context.getClickedPos())) {
+            return InteractionResult.FAIL;
         }
         if (!(context.getLevel() instanceof ServerLevel level) || context.getPlayer() == null) {
             return InteractionResult.SUCCESS;

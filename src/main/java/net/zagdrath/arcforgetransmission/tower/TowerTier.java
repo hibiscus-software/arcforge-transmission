@@ -66,8 +66,9 @@ public enum TowerTier {
     LV_ATS("lv_transfer_switch", Kind.ATS, VoltageTier.LV, null, TowerMesh.Design.ATS_LV),
     MV_ATS("mv_transfer_switch", Kind.ATS, VoltageTier.MV, null, TowerMesh.Design.ATS_MV);
 
-    // A tower carries a line; a substation transformer joins a line of its tier (primary) to one a tier down (secondary)
-    // through an FE buffer, stepping down or up; a unit transformer joins a line to the FE block in front of it. The
+    // A tower carries a line; a substation transformer joins a line of its tier (primary) to one a tier down (secondary),
+    // an electrical link holding no energy that passes power either way; a unit transformer joins a line to the FE blocks
+    // touching its front face (and, on Input, whatever pushes FE into it). The
     // protection devices join each line-side conductor to its load-side one while closed: a fuse cutout (one conductor;
     // blows on overcurrent), a recloser or circuit breaker (three; trips and recloses), a disconnect switch (three; by
     // hand). A dead-end pole ends lines both ways, each conductor jumpered through. A service meter feeds a building's

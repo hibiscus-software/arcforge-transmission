@@ -28,6 +28,7 @@ public final class GridNetwork {
     private final List<GridEdge> edges;
     private final GridGraph graph;
     private final Map<Long, Map<Long, Route>> routes = new HashMap<>();
+    private @Nullable NetworkTopology topology;
 
     // A route from one node to another: the edges in order, each with the way power runs through it (true: a to b).
     public record Route(List<GridEdge> edges, List<Boolean> forward, List<Long> nodes) {}
@@ -59,6 +60,14 @@ public final class GridNetwork {
 
     public List<GridEdge> edges() {
         return Collections.unmodifiableList(edges);
+    }
+
+    // Its shape for the flow solver (worked out once; a new layout makes a new network).
+    public NetworkTopology topology() {
+        if (topology == null) {
+            topology = new NetworkTopology(nodes, edges);
+        }
+        return topology;
     }
 
     // The shortest route from one node to another in this network, or null if there's none.

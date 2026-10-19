@@ -17,6 +17,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
+import net.zagdrath.arcforgetransmission.grid.block.GridInteractions;
 import net.zagdrath.arcforgetransmission.ArcforgeTransmission;
 import net.zagdrath.arcforgetransmission.grid.block.GridContent;
 import net.zagdrath.arcforgetransmission.tower.TowerBlockEntity;
@@ -36,6 +37,9 @@ public class GuyWireItem extends Item {
         ItemStack stack = context.getItemInHand();
         String m = ArcforgeTransmission.MODID;
         String dimension = level.dimension().identifier().toString();
+        if (!GridInteractions.mayChange(player, level, context.getClickedPos())) {
+            return InteractionResult.FAIL;
+        }
         if (WireCoilItem.endpointAt(level, context.getClickedPos()) instanceof TowerBlockEntity tower) {
             if (level.isClientSide()) {
                 return InteractionResult.SUCCESS;

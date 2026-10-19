@@ -25,6 +25,7 @@ import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
+import net.zagdrath.arcforgetransmission.grid.block.GridInteractions;
 import net.zagdrath.arcforgetransmission.ArcforgeTransmission;
 import net.zagdrath.arcforgetransmission.grid.ConnectionRules;
 import net.zagdrath.arcforgetransmission.grid.GridEdge;
@@ -87,6 +88,9 @@ public class WireCoilItem extends Item {
         GridEndpointBlockEntity endpoint = endpointAt(level, context.getClickedPos());
         if (endpoint == null) {
             return InteractionResult.PASS;
+        }
+        if (!GridInteractions.mayChange(player, level, endpoint.getBlockPos())) {
+            return InteractionResult.FAIL;
         }
         if (!(level instanceof ServerLevel server) || player == null) {
             return InteractionResult.SUCCESS;

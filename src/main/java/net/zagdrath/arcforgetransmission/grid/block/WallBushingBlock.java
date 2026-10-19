@@ -52,6 +52,9 @@ public class WallBushingBlock extends BaseEntityBlock {
         if (!(level.getBlockEntity(pos) instanceof WallBushingBlockEntity bushing)) {
             return InteractionResult.PASS;
         }
+        if (!GridInteractions.mayChange(player, level, pos)) {
+            return stack.isEmpty() ? InteractionResult.TRY_WITH_EMPTY_HAND : InteractionResult.PASS;
+        }
         if (stack.getItem() instanceof ConduitFacadeItem) {
             if (bushing.hasFacade()) {
                 return InteractionResult.FAIL;
@@ -83,7 +86,8 @@ public class WallBushingBlock extends BaseEntityBlock {
     // Sneak-use, empty-handed: the dressing comes off, then the facade.
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
-        if (!player.isSecondaryUseActive() || !(level.getBlockEntity(pos) instanceof WallBushingBlockEntity bushing) || !bushing.hasFacade()) {
+        if (!player.isSecondaryUseActive() || !(level.getBlockEntity(pos) instanceof WallBushingBlockEntity bushing) || !bushing.hasFacade()
+                || !GridInteractions.mayChange(player, level, pos)) {
             return InteractionResult.PASS;
         }
         if (!level.isClientSide()) {

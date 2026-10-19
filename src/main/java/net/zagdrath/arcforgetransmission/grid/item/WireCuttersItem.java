@@ -19,6 +19,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+import net.zagdrath.arcforgetransmission.grid.block.GridInteractions;
 import net.zagdrath.arcforgetransmission.ArcforgeTransmission;
 import net.zagdrath.arcforgetransmission.grid.block.GridEndpointBlockEntity;
 import net.zagdrath.arcforgetransmission.grid.world.GridData;
@@ -53,6 +54,9 @@ public class WireCuttersItem extends Item {
         if (endpoint == null) {
             return InteractionResult.PASS;
         }
+        if (!GridInteractions.mayChange(player, level, endpoint.getBlockPos())) {
+            return InteractionResult.FAIL;
+        }
         int index = endpoint.nearest(context.getClickLocation());
         List<Long> wires = index < 0 ? List.of() : GridManager.wiresAt(level, new GridData.Anchor(endpoint.getBlockPos(), index));
         if (wires.isEmpty()) {
@@ -61,7 +65,7 @@ public class WireCuttersItem extends Item {
         }
         int cut = 0;
         for (long wire : wires) {
-            if (GridManager.cut(level, wire, context.getClickLocation())) {
+            if (GridManager.cut(level, wire, context.getClickLocation(), !player.hasInfiniteMaterials())) {
                 cut++;
             }
         }
@@ -81,7 +85,7 @@ public class WireCuttersItem extends Item {
     private static boolean cutLookedAt(ServerLevel level, Player player, InteractionHand hand, double reach) {
         Vec3 eye = player.getEyePosition();
         GridManager.WireHit hit = GridManager.wireAlong(level, eye, player.getLookAngle(), Math.min(reach, REACH), AIM);
-        if (hit == null || !GridManager.cut(level, hit.edge(), hit.at())) {
+        if (hit == null || !GridManager.mayCut(level, player, hit.edge()) || !GridManager.cut(level, hit.edge(), hit.at(), !player.hasInfiniteMaterials())) {
             return false;
         }
         cutDone(level, player, hand, hit.at(), 1);

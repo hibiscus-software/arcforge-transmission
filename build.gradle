@@ -22,6 +22,20 @@ base {
     archivesName = mod_id
 }
 
+// The game tests (./gradlew runGameTestServer) live in their own source set, run only by the gameTestServer run and
+// never put in the jar.
+sourceSets {
+    gametest {
+        compileClasspath += sourceSets.main.output
+        runtimeClasspath += sourceSets.main.output
+    }
+}
+
+configurations {
+    gametestImplementation.extendsFrom implementation
+    gametestCompileOnly.extendsFrom compileOnly
+}
+
 java.toolchain.languageVersion = JavaLanguageVersion.of(25)
 
 runs {
@@ -34,19 +48,17 @@ runs {
         modSource project.sourceSets.main
     }
 
-    client {
-        systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
-    }
-
     server {
-        systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
         argument '--nogui'
     }
 
     gameTestServer {
         systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+        modSource project.sourceSets.gametest
     }
 
+    // NeoForge's data generators, into src/generated/resources (a resource folder above). The addon has no data providers of
+    // its own (its generated files come from tools/); the run is there for any that are added.
     clientData {
         arguments.addAll '--mod', project.mod_id, '--all', '--output', file('src/generated/resources/').getAbsolutePath(), '--existing', file('src/main/resources/').getAbsolutePath()
     }
