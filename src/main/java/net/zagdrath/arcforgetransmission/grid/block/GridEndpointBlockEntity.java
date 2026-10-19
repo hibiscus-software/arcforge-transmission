@@ -187,9 +187,31 @@ public abstract class GridEndpointBlockEntity extends BlockEntity {
         return box == null ? own : own.minmax(box);
     }
 
+    // The endpoints loaded on this client (none on a server): what the client's sounds and particles look through for
+    // transformers and live wires near the player (TransformerHums, CoronaEffects).
+    public static final java.util.Set<GridEndpointBlockEntity> CLIENT_LOADED = java.util.concurrent.ConcurrentHashMap.newKeySet();
+
+    // Whether any of its insulators was live, as its HUD was last sent.
+    public boolean hudLive() {
+        for (int permille : hudPermille) {
+            if (permille > 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // The wires it draws (strung from its insulators).
+    public List<WireView> wireViews() {
+        return wires;
+    }
+
     @Override
     public void onLoad() {
         super.onLoad();
+        if (level != null && level.isClientSide()) {
+            CLIENT_LOADED.add(this);
+        }
         if (level instanceof ServerLevel server) {
             GridManager.loaded(server, this);
             GridManager.attach(server, worldPosition, insulators(), this);
@@ -200,6 +222,7 @@ public abstract class GridEndpointBlockEntity extends BlockEntity {
     @Override
     public void setRemoved() {
         super.setRemoved();
+        CLIENT_LOADED.remove(this);
         if (level instanceof ServerLevel server) {
             GridManager.unloaded(server, this);
         }
@@ -208,6 +231,7 @@ public abstract class GridEndpointBlockEntity extends BlockEntity {
     @Override
     public void onChunkUnloaded() {
         super.onChunkUnloaded();
+        CLIENT_LOADED.remove(this);
         if (level instanceof ServerLevel server) {
             GridManager.unloaded(server, this);
         }

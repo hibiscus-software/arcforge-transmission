@@ -61,6 +61,9 @@ import net.zagdrath.arcforgetransmission.grid.protection.TapControl;
 import net.zagdrath.arcforgetransmission.grid.protection.TransferSwitch;
 import net.zagdrath.arcforgetransmission.grid.protection.Unbalance;
 import net.zagdrath.arcforgetransmission.grid.protection.UnbalanceWatch;
+import net.zagdrath.arcforgetransmission.effects.ArcEvent;
+import net.zagdrath.arcforgetransmission.effects.Humming;
+import net.zagdrath.arcforgetransmission.grid.world.GridArcs;
 import net.zagdrath.arcforgetransmission.grid.world.GridConfig;
 import net.zagdrath.arcforgetransmission.grid.world.GridData;
 import net.zagdrath.arcforgetransmission.grid.world.GridManager;
@@ -86,7 +89,7 @@ import net.zagdrath.arcforgetransmission.tower.model.TowerMesh;
 //    while switched in (by hand, by redstone, or by its Relay Panel on the voltage);
 //  - an automatic transfer switch joins its load to its preferred feeder, or its alternate when the preferred is dead;
 //  - a bus section joins its phases to the sections in line with it.
-public class TowerBlockEntity extends GridEndpointBlockEntity implements GridManager.PortSource, PortHud {
+public class TowerBlockEntity extends GridEndpointBlockEntity implements GridManager.PortSource, PortHud, Humming {
     // A relay's time dials (its inverse curve's multiplier), stepped with the Wrench on Configure.
     private static final double[] TIME_DIALS = { 0.05, 0.1, 0.2, 0.3, 0.5 };
 
@@ -244,6 +247,31 @@ public class TowerBlockEntity extends GridEndpointBlockEntity implements GridMan
     @Override
     public FlowSolver.PortStatus status() {
         return status;
+    }
+
+    // Its hum (TransformerHums), a substation or unit transformer's: its load against its rated power, while it's live.
+    @Override
+    public boolean hums() {
+        return tier().kind() == TowerTier.Kind.SUBSTATION || tier().kind() == TowerTier.Kind.UNIT;
+    }
+
+    @Override
+    public double humLoad() {
+        TowerTier tier = tier();
+        double rating = GridConfig.SETTINGS.ratedAmps(tier.voltage()) * tier.voltage().volts()
+                * (tier.kind() == TowerTier.Kind.SUBSTATION ? GridConfig.SUBSTATION_RATING.getAsDouble() : 1.0);
+        return rating <= 0 ? 0 : lastFlow / rating;
+    }
+
+    @Override
+    public boolean humEnergized() {
+        return hudLive();
+    }
+
+    @Override
+    public net.minecraft.world.phys.Vec3 humAt() {
+        BlockPos centre = TowerPlacement.centre(tier(), eighths(), worldPosition);
+        return new net.minecraft.world.phys.Vec3(centre.getX() + 0.5, centre.getY() + 1.0, centre.getZ() + 0.5);
     }
 
     @Override
@@ -451,13 +479,40 @@ public class TowerBlockEntity extends GridEndpointBlockEntity implements GridMan
 
     // A breaker or switch opens: its links come off, with a spark and a bang.
     private void open(ServerLevel level) {
+        open(level, null, 0);
+    }
+
+    // ...or, interrupting current (`kind` not null), with an arc (GridArcs) `severity` times its rating instead: the
+    // clients near draw it and play its sound.
+    private void open(ServerLevel level, ArcEvent.@Nullable Kind kind, double severity) {
         closed = false;
         setChanged();
         relink(level);
-        level.playSound(null, worldPosition, SoundEvents.LIGHTNING_BOLT_IMPACT, SoundSource.BLOCKS, 0.3F, 2.0F);
-        level.sendParticles(net.minecraft.core.particles.ParticleTypes.ELECTRIC_SPARK, worldPosition.getX() + 0.5, worldPosition.getY() + 1.0,
-                worldPosition.getZ() + 0.5, 16, 0.4, 0.4, 0.4, 0.2);
+        if (kind != null) {
+            GridArcs.arc(level, arcPoint(), kind, tier().voltage(), severity);
+        } else {
+            level.playSound(null, worldPosition, SoundEvents.LIGHTNING_BOLT_IMPACT, SoundSource.BLOCKS, 0.3F, 2.0F);
+            level.sendParticles(net.minecraft.core.particles.ParticleTypes.ELECTRIC_SPARK, worldPosition.getX() + 0.5, worldPosition.getY() + 1.0,
+                    worldPosition.getZ() + 0.5, 16, 0.4, 0.4, 0.4, 0.2);
+        }
         GridManager.display(level, this, true);
+    }
+
+    // Where its contacts part: amid its insulators (its bushings), or above its middle without any.
+    public net.minecraft.world.phys.Vec3 arcPoint() {
+        List<Insulator> insulators = insulators();
+        if (insulators.isEmpty()) {
+            BlockPos centre = TowerPlacement.centre(tier(), eighths(), worldPosition);
+            return new net.minecraft.world.phys.Vec3(centre.getX() + 0.5, centre.getY() + 1.0, centre.getZ() + 0.5);
+        }
+        double x = 0, y = 0, z = 0;
+        for (Insulator insulator : insulators) {
+            x += insulator.at().x;
+            y += insulator.at().y;
+            z += insulator.at().z;
+        }
+        int n = insulators.size();
+        return new net.minecraft.world.phys.Vec3(x / n, y / n, z / n);
     }
 
     private void close(ServerLevel level) {
@@ -470,10 +525,11 @@ public class TowerBlockEntity extends GridEndpointBlockEntity implements GridMan
         GridManager.display(level, this, true);
     }
 
-    // A breaker trips: opens, and recloses after the delay unless that was its last shot (locked out).
-    private void trip(ServerLevel level) {
+    // A breaker trips on `amps`: opens with an arc, and recloses after the delay unless that was its last shot (locked out).
+    private void trip(ServerLevel level, double amps) {
         reclosing.trip(level.getGameTime(), GridConfig.RECLOSE_SHOTS.getAsInt(), GridConfig.RECLOSE_DELAY.getAsInt());
-        open(level);
+        double setting = tripAmps();
+        open(level, ArcEvent.Kind.BREAKER, setting <= 0 ? 1 : amps / setting);
     }
 
     // A surge inside the transformer (lightning with no arrester near), `surge` per unit of its rating, and a Relay Panel's
@@ -494,7 +550,7 @@ public class TowerBlockEntity extends GridEndpointBlockEntity implements GridMan
             if (level.isLoaded(pos) && level.getBlockEntity(pos) instanceof TowerBlockEntity breaker && breaker.tier().kind() == TowerTier.Kind.BREAKER
                     && breaker.closed) {
                 breaker.reclosing.lockOut();
-                breaker.open(level);
+                breaker.open(level, ArcEvent.Kind.BREAKER, 1 + surge);
             }
         }
         return true;
@@ -540,7 +596,14 @@ public class TowerBlockEntity extends GridEndpointBlockEntity implements GridMan
                 if (refusal == null) {
                     if (closed) {
                         reclosing.cancel();
-                        open(level);
+                        // A disconnect (no breaker linked to hold it) opened under load draws an arc.
+                        double amps = kind == TowerTier.Kind.DISCONNECT ? linkAmps(level) : 0;
+                        double rated = GridConfig.SETTINGS.ratedAmps(tier().voltage());
+                        if (amps > 0.01 && rated > 0) {
+                            open(level, ArcEvent.Kind.DISCONNECT, amps / rated);
+                        } else {
+                            open(level);
+                        }
                     } else {
                         reclosing.reset();
                         sectionalizer.close();
@@ -945,8 +1008,9 @@ public class TowerBlockEntity extends GridEndpointBlockEntity implements GridMan
         TowerTier tier = tier();
         switch (tier.kind()) {
             case FUSE -> {
-                if (closed && fuse.tick(linkAmps(dimension, view) / fuseAmps(), GridConfig.FUSE_MELT.getAsDouble(), GridConfig.FUSE_COOLING.getAsDouble())) {
-                    open(level);
+                double multiple = linkAmps(dimension, view) / fuseAmps();
+                if (closed && fuse.tick(multiple, GridConfig.FUSE_MELT.getAsDouble(), GridConfig.FUSE_COOLING.getAsDouble())) {
+                    open(level, ArcEvent.Kind.FUSE, multiple);
                 }
             }
             case BREAKER -> breakerTick(level, dimension, view);
@@ -1050,7 +1114,7 @@ public class TowerBlockEntity extends GridEndpointBlockEntity implements GridMan
                         GridConfig.GRADING_INTERVAL.getAsInt(), panel.fuseSaving, GridConfig.FAST_SHOTS.getAsInt())
                 : new Overcurrent.Settings(tripAmps(), 0, 0, false, GridConfig.BREAKER_TRIP_TICKS.getAsInt(), GridConfig.GRADING_INTERVAL.getAsInt(), false, 0);
         if (overcurrent.tick(most, beyond, reclosing.shots(), settings, GridConfig.FUSE_MELT.getAsDouble())) {
-            trip(level);
+            trip(level, most);
             return;
         }
         // Unbalance (a lost phase is the worst): told once when it starts; a relayed breaker trips on it.
@@ -1059,7 +1123,7 @@ public class TowerBlockEntity extends GridEndpointBlockEntity implements GridMan
             GridFaults.raise(FaultEvent.edge(links.get(0), FaultEvent.Cause.UNBALANCE, Unbalance.of(each)));
         }
         if (relayed && tripping) {
-            trip(level);
+            trip(level, most);
             return;
         }
         reclosing.forget(now);

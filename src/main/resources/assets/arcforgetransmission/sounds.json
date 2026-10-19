@@ -1,0 +1,47 @@
+{
+  "transformer_hum": {
+    "subtitle": "subtitles.arcforgetransmission.transformer_hum",
+    "sounds": [
+      {
+        "name": "arcforgetransmission:transformer_hum",
+        "stream": false
+      }
+    ]
+  },
+  "corona_buzz": {
+    "subtitle": "subtitles.arcforgetransmission.corona_buzz",
+    "sounds": [
+      {
+        "name": "arcforgetransmission:corona_buzz",
+        "stream": false
+      }
+    ]
+  },
+  "arc_crack": {
+    "subtitle": "subtitles.arcforgetransmission.arc_crack",
+    "sounds": [
+      {
+        "name": "arcforgetransmission:arc_crack",
+        "stream": false
+      }
+    ]
+  },
+  "fuse_pop": {
+    "subtitle": "subtitles.arcforgetransmission.fuse_pop",
+    "sounds": [
+      {
+        "name": "arcforgetransmission:fuse_pop",
+        "stream": false
+      }
+    ]
+  },
+  "breaker_clunk": {
+    "subtitle": "subtitles.arcforgetransmission.breaker_clunk",
+    "sounds": [
+      {
+        "name": "arcforgetransmission:breaker_clunk",
+        "stream": false
+      }
+    ]
+  }
+}

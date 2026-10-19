@@ -107,12 +107,18 @@ catch it, and put a **Surge Arrester** near each transformer so a surge doesn't 
 **At the end of the line.** A **Service Meter** takes L1, N and L2 from a Pole-Mount Transformer and feeds the block it
 faces. **Underground Cable** runs unseen and safe, and the **Clamp Meter** reads any wire's current and loss.
 
+**Sound and light.** Transformers hum while energised, louder and a little higher with their load. In rain, energised
+EHV lines near you buzz softly and glow faintly blue-violet, more at night. A breaker or recloser opening on a fault, a
+fuse blowing, a disconnect opened under load and a lightning flashover flash, throw sparks and crack (a fuse pops, a
+breaker clunks), bigger with the fault current and the tier.
+
 **Creative tabs.** Everything is in six tabs: **Towers & Lines**, **Transformers**, **Protection & Switching**,
 **Substation Yard**, **Wiring & Tools** and **Materials**.
 
 ## Config
 
-Settings are in `arcforgetransmission-common.toml`. On a server, clients show the server's wire ratings and spans, fuse
+Settings are in `arcforgetransmission-common.toml`; each player's sounds and particles (the hum, corona, arcs: their
+volumes, budgets and toggles) in `arcforgetransmission-client.toml`. On a server, clients show the server's wire ratings and spans, fuse
 factor, tap step and sectionalizer count (sent when they join and when the config reloads), not their own. Admins (permission level 3) can put them back to their defaults from in
 game or the server console, as with Arcforge's `/arcforge config reset`:
 
@@ -143,6 +149,8 @@ by hand:
 | `grid_block_model_gen.py` | the Pin Insulators', Pole-Mount Transformer's, Wall Bushing's and Surge Arrester's models, textures and attach groups; the Station Fence's and its Barbed Wire's models |
 | `wire_texture_gen.py` | `textures/block/wire/`, the coil and cable sprites, the Wire Cutters, Burnt Wire |
 | `material_texture_gen.py` | the bauxite and aluminium textures (recoloured from Arcforge's nickel) |
+| `transmission_sound_gen.py` | `sounds/` (the transformer hum, corona buzz, arc crack, fuse pop, breaker clunk; seeded, numpy and soundfile) and `sounds.json` |
+| `transmission_particle_gen.py` | `textures/particle/` (corona, arc flash, spark) and `particles/` |
 
 Everything else (blockstates, item definitions, other models, recipes, loot tables, tags, lang) is written by hand, and
 the audit checks it: every registered block and item has its files and name, every model and texture named exists,
@@ -161,6 +169,8 @@ every translation key is both defined and used, and every recipe's items resolve
 | `grid.block` | Pin Insulators, the pole-mount transformers, the Wall Bushing, the Surge Arrester, Station Fence and Ground Grid. |
 | `grid.item` | Wire coils and cable, the tools, Control Cable, CT and PT. |
 | `grid.client` | Wire and transformer rendering, the insulator HUD, the payloads' client side. |
+| `effects` | Sounds and particles, the common side: their registries, the arc event (its packet too) and the hum's model (unit tested). |
+| `effects.client` | The transformers' hum, corona on wet EHV lines, the arcs, the particles, and the client config. |
 | `tower` | Everything placed whole: towers, transformers, devices, line hardware, the yard; the creative tabs. |
 | `tower.model` | The structures' models, built in code (`ModelPreview` in the test sources renders them). |
 | `tower.client` | Structure rendering and outlines. |

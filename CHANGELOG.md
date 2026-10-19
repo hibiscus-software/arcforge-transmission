@@ -10,6 +10,20 @@
   fence goes. Its collision fills the block above the fence, so nothing jumps it; touching it does
   `fence.barbedWireDamage` (1, 0 for none), as a sweet berry bush does. A yard fenced with it still counts as fenced.
   Six from steel rods and iron nuggets. Its models and texture come from `grid_block_model_gen.py`.
+- **Sound and particles**, all client-side and in a new client config (`arcforgetransmission-client.toml`):
+  - **Transformer hum**: substation, unit, pole-mount and MV distribution transformers hum while energised (a seamless
+    loop at twice the line frequency with its harmonics), louder and up to 5% higher with their load as their HUD shows
+    it, fading in and out over half a second; at most `hum.maxInstances` (6) at once, the nearest.
+  - **Corona**: in rain or thunder, energised EHV spans within 24 blocks buzz softly and glow faintly blue-violet (a
+    budget of particles a tick over the nearest spans, more at night), scaled by the line's voltage; HV optionally,
+    weaker (off by default).
+  - **Arcs**: a breaker or recloser opening on fault current, a fuse blowing, a disconnect opened under load and a
+    flashover (lightning's too) flash full-bright, throw sparks and crack; a fuse also pops and a breaker clunks. Size
+    and loudness follow the fault current against the rating, and the tier. The server sends each as one small packet
+    to the players within 64 blocks.
+  - The sounds come from `tools/transmission_sound_gen.py` (seeded, numpy and soundfile, as Arcforge's) with subtitles,
+    the particle sprites from `tools/transmission_particle_gen.py`. `audit.py` checks every sound event has its file
+    and subtitle and every sound and sprite comes from a generator (sounds by length and channels, not bytes).
 
 ### Changed
 - **Every tier's voltage and rated current doubled**, so each carries 4x the FE/t: LV 256 V, 16 A, 4,096 FE/t per
@@ -32,6 +46,8 @@
   Electrically nothing changes: the jumper is the same link, with no hitbox, and isn't a span for shocks, lightning, the
   Clamp Meter or Wire Cutters. The jumper and the tilted strain string are shared code (`TowerTier.drawsJumpers`,
   `Catenary.jumperSag`, `TowerMesh.glassStrainEnd`) for the dead-end and transposition towers to take up.
+- Opening a breaker or switch by hand keeps its old spark and bang; tripping, blowing or opening under load arcs
+  instead.
 - `./gradlew renderPreviews -Pdesigns=NAME#3` renders a model from the front, the side and 45 degrees, with its
   jumpers.
 - **Station Fence** has three rails instead of two, evenly spaced (2 px apart and off the ground), in the same section

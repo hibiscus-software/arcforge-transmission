@@ -6,6 +6,11 @@
 
 package net.zagdrath.arcforgetransmission.grid.block;
 
+import com.mojang.serialization.Codec;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.storage.ValueInput;
+import net.zagdrath.arcforgetransmission.effects.Humming;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,12 +36,13 @@ import net.zagdrath.arcforgetransmission.tower.model.TowerMesh;
 // (A, B, C on the lid), split phase out on its secondary (L1, N and L2 on the front: two single-phase circuits, L1 + N and
 // L2 + N, sharing the neutral). An electrical link between them (a Coupling): power passes either way as the grid needs,
 // up to its rating, and it holds none.
-public class PoleTransformerBlockEntity extends GridEndpointBlockEntity implements GridManager.PortSource {
+public class PoleTransformerBlockEntity extends GridEndpointBlockEntity implements GridManager.PortSource, Humming {
     // Insulator order (the attach file's): primaries A B C, then secondaries L1 N L2.
     private static final int L1 = 3, N = 4, L2 = 5;
 
     private double lastFlow;
     private int lastComparator;
+    private long sentFlow = -1;
 
     public PoleTransformerBlockEntity(BlockPos pos, BlockState state) {
         super(GridContent.POLE_TRANSFORMER_ENTITY.get(), pos, state);
@@ -117,6 +123,52 @@ public class PoleTransformerBlockEntity extends GridEndpointBlockEntity implemen
     public int comparator() {
         int rating = GridConfig.POLE_TRANSFORMER_RATING.getAsInt();
         return rating <= 0 ? 0 : (int) Math.round(15 * Math.min(1.0, lastFlow / rating));
+    }
+
+    // Its hum (TransformerHums): its load against its rating, while its primaries are live.
+    @Override
+    public boolean hums() {
+        return true;
+    }
+
+    @Override
+    public double humLoad() {
+        int rating = GridConfig.POLE_TRANSFORMER_RATING.getAsInt();
+        return rating <= 0 ? 0 : lastFlow / rating;
+    }
+
+    @Override
+    public boolean humEnergized() {
+        return hudLive();
+    }
+
+    @Override
+    public Vec3 humAt() {
+        return Vec3.atCenterOf(worldPosition);
+    }
+
+    // Its flow goes with its HUD (rounded to the FE), for its hum.
+    @Override
+    protected boolean hudLiveChanged() {
+        return Math.round(lastFlow) != sentFlow;
+    }
+
+    @Override
+    protected void hudSent() {
+        sentFlow = Math.round(lastFlow);
+    }
+
+    @Override
+    public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
+        CompoundTag tag = super.getUpdateTag(registries);
+        tag.putLong("hud_flow", Math.round(lastFlow));
+        return tag;
+    }
+
+    @Override
+    protected void loadAdditional(ValueInput input) {
+        super.loadAdditional(input);
+        input.read("hud_flow", Codec.LONG).ifPresent(flow -> lastFlow = flow);
     }
 
     // The can, its brackets reaching into the pole's block, and its wires.

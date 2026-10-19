@@ -18,7 +18,8 @@ import net.zagdrath.arcforgetransmission.grid.block.GridEndpointBlockEntity;
 import net.zagdrath.arcforgetransmission.grid.world.GridConfig;
 import net.zagdrath.arcforgetransmission.grid.world.GridPayloads;
 
-// The client's side of GridPayloads: a block's HUD read into it, and the server's grid settings kept (until leaving).
+// The client's side of GridPayloads: a block's HUD read into it, an arc drawn, and the server's grid settings kept (until
+// leaving).
 @EventBusSubscriber(modid = ArcforgeTransmission.MODID, value = Dist.CLIENT)
 public final class GridClientPayloads {
     private GridClientPayloads() {}
@@ -32,6 +33,10 @@ public final class GridClientPayloads {
 
     public static void settings(GridPayloads.Settings payload) {
         GridConfig.sync(payload.synced());
+    }
+
+    public static void arc(net.zagdrath.arcforgetransmission.effects.ArcEvent payload) {
+        net.zagdrath.arcforgetransmission.effects.client.ArcEffects.play(payload);
     }
 
     @SubscribeEvent

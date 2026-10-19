@@ -20,6 +20,11 @@ Exits non-zero (listing every problem) when anything fails. Checks:
   lang        every complete translation key in the code is in en_us.json, and every key in en_us.json is used
   recipes     every item a recipe names is registered (this addon's) or exists (Arcforge's, vanilla's), every shaped
               key symbol is used in its pattern and every pattern symbol has a key
+  sounds      every sound event the code registers is in sounds.json, every sounds.json entry has its .ogg and its
+              subtitle in en_us.json, and every .ogg under sounds/ is written by a generator (sounds are compared by
+              length, channels and rate, not bytes: Vorbis encoding needn't be byte-identical)
+  particles   every particle the code registers has its definition, and every sprite a definition names exists; particle
+              sprites are 8x8 or 16x16
 """
 import filecmp
 import glob
@@ -36,7 +41,8 @@ from PIL import Image
 
 NS = "arcforgetransmission"
 GENERATORS = ["tools/transmission_tower_texture_gen.py", "tools/tower_attach_groups_gen.py", "tools/grid_block_model_gen.py",
-              "tools/wire_texture_gen.py", "tools/material_texture_gen.py"]
+              "tools/wire_texture_gen.py", "tools/material_texture_gen.py", "tools/transmission_sound_gen.py",
+              "tools/transmission_particle_gen.py"]
 SHEET_SIZES = {"block/transmission_tower/towers.png": (256, 512)}
 # Isolated pixels that are deliberate details, by texture: the rivet shadows of Arcforge's machine casing.
 INTENTIONAL = {"block/wall_bushing.png": {(3, 3), (12, 3), (3, 12), (12, 12)}}
@@ -92,6 +98,10 @@ def same(a, b):
     if a.endswith(".png"):
         ia, ib = Image.open(a).convert("RGBA"), Image.open(b).convert("RGBA")
         return ia.size == ib.size and ia.tobytes() == ib.tobytes()
+    if a.endswith(".ogg"):
+        import soundfile
+        sa, sb = soundfile.info(a), soundfile.info(b)
+        return (sa.frames, sa.channels, sa.samplerate) == (sb.frames, sb.channels, sb.samplerate)
     with open(a, "rb") as fa, open(b, "rb") as fb:
         return fa.read().replace(b"\r\n", b"\n") == fb.read().replace(b"\r\n", b"\n")
 
@@ -118,6 +128,9 @@ def check_textures(repo, written):
         if expected:
             if size != expected:
                 problem(f"png: textures/{rel} is {size}, expected {expected}")
+        elif rel.startswith("particle/"):
+            if size not in ((8, 8), (16, 16)):
+                problem(f"png: textures/{rel} is {size}: particle sprites are 8x8 or 16x16")
         elif size not in ((16, 16), (64, 64)):
             problem(f"png: textures/{rel} is {size}: sprites are 16x16, model sheets 64x64")
         px = img.load()
@@ -339,6 +352,11 @@ def check_lang(repo, sources, lang, blocks, items):
             if key not in lang:
                 problem(f"lang: {os.path.basename(path)} uses {key}, which en_us.json doesn't have")
         fragments.update(re.findall(r'"([^"\\]*)"', text))
+    sounds_json = os.path.join(repo, "src/main/resources/assets", NS, "sounds.json")
+    if os.path.exists(sounds_json):
+        for entry in json.load(open(sounds_json)).values():
+            if entry.get("subtitle"):
+                fragments.add(entry["subtitle"])
     # Keys the code builds from an enum: every port status has its words.
     solver = re.sub(r"//[^\n]*", "", open(os.path.join(repo, "src/main/java/net/zagdrath/arcforgetransmission/grid/FlowSolver.java"), encoding="utf-8").read())
     statuses = re.search(r"enum PortStatus \{([^}]*)\}", solver).group(1)
@@ -435,6 +453,54 @@ def check_recipes(repo, jars, items):
             item_exists(result, where)
 
 
+def check_sounds(repo, sources, lang, written):
+    """Every sound event the code registers (TransmissionSounds: register("name")) is in sounds.json; every entry has its
+    files and its subtitle; every .ogg is a generator's."""
+    assets = os.path.join(repo, "src/main/resources/assets", NS)
+    path = os.path.join(assets, "sounds.json")
+    events = json.load(open(path)) if os.path.exists(path) else {}
+    registered = set()
+    for name, text in sources.items():
+        if name.endswith("TransmissionSounds.java"):
+            registered.update(re.findall(r'register\("([a-z0-9_]+)"\)', text))
+    for event in sorted(registered - set(events)):
+        problem(f"sounds: {event} is registered but not in sounds.json")
+    for event, entry in events.items():
+        if event not in registered:
+            problem(f"sounds: sounds.json has {event}, which the code doesn't register")
+        subtitle = entry.get("subtitle")
+        if not subtitle:
+            problem(f"sounds: {event} has no subtitle")
+        elif subtitle not in lang:
+            problem(f"sounds: {event}'s subtitle {subtitle} isn't in en_us.json")
+        for sound in entry.get("sounds", []):
+            ref = sound["name"] if isinstance(sound, dict) else sound
+            ns, file = split(ref)
+            if ns == NS and not os.path.exists(os.path.join(assets, "sounds", file + ".ogg")):
+                problem(f"sounds: {event} names {ref}, which has no sounds/{file}.ogg")
+    for rel in files_under(os.path.join(assets, "sounds")):
+        if rel.endswith(".ogg") and f"src/main/resources/assets/{NS}/sounds/{rel}" not in written:
+            problem(f"manifest: sounds/{rel} isn't written by any generator")
+
+
+def check_particles(repo, sources):
+    """Every particle the code registers (TransmissionParticles) has particles/<name>.json, and its sprites exist."""
+    assets = os.path.join(repo, "src/main/resources/assets", NS)
+    registered = set()
+    for name, text in sources.items():
+        if name.endswith("TransmissionParticles.java"):
+            registered.update(re.findall(r'PARTICLES\.register\("([a-z0-9_]+)"', text))
+    for particle in sorted(registered):
+        path = os.path.join(assets, "particles", particle + ".json")
+        if not os.path.exists(path):
+            problem(f"particles: {particle} has no particles/{particle}.json")
+            continue
+        for ref in json.load(open(path)).get("textures", []):
+            ns, tex = split(ref)
+            if ns == NS and not os.path.exists(os.path.join(assets, "textures/particle", tex + ".png")):
+                problem(f"particles: {particle} names {ref}, which has no textures/particle/{tex}.png")
+
+
 def main():
     repo = os.path.abspath(sys.argv[1] if len(sys.argv) > 1 else ".")
     written = rebuild(repo)
@@ -450,6 +516,8 @@ def main():
     check_references(repo, jars)
     check_lang(repo, sources, lang, blocks, items)
     check_recipes(repo, jars, items)
+    check_sounds(repo, sources, lang, written)
+    check_particles(repo, sources)
     if problems:
         print(f"audit: {len(problems)} problem(s)")
         for p in problems:

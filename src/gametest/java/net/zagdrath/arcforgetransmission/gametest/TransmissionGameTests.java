@@ -56,7 +56,9 @@ import net.zagdrath.arcforgetransmission.grid.VoltageTier;
 import net.zagdrath.arcforgetransmission.grid.block.GridContent;
 import net.zagdrath.arcforgetransmission.grid.block.PoleTransformerBlock;
 import net.zagdrath.arcforgetransmission.grid.block.StationFenceBarbedWireBlock;
+import net.zagdrath.arcforgetransmission.effects.ArcEvent;
 import net.zagdrath.arcforgetransmission.grid.world.ConfigReset;
+import net.zagdrath.arcforgetransmission.grid.world.GridArcs;
 import net.zagdrath.arcforgetransmission.grid.world.GridConfig;
 import net.zagdrath.arcforgetransmission.grid.world.GridData;
 import net.zagdrath.arcforgetransmission.grid.world.GridManager;
@@ -84,7 +86,8 @@ import net.zagdrath.arcforgetransmission.tower.TowerTier;
 //    it was, and a block whose chunk unloads and loads again takes up where it left off;
 //  - a grid saved before the tiers' voltages doubled loads unchanged (tiers are saved by name) and runs at the new ratings;
 //  - Station Fence Barbed Wire goes only on a Station Fence, joins the next along the fence, and pops off as an item when
-//    its fence is broken.
+//    its fence is broken;
+//  - a fault sends its flashover's arc, and the recloser it trips its own (ArcEvent, the packet the players near get).
 // Each test stands on a stone floor in an empty structure, with room round it.
 @EventBusSubscriber(modid = ArcforgeTransmission.MODID)
 public final class TransmissionGameTests {
@@ -106,6 +109,7 @@ public final class TransmissionGameTests {
         TESTS.put("grid_save_reloads_and_chunks_unload", TransmissionGameTests::gridSaveReloadsAndChunksUnload);
         TESTS.put("old_save_loads_at_the_new_ratings", TransmissionGameTests::oldSaveLoadsAtTheNewRatings);
         TESTS.put("barbed_wire_stands_only_on_a_station_fence", TransmissionGameTests::barbedWireStandsOnlyOnAFence);
+        TESTS.put("faults_and_trips_send_arcs", TransmissionGameTests::faultsAndTripsSendArcs);
     }
 
     private TransmissionGameTests() {}
@@ -889,5 +893,54 @@ public final class TransmissionGameTests {
         helper.assertTrue(helper.getBlockState(next.above()).getValue(StationFenceBarbedWireBlock.WEST) == StationFenceBarbedWireBlock.Side.NONE,
                 "Its neighbour still joins it");
         helper.succeed();
+    }
+
+    // A ground fault past a recloser: the fault's flashover sends an arc where it is, and the recloser, tripping on it,
+    // sends a breaker's arc at itself, each with the fault current over the rating. The event is the packet itself: it
+    // goes through its codec unchanged.
+    private static void faultsAndTripsSendArcs(GameTestHelper helper) {
+        floor(helper, 30);
+        ServerLevel level = helper.getLevel();
+        TowerBlockEntity generator = generator(helper, TowerTier.MV_UNIT, 0, 0);
+        TowerBlockEntity recloser = build(helper, TowerTier.MV_RECLOSER, 10, 4, 6);
+        cell(helper, "tempered_energy_cell", 20, -1);
+        TowerBlockEntity sink = unit(helper, TowerTier.MV_UNIT, 20, 0, 2);
+        java.util.List<ArcEvent> arcs = new java.util.concurrent.CopyOnWriteArrayList<>();
+        // Only this test's line (the other tests in its batch arc too).
+        net.minecraft.world.phys.AABB here = new net.minecraft.world.phys.AABB(net.minecraft.world.phys.Vec3.atCenterOf(helper.absolutePos(new BlockPos(-4, 0, -8))),
+                net.minecraft.world.phys.Vec3.atCenterOf(helper.absolutePos(new BlockPos(30, 8, 12))));
+        Consumer<ArcEvent> listener = arc -> {
+            if (here.contains(arc.at())) {
+                arcs.add(arc);
+            }
+        };
+        GridArcs.listen(listener);
+        finallyRestore(helper, () -> GridArcs.unlisten(listener));
+        helper.startSequence()
+                .thenExecuteAfter(2, () -> {
+                    wire(helper, generator, ABC, recloser, ABC, VoltageTier.MV, GridEdge.Kind.BARE);
+                    wire(helper, recloser, SECOND, sink, ABC, VoltageTier.MV, GridEdge.Kind.BARE);
+                })
+                .thenExecuteAfter(20, () -> {
+                    arcs.clear();
+                    Long node = GridData.of(level).nodeAt(new GridData.Anchor(sink.getBlockPos(), 0));
+                    GridManager.fault(level, node, -1, FaultEvent.Cause.GROUND_FAULT, true);
+                })
+                .thenWaitUntil(() -> helper.assertFalse(recloser.closed(), "The recloser didn't trip on the fault"))
+                .thenExecute(() -> {
+                    ArcEvent flashover = arcs.stream().filter(a -> a.kind() == ArcEvent.Kind.FLASHOVER).findFirst().orElse(null);
+                    helper.assertTrue(flashover != null, "The fault sent no flashover arc: " + arcs);
+                    helper.assertTrue(arcs.stream().filter(a -> a.kind() == ArcEvent.Kind.FLASHOVER).count() == 1, "The flashover was sent more than once: "
+                            + arcs);
+                    helper.assertTrue(flashover.tier() == VoltageTier.MV && flashover.severity() > 1, "The flashover's arc: " + flashover);
+                    helper.assertTrue(flashover.at().distanceTo(sink.insulators().get(0).at()) < 0.01, "The flashover wasn't at the faulted insulator");
+                    ArcEvent trip = arcs.stream().filter(a -> a.kind() == ArcEvent.Kind.BREAKER).findFirst().orElse(null);
+                    helper.assertTrue(trip != null, "The trip sent no breaker arc: " + arcs);
+                    helper.assertTrue(trip.severity() > 1 && trip.at().distanceTo(recloser.arcPoint()) < 0.01, "The trip's arc: " + trip);
+                    var buf = new net.minecraft.network.RegistryFriendlyByteBuf(io.netty.buffer.Unpooled.buffer(), level.registryAccess());
+                    ArcEvent.CODEC.encode(buf, trip);
+                    helper.assertTrue(ArcEvent.CODEC.decode(buf).equals(trip), "The arc's packet doesn't round-trip");
+                })
+                .thenSucceed();
     }
 }

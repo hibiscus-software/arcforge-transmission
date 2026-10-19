@@ -24,6 +24,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.server.ServerLifecycleHooks;
 import net.zagdrath.arcforgetransmission.ArcforgeTransmission;
+import net.zagdrath.arcforgetransmission.effects.ArcEvent;
 import net.zagdrath.arcforgetransmission.grid.VoltageTier;
 import net.zagdrath.arcforgetransmission.grid.block.GridEndpointBlockEntity;
 import net.zagdrath.arcforgetransmission.grid.client.GridClientPayloads;
@@ -31,6 +32,7 @@ import net.zagdrath.arcforgetransmission.grid.client.GridClientPayloads;
 // What the server tells clients beyond block updates:
 //  - a block's HUD (its labels, currents, voltages and own state): sent to the players with its chunk loaded, without the
 //    wires or a block update (so the chunk isn't redrawn each time a current changes);
+//  - an interruption's arc (ArcEvent, from GridArcs), to the players near it;
 //  - the grid settings a client shows (wire ratings and spans, the fuse factor, the tap step, the sectionalizer's count):
 //    on joining, and to everyone when the config is reloaded, so a client shows the server's numbers, not its own.
 public final class GridPayloads {
@@ -83,7 +85,8 @@ public final class GridPayloads {
 
     private static void registerPayloads(RegisterPayloadHandlersEvent event) {
         event.registrar("1").playToClient(Hud.TYPE, Hud.CODEC, (payload, context) -> GridClientPayloads.hud(payload))
-                .playToClient(Settings.TYPE, Settings.CODEC, (payload, context) -> GridClientPayloads.settings(payload));
+                .playToClient(Settings.TYPE, Settings.CODEC, (payload, context) -> GridClientPayloads.settings(payload))
+                .playToClient(ArcEvent.TYPE, ArcEvent.CODEC, (payload, context) -> GridClientPayloads.arc(payload));
     }
 
     private static void loggedIn(PlayerEvent.PlayerLoggedInEvent event) {

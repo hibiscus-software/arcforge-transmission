@@ -18,6 +18,8 @@ import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.zagdrath.arcforgetransmission.effects.TransmissionParticles;
+import net.zagdrath.arcforgetransmission.effects.TransmissionSounds;
 import net.zagdrath.arcforgetransmission.grid.VoltageTier;
 import net.zagdrath.arcforgetransmission.grid.data.AttachGroups;
 import net.zagdrath.arcforgetransmission.tower.TowerTier;
@@ -36,6 +38,8 @@ public class ArcforgeTransmission {
         TowerContent.register(modEventBus);
         GridContent.register(modEventBus);
         MaterialContent.register(modEventBus);
+        TransmissionSounds.register(modEventBus);
+        TransmissionParticles.register(modEventBus);
         modContainer.registerConfig(localConfigType(), GridConfig.SPEC, MODID + "-common.toml");
         modEventBus.addListener(ArcforgeTransmission::commonSetup);
         GridPayloads.register(modEventBus);

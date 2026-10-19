@@ -820,6 +820,12 @@ public final class GridManager {
             }
             if (fault.since() == level.getGameTime() || fault.since() == level.getGameTime() - 1) {
                 GridFaults.raise(FaultEvent.node(fault.node(), FaultEvent.Cause.GROUND_FAULT, flow.amps()));
+                // The flashover's arc at its insulator, the fault current over the line's rating.
+                GridData.NodeRecord record = dimension.node(fault.node());
+                GridNode faulted = dimension.graph().node(fault.node());
+                if (record != null && faulted != null) {
+                    GridArcs.flashover(level, fault.node(), record.at(), faulted.tier(), flow.amps() / GridConfig.SETTINGS.ratedAmps(faulted.tier()));
+                }
             }
             flow.edgeAmps().forEach((edge, amps) -> faultAmps.merge(edge, amps, Math::max));
             flow.beyondInfo().forEach((edge, beyond) -> faultBeyond.merge(edge, beyond, (a, b) -> a.count() <= b.count() ? a : b));
