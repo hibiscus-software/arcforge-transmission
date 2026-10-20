@@ -68,6 +68,8 @@ public final class FlowSolver {
         // A power plant that connects at another tier (Generators): it gives nothing here (set by the block, never the
         // solver).
         WRONG_TIER_GENERATOR,
+        // A machine that takes another tier (Loads): it's given nothing here (set by the block, never the solver).
+        WRONG_TIER_LOAD,
         // No live source in its island, or it's in no pair at all.
         DEAD,
         // Wired fine, but nothing on the line can take what it gives or give what it takes.

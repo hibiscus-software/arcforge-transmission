@@ -28,6 +28,7 @@ import net.zagdrath.arcforgetransmission.grid.world.GridConfig;
 import net.zagdrath.arcforgetransmission.grid.world.GridData;
 import net.zagdrath.arcforgetransmission.grid.world.GridManager;
 import net.zagdrath.arcforgetransmission.grid.world.Generators;
+import net.zagdrath.arcforgetransmission.grid.world.Loads;
 import net.zagdrath.arcforgetransmission.grid.world.VoltageRatings;
 
 // A whole circuit of conductors mounted on a block, as a port: the block's FE in or out at up to the tier's voltage times
@@ -35,11 +36,13 @@ import net.zagdrath.arcforgetransmission.grid.world.VoltageRatings;
 // status goes back to whatever mounted it. The rules are the same for both:
 //  - a foreign FE block may feed or be fed only at LV; switched on at a higher tier it's an overvoltage
 //    (GridConfig.OVERVOLTAGE: broken, destroyed or blown up);
-//  - a mapped power plant (Generators) gives a mounted port FE only at LV.
+//  - a mapped power plant (Generators) gives a mounted port FE only at LV;
+//  - a mapped machine (Loads) takes FE only at its own tier: at a lower one the port says WRONG_TIER_LOAD and delivers
+//    nothing, at a higher one it's an overvoltage; and at most its share of its rating among all its feeds.
 public final class MountedPort implements GridManager.PortHandler {
     // What mounted the port: told how each tick went.
     public interface Holder {
-        void reported(FlowSolver.PortStatus status, PortHud.@Nullable Generator generator, double flow);
+        void reported(FlowSolver.PortStatus status, PortHud.@Nullable Generator generator, PortHud.@Nullable Load load, double flow);
     }
 
     // The mounted block's energy capability, cached (rebuilt if it moves or its face changes).
@@ -61,9 +64,18 @@ public final class MountedPort implements GridManager.PortHandler {
     private final PinInsulatorMode mode;
     private final double limitAmps;
     private final Generators.@Nullable Plant refusedPlant;
+    private final ServerLevel level;
+    private final Loads.@Nullable Machine machine;
+    private final boolean wrongLoad;
+    // The most it may deliver this tick (its share of a mapped machine's rating), FE/t.
+    private final double cap;
 
-    private MountedPort(List<? extends Holder> holders, VoltageTier tier, List<Long> nodes, @Nullable EnergyHandler handler, PinInsulatorMode mode,
-            double limitAmps, Generators.@Nullable Plant refusedPlant) {
+    private MountedPort(ServerLevel level, List<? extends Holder> holders, VoltageTier tier, List<Long> nodes, @Nullable EnergyHandler handler,
+            PinInsulatorMode mode, double limitAmps, Generators.@Nullable Plant refusedPlant, Loads.@Nullable Machine machine, boolean wrongLoad, double cap) {
+        this.level = level;
+        this.machine = machine;
+        this.wrongLoad = wrongLoad;
+        this.cap = cap;
         this.holders = holders;
         this.tier = tier;
         this.nodes = nodes;
@@ -83,18 +95,25 @@ public final class MountedPort implements GridManager.PortHandler {
         EnergyHandler handler = cache.handler(level, mount, side);
         // Overvoltage once it's live: switched on, against a block that can't take the tier, with a wire on any conductor.
         boolean wired = nodes.stream().anyMatch(id -> dimension.graph().networkOf(id) != null);
-        if (mode != PinInsulatorMode.OFF && wired && handler != null && !VoltageRatings.accepts(level, mount, tier)
-                && GridConfig.OVERVOLTAGE.get() != GridConfig.Overvoltage.NONE) {
+        // A mapped machine takes its own tier and below (below, nothing); any other foreign block LV only.
+        Loads.Machine machine = handler == null ? null : Loads.at(level, mount, handler);
+        boolean over = machine != null ? tier.ordinal() > machine.tier().ordinal() : !VoltageRatings.accepts(level, mount, tier);
+        if (mode != PinInsulatorMode.OFF && wired && handler != null && over && GridConfig.OVERVOLTAGE.get() != GridConfig.Overvoltage.NONE) {
             overvoltage(level, mount, nodes.get(0), tier);
             return;
         }
         // A mapped plant that connects above LV gives a mounted port nothing: it needs a unit transformer of its tier.
         Generators.Plant plant = handler == null ? null : Generators.at(level, mount);
         if (plant != null && plant.tier() != VoltageTier.LV) {
-            out.add(new MountedPort(holders, tier, nodes, null, mode, limitAmps, plant));
+            out.add(new MountedPort(level, holders, tier, nodes, null, mode, limitAmps, plant, null, false, 0));
             return;
         }
-        out.add(new MountedPort(holders, tier, nodes, handler, mode, limitAmps, null));
+        if (machine != null && tier != machine.tier()) {
+            out.add(new MountedPort(level, holders, tier, nodes, null, mode, limitAmps, null, machine, true, 0));
+            return;
+        }
+        double cap = machine == null ? Double.POSITIVE_INFINITY : Loads.share(level, machine, mount.relative(side));
+        out.add(new MountedPort(level, holders, tier, nodes, handler, mode, limitAmps, null, machine, false, cap));
     }
 
     public static void overvoltage(ServerLevel level, BlockPos pos, long node, VoltageTier tier) {
@@ -111,9 +130,10 @@ public final class MountedPort implements GridManager.PortHandler {
         }
     }
 
-    // The most FE/t it moves: the tier's voltage times its limit, no more than an int holds.
+    // The most FE/t it moves: the tier's voltage times its limit, and its share of a mapped machine's rating, no more than
+    // an int holds.
     private int maxPower() {
-        return (int) Math.max(0, Math.min(Integer.MAX_VALUE, Math.floor(limitAmps * tier.volts())));
+        return (int) Math.max(0, Math.min(Integer.MAX_VALUE, Math.min(cap, Math.floor(limitAmps * tier.volts()))));
     }
 
     @Override
@@ -142,18 +162,27 @@ public final class MountedPort implements GridManager.PortHandler {
 
     @Override
     public int deliver(int fe, TransactionContext tx) {
-        return handler == null || !mode.takes() ? 0 : handler.insert(fe, tx);
+        return handler == null || !mode.takes() ? 0 : handler.insert(Math.min(fe, maxPower()), tx);
+    }
+
+    @Override
+    public void moved(int drawn, int delivered) {
+        if (machine != null && !wrongLoad && delivered > 0) {
+            Loads.delivered(level, machine, delivered);
+        }
     }
 
     @Override
     public void report(FlowSolver.PortStatus status, double drawn, double delivered) {
-        // Says what's wrong rather than looking wired up and idle: a plant of another tier, or no FE block.
+        // Says what's wrong rather than looking wired up and idle: a plant or machine of another tier, or no FE block.
         FlowSolver.PortStatus shown = mode == PinInsulatorMode.OFF ? status
                 : refusedPlant != null ? FlowSolver.PortStatus.WRONG_TIER_GENERATOR
+                : wrongLoad ? FlowSolver.PortStatus.WRONG_TIER_LOAD
                 : handler == null && status != FlowSolver.PortStatus.UNWIRED ? FlowSolver.PortStatus.NO_FE_BLOCK : status;
         PortHud.Generator generator = PortHud.Generator.of(refusedPlant, true);
+        PortHud.Load load = PortHud.Load.of(level, machine, wrongLoad);
         for (Holder holder : holders) {
-            holder.reported(shown, generator, drawn > 0 ? drawn : delivered);
+            holder.reported(shown, generator, load, drawn > 0 ? drawn : delivered);
         }
     }
 }

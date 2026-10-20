@@ -39,6 +39,8 @@ public abstract class MountedPortBlockEntity extends GridEndpointBlockEntity imp
     protected double lastFlow;
     // A mapped plant of another tier it refuses (its HUD says which and where it connects).
     protected PortHud.@Nullable Generator generator;
+    // The mapped machine it feeds, or one of another tier it refuses (its HUD and comparator).
+    protected PortHud.@Nullable Load load;
     // The block it's mounted on, its energy capability cached.
     protected final MountedPort.Mount mount = new MountedPort.Mount();
     // The HUD's port state last sent to the client (server side).
@@ -47,6 +49,7 @@ public abstract class MountedPortBlockEntity extends GridEndpointBlockEntity imp
     private int sentLimit = -1;
     private long sentFlow = -1;
     private PortHud.@Nullable Generator sentGenerator;
+    private PortHud.@Nullable Load sentLoad;
 
     protected MountedPortBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
@@ -92,6 +95,16 @@ public abstract class MountedPortBlockEntity extends GridEndpointBlockEntity imp
         return generator;
     }
 
+    @Override
+    public PortHud.@Nullable Load hudLoad() {
+        return load;
+    }
+
+    // A comparator's reading: the machine it feeds, its draw as a share of its rating.
+    public int loadSignal() {
+        return load == null ? 0 : load.signal();
+    }
+
     // Its port's mode and current limit.
     @Override
     public @Nullable Component hudMode() {
@@ -119,10 +132,15 @@ public abstract class MountedPortBlockEntity extends GridEndpointBlockEntity imp
 
     // How its port's tick went (MountedPort tells everything mounted as one port).
     @Override
-    public void reported(FlowSolver.PortStatus status, PortHud.@Nullable Generator generator, double flow) {
+    public void reported(FlowSolver.PortStatus status, PortHud.@Nullable Generator generator, PortHud.@Nullable Load load, double flow) {
+        int signal = loadSignal();
         this.status = status;
         this.generator = generator;
+        this.load = load;
         this.lastFlow = flow;
+        if (signal != loadSignal() && level != null) {
+            level.updateNeighbourForOutputSignal(worldPosition, getBlockState().getBlock());
+        }
     }
 
     @Override
@@ -132,7 +150,7 @@ public abstract class MountedPortBlockEntity extends GridEndpointBlockEntity imp
 
     @Override
     protected boolean hudLiveChanged() {
-        return Math.round(lastFlow) != sentFlow || !java.util.Objects.equals(generator, sentGenerator);
+        return Math.round(lastFlow) != sentFlow || !java.util.Objects.equals(generator, sentGenerator) || !java.util.Objects.equals(load, sentLoad);
     }
 
     @Override
@@ -142,6 +160,7 @@ public abstract class MountedPortBlockEntity extends GridEndpointBlockEntity imp
         sentLimit = limitEighths;
         sentFlow = Math.round(lastFlow);
         sentGenerator = generator;
+        sentLoad = load;
     }
 
     @Override
@@ -160,6 +179,7 @@ public abstract class MountedPortBlockEntity extends GridEndpointBlockEntity imp
         input.read("hud_status", Codec.STRING).ifPresent(name -> status = FlowSolver.PortStatus.valueOf(name));
         input.read("hud_flow", Codec.LONG).ifPresent(flow -> lastFlow = flow);
         generator = PortHud.Generator.read(input, generator);
+        load = PortHud.Load.read(input, load);
     }
 
     // What the client gets: the saved settings, the HUD's numbers, and its port's status and flow.
@@ -169,6 +189,7 @@ public abstract class MountedPortBlockEntity extends GridEndpointBlockEntity imp
         tag.putString("hud_status", status.name());
         tag.putLong("hud_flow", Math.round(lastFlow));
         PortHud.Generator.write(tag, generator);
+        PortHud.Load.write(tag, load);
         return tag;
     }
 }

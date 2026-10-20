@@ -419,5 +419,7 @@
   "hud.arcforgetransmission.cable_tray.fill": "%s of %s cables",
   "hud.arcforgetransmission.cable_tray.tier": "%s \u00d7 %s",
   "hud.arcforgetransmission.cable_tray.derated": "Cables through it derated to %s%% (%s cables)",
-  "hud.arcforgetransmission.cable_tray.full": "Full ampacity"
+  "hud.arcforgetransmission.cable_tray.full": "Full ampacity",
+  "port_status.arcforgetransmission.wrong_tier_load": "%s takes %s",
+  "hud.arcforgetransmission.load": "%s (%s): %s of %s FE/t"
 }

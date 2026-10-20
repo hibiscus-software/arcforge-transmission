@@ -234,6 +234,24 @@ against its derated rating, and why it's derated). Breaking a tray block, or a t
 cable; the Wire Cutters on a termination take its cables up whole (not while they're live). Burnt out, the whole cable is
 gone.
 
+**Machines at their tier.** Arcforge's machines are mapped as loads (the data map `arcforgetransmission:load`, in
+`data/arcforgetransmission/data_maps/block/load.json`; a datapack can map any mod's): each takes FE only at its own tier,
+up to its rating (`auto`: its own energy capacity; it never takes more than its own input limit). A Cable Termination or
+Pin Insulator on it delivers only at that tier: at a lower one it says so ("Diamond Press takes HV") and delivers
+nothing; a higher one is an overvoltage. A machine may have several feeds of its tier, each held to its own circuit,
+sharing its rating between them. Its HUD shows the machine, its tier, its draw across all its feeds and its rating; a
+comparator on the termination reads its draw as a share of its rating. An unmapped foreign block takes FE at LV only, as
+before.
+
+| Tier | One circuit | Machines |
+|---|---|---|
+| LV | 4,096 FE/t | every other FE machine and multiblock (crushers, presses, furnaces, reactors, pumps, Heavy Water Tower, Water Intake, Centrifuge Cascade, ...) |
+| MV | 32,768 FE/t | Electrolyzer, Arc Quarry, Chargepad |
+| HV | 262,144 FE/t | Diamond Press, Carbon Reclaimer |
+| EHV | 2,097,152 FE/t | none by default (a machine past one circuit takes several feeds, or an 8W gas-insulated line) |
+
+The Chunk Loader and storage (the Battery Array, energy cells) aren't loads.
+
 Inside the grid a cable, a busway joint or a lineup's bus is three conductors, A to A, B to B and C to C: the solver,
 loss, burnout, the Clamp Meter and protection treat it as three wires.
 

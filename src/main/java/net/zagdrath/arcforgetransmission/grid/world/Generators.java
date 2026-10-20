@@ -28,6 +28,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.registries.datamaps.DataMapType;
 import net.neoforged.neoforge.registries.datamaps.RegisterDataMapTypesEvent;
+import net.zagdrath.arcforge.blockentity.machine.ArcQuarryBoundingBlockEntity;
 import net.zagdrath.arcforge.blockentity.machine.CombustionPlantBlockEntity;
 import net.zagdrath.arcforge.blockentity.machine.ThermoelectricPlantBlockEntity;
 import net.zagdrath.arcforge.blockentity.multiblock.DieselGeneratorBlockEntity;
@@ -88,17 +89,20 @@ public final class Generators {
         if (rating == null) {
             return null;
         }
-        BlockEntity entity = plantEntity(level, pos, state);
+        BlockEntity entity = entityOf(level, pos, state);
         int nameplate = rating.nameplate().isPresent() ? rating.nameplate().getAsInt() : maxOutput(entity);
         return new Plant(name(entity, state.getBlock()), rating.tier(), nameplate, output(entity, nameplate), entity);
     }
 
-    // The block entity that runs the plant: a shell multiblock's master, a plant controller (from any of its casing), or
-    // the block's own.
-    private static @Nullable BlockEntity plantEntity(Level level, BlockPos pos, BlockState state) {
+    // The block entity that runs a plant or machine (Loads too): a shell multiblock's master, a controller (from any of
+    // its casing), an Arc Quarry (from its bounding blocks), or the block's own.
+    public static @Nullable BlockEntity entityOf(Level level, BlockPos pos, BlockState state) {
         BlockEntity entity = level.getBlockEntity(pos);
         if (entity instanceof ShellMultiblockBlockEntity shell) {
             return shell.getMaster();
+        }
+        if (entity instanceof ArcQuarryBoundingBlockEntity bounding) {
+            return bounding.main();
         }
         if (entity == null && state.getBlock() instanceof MultiblockPart part && part.findController(level, pos) instanceof BlockEntity controller) {
             return controller;
@@ -141,7 +145,7 @@ public final class Generators {
     }
 
     // Its name as its screen calls it (a Steam Turbine Array, not its casing), else its block's.
-    private static Component name(@Nullable BlockEntity entity, Block block) {
+    public static Component name(@Nullable BlockEntity entity, Block block) {
         return entity instanceof MenuProvider menu ? menu.getDisplayName() : (entity != null ? entity.getBlockState().getBlock() : block).getName();
     }
 

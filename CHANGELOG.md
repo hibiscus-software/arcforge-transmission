@@ -52,6 +52,15 @@
   Cutters take it up whole. Saved per dimension (`tray_cables`). Tray models, hitboxes and the cable jackets from
   `factory_block_model_gen.py`, the cable sprites from `wire_texture_gen.py`. Game tests: the shortest route and no
   route, derating and burnout at it, full and mixed trays, EHV in standard tray, saving and reloading, breaking a tray.
+- **Machines at their tier**: the data map `arcforgetransmission:load` (on blocks: a tier and a rating in FE/t, or
+  `auto` for the machine's energy capacity), the mirror of `generator` and sharing its code. Arcforge's machines are
+  mapped out of the box: Electrolyzer, Arc Quarry and Chargepad MV; Diamond Press and Carbon Reclaimer HV; every other FE
+  machine and multiblock LV (the Chunk Loader and storage not at all). A Cable Termination or Pin Insulator on a mapped
+  machine delivers only at its tier: lower, the new `WRONG_TIER_LOAD` status ("Diamond Press takes HV") and nothing;
+  higher, an overvoltage. Several feeds of its tier share its rating, each held to its own circuit; the HUD shows the
+  machine, its tier, its total draw and rating, and a comparator on the port reads its load. Game tests: an EHV machine
+  drawing a whole circuit, an HV termination on it refused, two EHV feeds adding up past one circuit, a foreign block at
+  LV only.
 
 ### Changed
 - The Pin Insulator's port is now shared with the Cable Termination (`MountedPort`, `MountedPortBlockEntity`): one set of

@@ -44,6 +44,7 @@ public class ArcforgeTransmission {
         TransmissionSounds.register(modEventBus);
         TransmissionParticles.register(modEventBus);
         Generators.register(modEventBus);
+        net.zagdrath.arcforgetransmission.grid.world.Loads.register(modEventBus);
         modContainer.registerConfig(localConfigType(), GridConfig.SPEC, MODID + "-common.toml");
         modEventBus.addListener(ArcforgeTransmission::commonSetup);
         GridPayloads.register(modEventBus);

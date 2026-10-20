@@ -8,9 +8,11 @@ package net.zagdrath.arcforgetransmission.grid.block;
 
 import com.mojang.serialization.Codec;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.storage.ValueInput;
 import net.zagdrath.arcforgetransmission.grid.VoltageTier;
 import net.zagdrath.arcforgetransmission.grid.world.Generators;
+import net.zagdrath.arcforgetransmission.grid.world.Loads;
 import org.jspecify.annotations.Nullable;
 
 import net.minecraft.network.chat.Component;
@@ -35,6 +37,47 @@ public interface PortHud {
     // The mapped power plant it feeds from (Generators), or one of the wrong tier it refuses; null for none.
     default @Nullable Generator hudGenerator() {
         return null;
+    }
+
+    // The mapped machine it feeds (Loads), or one of another tier it refuses; null for none.
+    default @Nullable Load hudLoad() {
+        return null;
+    }
+
+    // A machine as its HUD is sent: its name (a translation key), the tier it takes, its rating and what all its feeds
+    // gave it last tick (FE/t), and whether it's refused (another tier: WRONG_TIER_LOAD).
+    record Load(String name, VoltageTier tier, int rating, long draw, boolean wrong) {
+        public static @Nullable Load of(Level level, Loads.@Nullable Machine machine, boolean wrong) {
+            return machine == null ? null : new Load(Generators.key(machine.name()), machine.tier(), machine.rating(), Loads.draw(level, machine), wrong);
+        }
+
+        // Its comparator signal: its draw as a share of its rating, 0 to 15.
+        public int signal() {
+            return wrong || rating <= 0 ? 0 : (int) Math.max(0, Math.min(15, Math.round(15.0 * draw / rating)));
+        }
+
+        public static void write(CompoundTag tag, @Nullable Load load) {
+            tag.putString("hud_load", load == null ? "" : load.name);
+            if (load != null) {
+                tag.putInt("hud_load_tier", load.tier.ordinal());
+                tag.putInt("hud_load_rating", load.rating);
+                tag.putLong("hud_load_draw", load.draw);
+                tag.putBoolean("hud_load_wrong", load.wrong);
+            }
+        }
+
+        // From a HUD update: the machine it names, null for none, or `current` if the update says nothing.
+        public static @Nullable Load read(ValueInput input, @Nullable Load current) {
+            var name = input.read("hud_load", Codec.STRING);
+            if (name.isEmpty()) {
+                return current;
+            }
+            if (name.get().isEmpty()) {
+                return null;
+            }
+            return new Load(name.get(), VoltageTier.values()[input.read("hud_load_tier", Codec.INT).orElse(0)], input.read("hud_load_rating", Codec.INT).orElse(0),
+                    input.read("hud_load_draw", Codec.LONG).orElse(0L), input.read("hud_load_wrong", Codec.BOOL).orElse(false));
+        }
     }
 
     // A plant as its HUD is sent: its name (a translation key), the tier it connects at, its nameplate and the FE/t it
