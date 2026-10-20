@@ -19,6 +19,9 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.zagdrath.arcforgetransmission.ArcforgeTransmission;
+import net.zagdrath.arcforgetransmission.factory.CableData;
+import net.zagdrath.arcforgetransmission.factory.CableNetwork;
+import net.zagdrath.arcforgetransmission.factory.CableTrayBlockEntity;
 import net.zagdrath.arcforgetransmission.grid.GridEdge;
 import net.zagdrath.arcforgetransmission.grid.GridNode;
 import net.zagdrath.arcforgetransmission.grid.block.GridEndpointBlockEntity;
@@ -28,7 +31,8 @@ import net.zagdrath.arcforgetransmission.grid.world.GridManager;
 
 // A Clamp Meter: used on a wire (the one the crosshair is on, within 8 blocks) it reads it out in chat: its tier and
 // kind, the current on it against its rating, its loss (FE/t) and its length, and its ends' labels; used on an insulator
-// it reads every wire on it. The readings are the last tick's.
+// it reads every wire on it, on a block of cable tray every cable through it. A cable derated by the tray it shares says
+// so and why. The readings are the last tick's.
 public class ClampMeterItem extends Item {
     private static final double REACH = 8.0, AIM = 0.3;
 
@@ -51,6 +55,12 @@ public class ClampMeterItem extends Item {
 
     @Override
     public InteractionResult useOn(UseOnContext context) {
+        if (context.getPlayer() != null && context.getLevel().getBlockEntity(context.getClickedPos()) instanceof CableTrayBlockEntity) {
+            if (context.getLevel() instanceof ServerLevel server) {
+                tray(server, context.getPlayer(), CableData.of(server).inTray(context.getClickedPos()));
+            }
+            return InteractionResult.SUCCESS;
+        }
         GridEndpointBlockEntity endpoint = WireCoilItem.endpointAt(context.getLevel(), context.getClickedPos());
         Player player = context.getPlayer();
         if (endpoint == null || player == null) {
@@ -66,6 +76,34 @@ public class ClampMeterItem extends Item {
             }
         }
         return InteractionResult.SUCCESS;
+    }
+
+    // Each cable through a tray block: its tier, its current against its derated rating, and why it's derated.
+    private static void tray(ServerLevel level, Player player, List<CableData.Cable> cables) {
+        String m = ArcforgeTransmission.MODID;
+        if (cables.isEmpty()) {
+            player.sendOverlayMessage(Component.translatable("message." + m + ".meter.empty_tray"));
+            return;
+        }
+        GridData.Dimension dimension = GridData.of(level);
+        for (CableData.Cable cable : cables) {
+            GridEdge edge = cable.edges().isEmpty() ? null : dimension.graph().edge(cable.edges().get(0));
+            double amps = CableNetwork.amps(level, cable), rated = edge == null ? 0 : GridConfig.SETTINGS.ratedAmps(edge);
+            ChatFormatting colour = amps > rated + 1.0E-9 ? ChatFormatting.RED : amps > 0.8 * rated ? ChatFormatting.YELLOW : ChatFormatting.GREEN;
+            player.sendSystemMessage(Component.translatable("message." + m + ".meter.cable", Component.literal(cable.tier().name()),
+                    Component.literal(format(amps)).withStyle(colour), format(rated), rated > 0 ? Math.round(100 * amps / rated) : 0,
+                    format(cable.length())).withStyle(ChatFormatting.GRAY));
+            derated(level, player, cable);
+        }
+    }
+
+    // Why a cable's rated below its ampacity: the most cables it shares a tray block with.
+    private static void derated(ServerLevel level, Player player, CableData.Cable cable) {
+        double derate = CableNetwork.derate(level, cable);
+        if (derate < 1.0) {
+            player.sendSystemMessage(Component.translatable("message." + ArcforgeTransmission.MODID + ".meter.derated",
+                    Math.round(100 * derate), CableNetwork.crowd(level, cable)).withStyle(ChatFormatting.YELLOW));
+        }
     }
 
     private static void read(ServerLevel level, Player player, List<Long> wires) {
@@ -84,6 +122,10 @@ public class ClampMeterItem extends Item {
                     Component.literal(edge.tier().name()), Component.translatable("wire_kind." + m + "." + edge.kind().name().toLowerCase(Locale.ROOT)),
                     Component.literal(format(amps)).withStyle(colour), format(rated), Math.round(100 * amps / rated), format(loss), format(edge.length()),
                     a == null ? "?" : a.phase().name(), b == null ? "?" : b.phase().name()).withStyle(ChatFormatting.GRAY));
+            CableData.Cable cable = CableData.of(level).ofEdge(id);
+            if (cable != null) {
+                derated(level, player, cable);
+            }
         }
     }
 

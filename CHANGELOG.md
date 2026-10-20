@@ -41,6 +41,17 @@
   the new `tools/factory_block_model_gen.py`; `tools/block_model_preview.py` renders its scenes. Game tests: an LV 128 A
   run to four 32 A tap boxes, an EHV 1,024 A line at 16,777,216 FE/t, a tap tripping before its feeder, sizes and tiers
   joining only through the right reducer, a damaged block opening the circuit.
+- **Cable tray and Insulated Cable** (Wiring & Tools tab): Cable Tray (6 slots), Wide Cable Tray (12, in two layers) and
+  Heavy-Duty Cable Tray (6, for HV and EHV), placed on a floor, a wall or under a block, joining into runs with risers
+  and bends; LV, MV, HV and EHV Insulated Cable laid from one Cable Termination to another along the shortest run of
+  tray (a free drop at each end), one item for every 8 blocks. Its cores are drawn lying in the tray (LV and MV side by
+  side, HV and EHV in trefoil, MV to EHV with their tier stripe). Fill, segregation (LV apart from MV and up; HV and EHV
+  in heavy-duty tray only) and derating by how many cables share a block (100%, 80%, 70%) are in the config's
+  `factory.tray` section; a cable's conductors carry its derating, so it burns out at it. A tray HUD shows its fill and
+  derating, and the Clamp Meter on a tray lists its cables. Breaking a tray or termination drops the cable; the Wire
+  Cutters take it up whole. Saved per dimension (`tray_cables`). Tray models, hitboxes and the cable jackets from
+  `factory_block_model_gen.py`, the cable sprites from `wire_texture_gen.py`. Game tests: the shortest route and no
+  route, derating and burnout at it, full and mixed trays, EHV in standard tray, saving and reloading, breaking a tray.
 
 ### Changed
 - The Pin Insulator's port is now shared with the Cable Termination (`MountedPort`, `MountedPortBlockEntity`): one set of

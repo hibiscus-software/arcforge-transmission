@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "T": "arcforgetransmission:cable_tray",
+    "S": "#c:plates/steel"
+  },
+  "pattern": [
+    "S S",
+    "STS",
+    "S S"
+  ],
+  "result": {
+    "count": 1,
+    "id": "arcforgetransmission:heavy_duty_cable_tray"
+  }
+}

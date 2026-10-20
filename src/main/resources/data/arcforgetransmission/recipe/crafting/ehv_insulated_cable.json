@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "P": "#c:plastics",
+    "L": "#c:plates/lead",
+    "C": "arcforgetransmission:ehv_wire_coil"
+  },
+  "pattern": [
+    "PCP",
+    "PLP",
+    "PCP"
+  ],
+  "result": {
+    "count": 3,
+    "id": "arcforgetransmission:ehv_insulated_cable"
+  }
+}

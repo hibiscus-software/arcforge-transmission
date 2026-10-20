@@ -107,6 +107,9 @@
     "arcforgetransmission:ehv_busway_feed_in",
     "arcforgetransmission:ehv_busway_tap_off",
     "arcforgetransmission:ehv_busway_reducer_8w_4w",
-    "arcforgetransmission:ehv_busway_reducer_4w_2w"
+    "arcforgetransmission:ehv_busway_reducer_4w_2w",
+    "arcforgetransmission:cable_tray",
+    "arcforgetransmission:wide_cable_tray",
+    "arcforgetransmission:heavy_duty_cable_tray"
   ]
 }

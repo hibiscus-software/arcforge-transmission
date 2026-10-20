@@ -44,6 +44,8 @@ public class CableTerminationRenderer implements StructureRenderer<CableTerminat
         public float[] solid = EMPTY;
         public @Nullable TextureAtlasSprite sheet;
         public int light;
+        public java.util.List<float[]> drops = java.util.List.of();
+        public java.util.List<Integer> dropTiers = java.util.List.of();
     }
 
     public CableTerminationRenderer(BlockEntityRendererProvider.Context context) {}
@@ -68,6 +70,18 @@ public class CableTerminationRenderer implements StructureRenderer<CableTerminat
         state.sheet = Minecraft.getInstance().getAtlasManager().getAtlasOrThrow(AtlasIds.BLOCKS).getSprite(TowerRenderer.SHEET);
         Level level = termination.getLevel();
         state.light = level != null ? LightCoordsUtil.getLightCoords(level, termination.getBlockPos()) : LightCoordsUtil.FULL_BRIGHT;
+        // Its cables hanging straight to another termination.
+        java.util.List<float[]> drops = new java.util.ArrayList<>();
+        java.util.List<Integer> tiers = new java.util.ArrayList<>();
+        Vec3 origin = Vec3.atLowerCornerOf(termination.getBlockPos()), gland = termination.cableEnd().subtract(origin);
+        for (Vec3 far : termination.drops()) {
+            Vec3 to = far.subtract(origin);
+            drops.add(CableMesh.drop(new float[] { (float) gland.x * 16, (float) gland.y * 16, (float) gland.z * 16 },
+                    new float[] { (float) to.x * 16, (float) to.y * 16, (float) to.z * 16 }, tier));
+            tiers.add(tier);
+        }
+        state.drops = drops;
+        state.dropTiers = tiers;
     }
 
     @Override
@@ -75,6 +89,9 @@ public class CableTerminationRenderer implements StructureRenderer<CableTerminat
         TextureAtlasSprite sheet = state.sheet;
         if (sheet != null) {
             MeshRendering.submitStill(collector, poseStack, RenderTypes.entitySolid(sheet.atlasLocation()), state.solid, sheet, state.light);
+        }
+        if (!state.drops.isEmpty()) {
+            CableTrayRenderer.submitTubes(state.drops, state.dropTiers, state.light, poseStack, collector);
         }
     }
 

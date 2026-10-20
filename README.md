@@ -211,6 +211,29 @@ half what wire of its rating would (`factory.conductors.<tier>.busResistance`), 
 (`busHeat`), and is enclosed: no shocks, no lightning, no sag. Burnt out, a block is damaged (dull and smoking) and
 breaks the circuit until it's replaced.
 
+**Cable tray and Insulated Cable** (Wiring & Tools tab) carry a circuit from a feeder or a tap-off to a machine. Lay
+**Cable Tray** (standard, 6 slots), **Wide Cable Tray** (12 slots, in two layers) or **Heavy-Duty Cable Tray** (6 slots,
+deep, for HV and EHV) on a floor or wall, or hang it under a block: runs join up, with risers and bends. Use an
+**Insulated Cable** of a tier on one Cable Termination, then on another of that tier: it's laid along the shortest run of
+tray between them (a free drop counts double, `dropWeight`, so it goes into the nearest tray), a free drop of up to
+`factory.tray.maxFreeDrop` (6) blocks at each end, and one item is used for every
+`cableBlocksPerItem` (8) blocks. Two terminations within a drop of each other take a cable straight between them, no tray.
+
+| Cable | Cores | Rating | FE/t | Tray slots | Tray |
+|---|---|---|---|---|---|
+| LV | three 2 px cores, side by side | 16 A | 4,096 | 1 | any |
+| MV | three 2 px cores, red stripe | 32 A | 32,768 | 1 | any (not beside LV) |
+| HV | trefoil, orange stripe | 64 A | 262,144 | 2 | heavy-duty |
+| EHV | trefoil, purple stripe | 128 A | 2,097,152 | 3 | heavy-duty |
+
+LV is kept out of tray blocks carrying MV and up (`segregateTiers`), and a full block refuses another cable; the refusal
+says which block. Cables sharing a tray block heat each other: up to 3 a block keep their full rating, 4 to 6 keep 80%,
+more keep 70% (`fullUpTo`, `midUpTo`, `derateMid`, `derateLow`), and a cable's rating is its most crowded block's, so it
+burns out at that. Look at a tray block for its fill and derating; the Clamp Meter on it lists each cable (its current
+against its derated rating, and why it's derated). Breaking a tray block, or a termination at either end, drops the
+cable; the Wire Cutters on a termination take its cables up whole (not while they're live). Burnt out, the whole cable is
+gone.
+
 Inside the grid a cable, a busway joint or a lineup's bus is three conductors, A to A, B to B and C to C: the solver,
 loss, burnout, the Clamp Meter and protection treat it as three wires.
 

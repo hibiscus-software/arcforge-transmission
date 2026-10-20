@@ -57,6 +57,25 @@ public class WireCuttersItem extends Item {
         if (!GridInteractions.mayChange(player, level, endpoint.getBlockPos())) {
             return InteractionResult.FAIL;
         }
+        // A Cable Termination: its tray cables come up whole, never while energised.
+        if (endpoint instanceof net.zagdrath.arcforgetransmission.factory.CableTerminationBlockEntity) {
+            var cables = net.zagdrath.arcforgetransmission.factory.CableData.of(level).atEnd(endpoint.getBlockPos());
+            if (!cables.isEmpty()) {
+                int cut = 0;
+                for (var cable : cables) {
+                    if (net.zagdrath.arcforgetransmission.factory.CableNetwork.energized(level, cable)) {
+                        player.sendOverlayMessage(Component.translatable("message." + ArcforgeTransmission.MODID + ".cable.energized"));
+                        return InteractionResult.FAIL;
+                    }
+                }
+                for (var cable : cables) {
+                    net.zagdrath.arcforgetransmission.factory.CableNetwork.remove(level, cable, player.hasInfiniteMaterials() ? null : context.getClickLocation());
+                    cut++;
+                }
+                cutDone(level, player, context.getHand(), context.getClickLocation(), cut);
+                return InteractionResult.SUCCESS;
+            }
+        }
         int index = endpoint.nearest(context.getClickLocation());
         List<Long> wires = index < 0 ? List.of() : GridManager.wiresAt(level, new GridData.Anchor(endpoint.getBlockPos(), index));
         if (wires.isEmpty()) {

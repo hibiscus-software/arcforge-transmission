@@ -92,6 +92,7 @@ public final class GridConfig {
     public static final ModConfigSpec.DoubleValue BUS_HEAT;
     public static final ModConfigSpec.IntValue MAX_FREE_DROP, CABLE_BLOCKS_PER_ITEM;
     public static final ModConfigSpec.IntValue TRAY_FILL_STANDARD, TRAY_FILL_WIDE, TRAY_FILL_HEAVY;
+    public static final ModConfigSpec.DoubleValue DROP_WEIGHT;
     private static final Map<VoltageTier, ModConfigSpec.IntValue> CABLE_SLOTS = new EnumMap<>(VoltageTier.class);
     public static final ModConfigSpec.BooleanValue SEGREGATE_TIERS;
     public static final ModConfigSpec.IntValue DERATE_FULL_UP_TO, DERATE_MID_UP_TO;
@@ -214,6 +215,8 @@ public final class GridConfig {
         BUILDER.comment("Cable tray.").push("tray");
         MAX_FREE_DROP = BUILDER.comment("Blocks of cable that may hang free (no tray) at each end: from a termination to its tray, or a",
                 "tap-off's drop to its machine.").defineInRange("maxFreeDrop", 6, 0, 64);
+        DROP_WEIGHT = BUILDER.comment("How much more a block of free drop costs a cable's route than a block of tray (so it goes into the",
+                "nearest tray rather than hanging across to a far one).").defineInRange("dropWeight", 2.0, 1.0, 100.0);
         CABLE_BLOCKS_PER_ITEM = BUILDER.comment("Blocks of cable one Insulated Cable item lays.").defineInRange("cableBlocksPerItem", 8, 1, 1024);
         TRAY_FILL_STANDARD = BUILDER.comment("Slots in a block of standard tray.").defineInRange("fillStandard", 6, 1, 256);
         TRAY_FILL_WIDE = BUILDER.comment("Slots in a block of wide tray.").defineInRange("fillWide", 12, 1, 256);

@@ -22,5 +22,6 @@ public final class FactoryClient {
     static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerBlockEntityRenderer(FactoryContent.TERMINATION_ENTITY.get(), CableTerminationRenderer::new);
         event.registerBlockEntityRenderer(FactoryContent.SECTION_ENTITY.get(), SectionRenderer::new);
+        event.registerBlockEntityRenderer(FactoryContent.TRAY_ENTITY.get(), CableTrayRenderer::new);
     }
 }

@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "R": "#c:rubbers",
+    "P": "#c:plastics",
+    "C": "arcforgetransmission:hv_wire_coil"
+  },
+  "pattern": [
+    "PCP",
+    "RCR",
+    "PCP"
+  ],
+  "result": {
+    "count": 4,
+    "id": "arcforgetransmission:hv_insulated_cable"
+  }
+}

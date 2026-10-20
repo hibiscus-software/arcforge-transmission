@@ -27,7 +27,8 @@ import net.zagdrath.arcforgetransmission.grid.VoltageTier;
 import net.zagdrath.arcforgetransmission.tower.model.FactoryMesh.Section;
 
 // Factory distribution's content: per tier a Cable Termination (and the invisible cells the tall ones stand up into)
-// and a switchgear lineup's sections (and their other blocks); busway (runs, feed-ins, tap-offs, reducers).
+// and a switchgear lineup's sections (and their other blocks); busway (runs, feed-ins, tap-offs, reducers); cable tray
+// and insulated cable.
 // Call register(modEventBus) from the mod's constructor.
 public final class FactoryContent {
     private static final String MODID = ArcforgeTransmission.MODID;
@@ -144,6 +145,38 @@ public final class FactoryContent {
     public static final Supplier<BlockEntityType<BuswayReducerBlockEntity>> REDUCER_ENTITY = BLOCK_ENTITY_TYPES.register("busway_reducer",
             () -> new BlockEntityType<>(BuswayReducerBlockEntity::new, REDUCERS.values().stream().flatMap(List::stream).map(DeferredBlock::get)
                     .toArray(BuswayReducerBlock[]::new)));
+
+    // Cable tray (standard, wide, heavy-duty) and the insulated cable laid in it, per tier.
+    public static final Map<CableTrayBlock.Kind, DeferredBlock<CableTrayBlock>> TRAYS = new EnumMap<>(CableTrayBlock.Kind.class);
+    public static final Map<VoltageTier, DeferredItem<InsulatedCableItem>> CABLES = new EnumMap<>(VoltageTier.class);
+
+    static {
+        TRAYS.put(CableTrayBlock.Kind.STANDARD, tray(BLOCKS.registerBlock("cable_tray", p -> new CableTrayBlock(CableTrayBlock.Kind.STANDARD, p),
+                FactoryContent::trayProperties)));
+        TRAYS.put(CableTrayBlock.Kind.WIDE, tray(BLOCKS.registerBlock("wide_cable_tray", p -> new CableTrayBlock(CableTrayBlock.Kind.WIDE, p),
+                FactoryContent::trayProperties)));
+        TRAYS.put(CableTrayBlock.Kind.HEAVY, tray(BLOCKS.registerBlock("heavy_duty_cable_tray", p -> new CableTrayBlock(CableTrayBlock.Kind.HEAVY, p),
+                FactoryContent::trayProperties)));
+        for (VoltageTier tier : VoltageTier.values()) {
+            DeferredItem<InsulatedCableItem> cable = ITEMS.registerItem(tier.id() + "_insulated_cable", p -> new InsulatedCableItem(tier, p),
+                    p -> p.stacksTo(64));
+            CABLES.put(tier, cable);
+            add(Tab.WIRING, cable);
+        }
+    }
+
+    private static net.minecraft.world.level.block.state.BlockBehaviour.Properties trayProperties(
+            net.minecraft.world.level.block.state.BlockBehaviour.Properties p) {
+        return p.mapColor(MapColor.METAL).strength(2.0F, 6.0F).sound(SoundType.CHAIN).noOcclusion().requiresCorrectToolForDrops();
+    }
+
+    private static DeferredBlock<CableTrayBlock> tray(DeferredBlock<CableTrayBlock> block) {
+        add(Tab.WIRING, ITEMS.registerSimpleBlockItem(block));
+        return block;
+    }
+
+    public static final Supplier<BlockEntityType<CableTrayBlockEntity>> TRAY_ENTITY = BLOCK_ENTITY_TYPES.register("cable_tray",
+            () -> new BlockEntityType<>(CableTrayBlockEntity::new, TRAYS.values().stream().map(DeferredBlock::get).toArray(CableTrayBlock[]::new)));
 
     public static final Supplier<BlockEntityType<CableTerminationBlockEntity>> TERMINATION_ENTITY = BLOCK_ENTITY_TYPES.register("cable_termination",
             () -> new BlockEntityType<>(CableTerminationBlockEntity::new,

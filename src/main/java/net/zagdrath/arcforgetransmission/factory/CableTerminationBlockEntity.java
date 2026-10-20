@@ -148,9 +148,63 @@ public class CableTerminationBlockEntity extends MountedPortBlockEntity implemen
                 Component.translatable("port_status." + m + "." + status.name().toLowerCase(Locale.ROOT)), GridInteractions.format(Math.round(lastFlow)));
     }
 
+    // Its cables straight to another termination (no tray between): their far glands, drawn from its own (the client's
+    // copy; tray cables are drawn by their trays).
+    private List<Vec3> drops = List.of();
+
+    public List<Vec3> drops() {
+        return drops;
+    }
+
+    public void showDrops(ServerLevel level) {
+        List<Vec3> now = CableNetwork.directFrom(level, worldPosition);
+        if (!now.equals(drops)) {
+            drops = now;
+            setChanged();
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), net.minecraft.world.level.block.Block.UPDATE_CLIENTS);
+        }
+    }
+
+    // Its cables come up with it (dropping here), before its conductors go.
+    @Override
+    public void preRemoveSideEffects(BlockPos pos, BlockState state) {
+        if (level instanceof ServerLevel server) {
+            CableNetwork.terminationGone(server, pos);
+        }
+        super.preRemoveSideEffects(pos, state);
+    }
+
+    @Override
+    protected void saveAdditional(net.minecraft.world.level.storage.ValueOutput output) {
+        super.saveAdditional(output);
+        java.util.List<Double> flat = new java.util.ArrayList<>();
+        drops.forEach(v -> {
+            flat.add(v.x);
+            flat.add(v.y);
+            flat.add(v.z);
+        });
+        output.store("drops", com.mojang.serialization.Codec.DOUBLE.listOf(), flat);
+    }
+
+    @Override
+    protected void loadAdditional(net.minecraft.world.level.storage.ValueInput input) {
+        super.loadAdditional(input);
+        input.read("drops", com.mojang.serialization.Codec.DOUBLE.listOf()).ifPresent(flat -> {
+            java.util.List<Vec3> out = new java.util.ArrayList<>();
+            for (int i = 0; i + 2 < flat.size(); i += 3) {
+                out.add(new Vec3(flat.get(i), flat.get(i + 1), flat.get(i + 2)));
+            }
+            drops = out;
+        });
+    }
+
     public AABB getRenderBox() {
         int h = FactoryMesh.terminationHeight(tier().ordinal());
         AABB own = new AABB(worldPosition);
-        return withWires(facing() == Direction.DOWN ? own.expandTowards(0, -(h - 1), 0) : own.expandTowards(0, h - 1, 0));
+        AABB box = withWires(facing() == Direction.DOWN ? own.expandTowards(0, -(h - 1), 0) : own.expandTowards(0, h - 1, 0));
+        for (Vec3 drop : drops) {
+            box = box.minmax(new AABB(drop, drop).inflate(0.25));
+        }
+        return box;
     }
 }

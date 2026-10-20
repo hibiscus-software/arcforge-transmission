@@ -7,6 +7,7 @@ Writes (assets/arcforgetransmission/textures/):
     block/wire/ehv_wire_glow.png    the EHV core's glow, one flat tone, drawn full-bright over the wire
     item/{tier}_wire_coil.png      a black plastic spool wound with the tier's conductor
     block/wire/{lv,mv}_insulated.png, item/{lv,mv}_insulated_wire_coil.png   insulated wire: black rubber, flat; its spool
+    item/{tier}_insulated_cable.png  tray cable: the tier's conductor in the tray cable's matte jacket, its tier stripe
     item/wire_cutters.png          the Wire Cutters, from the addon's pixel art, in Arcforge's palette
     item/burnt_wire.png            a charred, broken length of wire
 
@@ -124,6 +125,9 @@ def coil(tier, insulated=False, ramp=None, tip=None, stripe=None):
 STRAND = [hx(c) for c in ("#4A5056", "#6A7178", "#8A9198", "#A8AEB4", "#C4C9CE")]
 STRAND_TONE = hx("#7E858C")
 TRACER = hx("#E0782A")
+# Tray cable's jacket (as the strung cable's, tools/factory_block_model_gen.py JACKET) and its tier stripe (STRIPE there).
+JACKET = [hx(c) for c in ("#141516", "#1C1E20", "#26292B", "#313437", "#3D4144")]
+CABLE_STRIPE = {"mv": hx("#E5483C"), "hv": hx("#E8913A"), "ehv": hx("#8A55C2")}
 
 
 def fuse_link():
@@ -296,6 +300,9 @@ def main():
     # Underground cable for every tier: the conductor in its black sheath with the orange tracer.
     for tier in RAMPS:
         save(coil(tier, True, stripe=TRACER), os.path.join(tex, "item", tier + "_underground_cable.png"))
+    # Tray cable for every tier.
+    for tier in RAMPS:
+        save(coil(tier, True, ramp=JACKET, stripe=CABLE_STRIPE.get(tier)), os.path.join(tex, "item", tier + "_insulated_cable.png"))
     save(Image.new("RGBA", (16, 16), STRAND_TONE), os.path.join(tex, "block/wire/steel.png"))
     save(coil("lv", ramp=STRAND, tip=STRAND[4]), os.path.join(tex, "item/shield_wire_coil.png"))
     save(coil("lv", ramp=STRAND[:2] + STRAND[1:4], tip=STRAND[3], stripe=STRAND[0]), os.path.join(tex, "item/guy_wire.png"))

@@ -249,7 +249,7 @@ def registered(repo, sources):
         for suffix in re.findall(r'BLOCKS\.registerBlock\(tier\.id\(\) \+ "([a-z0-9_]+)"', text):
             blocks.update(t + suffix for t in TIERS if not (t == "lv" and suffix in NOT_LV))
         for suffix in re.findall(r'ITEMS\.registerItem\(tier\.id\(\) \+ "([a-z0-9_]+)"', text):
-            items.update(t + suffix for t in (INSULATABLE if "insulated" in suffix else TIERS))
+            items.update(t + suffix for t in (INSULATABLE if suffix == "_insulated_wire_coil" else TIERS))
     tiers = open(os.path.join(repo, "src/main/java/net/zagdrath/arcforgetransmission/tower/TowerTier.java"), encoding="utf-8").read()
     towers = re.findall(r'^    [A-Z0-9_]+\("([a-z0-9_]+)", Kind\.', tiers, re.M)
     blocks.update(towers)

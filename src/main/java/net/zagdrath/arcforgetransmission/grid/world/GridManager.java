@@ -1034,6 +1034,10 @@ public final class GridManager {
             }
             ends.add(a.pos());
             ends.add(b.pos());
+            if (edge.kind() == GridEdge.Kind.CABLE) {
+                // A tray cable burns whole: its other conductors come up too.
+                net.zagdrath.arcforgetransmission.factory.CableNetwork.burnt(level, edge.id());
+            }
             if (edge.kind() == GridEdge.Kind.BUS) {
                 for (BlockPos end : new BlockPos[] { a.pos(), b.pos() }) {
                     if (level.isLoaded(end) && level.getBlockEntity(end) instanceof net.zagdrath.arcforgetransmission.factory.BuswayBlockEntity run) {
