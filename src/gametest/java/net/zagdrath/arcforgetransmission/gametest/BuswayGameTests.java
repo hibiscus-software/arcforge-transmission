@@ -65,6 +65,7 @@ public final class BuswayGameTests {
         TESTS.put("an_overloaded_tap_trips_before_its_feeder", BuswayGameTests::tapBeforeFeeder);
         TESTS.put("busway_joins_only_its_size_and_tier", BuswayGameTests::sizesAndTiers);
         TESTS.put("a_damaged_busway_breaks_the_circuit", BuswayGameTests::damaged);
+        TESTS.put("a_feed_in_turns_to_busway_laid_beside_it", BuswayGameTests::feedInTurns);
     }
 
     private BuswayGameTests() {}
@@ -132,6 +133,37 @@ public final class BuswayGameTests {
     }
 
     // --- The tests ----------------------------------------------------------------------------------------------------
+
+    // A feed-in standing alone faces up; busway of its tier laid beside it: it turns to the busway, and the busway's side
+    // toward it joins (at every tier). One facing up under a run along z turns its riser along z.
+    private static void feedInTurns(GameTestHelper helper) {
+        FactoryGameTests.floor(helper, 24);
+        ServerLevel level = helper.getLevel();
+        List<String> wrong = new ArrayList<>();
+        int x = 2;
+        for (VoltageTier tier : VoltageTier.values()) {
+            BusPieceBlockEntity feed = feedIn(helper, tier, new BlockPos(x, 2, 4), Direction.UP);
+            BlockPos at = new BlockPos(x, 2, 5);
+            BuswayBlockEntity bus = run(helper, tier, 2, at);
+            BlockState feedState = level.getBlockState(feed.getBlockPos()), busState = level.getBlockState(bus.getBlockPos());
+            if (feedState.getValue(BuswayFeedInBlock.FACING) != Direction.SOUTH || !busState.getValue(BuswayBlock.SIDES.get(Direction.NORTH))) {
+                wrong.add(tier + ": feed-in faces " + feedState.getValue(BuswayFeedInBlock.FACING) + ", busway joined north "
+                        + busState.getValue(BuswayBlock.SIDES.get(Direction.NORTH)));
+            }
+            // Facing up under a run along z: its riser turned to meet that run.
+            BusPieceBlockEntity up = feedIn(helper, tier, new BlockPos(x, 2, 10), Direction.UP);
+            run(helper, tier, 2, new BlockPos(x, 3, 10));
+            run(helper, tier, 2, new BlockPos(x, 3, 11));
+            BlockState upState = level.getBlockState(up.getBlockPos());
+            if (upState.getValue(BuswayFeedInBlock.FACING) != Direction.UP || upState.getValue(BuswayFeedInBlock.AXIS) != Direction.Axis.Z) {
+                wrong.add(tier + ": under a run along z, the feed-in faces " + upState.getValue(BuswayFeedInBlock.FACING) + " along "
+                        + upState.getValue(BuswayFeedInBlock.AXIS));
+            }
+            x += 5;
+        }
+        helper.assertTrue(wrong.isEmpty(), String.join("; ", wrong));
+        helper.succeed();
+    }
 
     // Nine LV sources into a feed-in, an LV 8W run of six blocks, four 2W tap boxes on it, each tap's termination cabled to
     // two LV sinks (8,192 FE/t a tap): 32,768 FE/t reach the sinks, every tap closed and the run whole.

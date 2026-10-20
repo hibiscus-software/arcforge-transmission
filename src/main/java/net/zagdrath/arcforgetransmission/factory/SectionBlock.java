@@ -150,8 +150,9 @@ public class SectionBlock extends BaseEntityBlock {
             InteractionResult grid = GridInteractions.wrench(stack, level, section, player, hit.getLocation(), false);
             return grid != null ? grid : InteractionResult.PASS;
         }
+        // Anything else in hand (a Cable Termination to mount on it, a cable, a block) is the item's to use.
         if (!stack.isEmpty()) {
-            return InteractionResult.TRY_WITH_EMPTY_HAND;
+            return InteractionResult.PASS;
         }
         if (!GridInteractions.mayChange(player, level, main)) {
             return InteractionResult.FAIL;
@@ -172,5 +173,22 @@ public class SectionBlock extends BaseEntityBlock {
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new SectionBlockEntity(pos, state);
+    }
+
+    @Override
+    protected boolean propagatesSkylightDown(BlockState state) {
+        return true;
+    }
+
+    // Drawn by its block entity: it dims no light and casts no ambient-occlusion shade on its neighbours, however much of
+    // its block its shape fills.
+    @Override
+    protected int getLightDampening(BlockState state) {
+        return 0;
+    }
+
+    @Override
+    protected float getShadeBrightness(BlockState state, BlockGetter level, BlockPos pos) {
+        return 1.0F;
     }
 }

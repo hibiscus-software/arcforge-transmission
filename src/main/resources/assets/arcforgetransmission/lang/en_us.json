@@ -421,5 +421,7 @@
   "hud.arcforgetransmission.cable_tray.derated": "Cables through it derated to %s%% (%s cables)",
   "hud.arcforgetransmission.cable_tray.full": "Full ampacity",
   "port_status.arcforgetransmission.wrong_tier_load": "%s takes %s",
-  "hud.arcforgetransmission.load": "%s (%s): %s of %s FE/t"
+  "hud.arcforgetransmission.load": "%s (%s): %s of %s FE/t",
+  "message.arcforgetransmission.cable_termination.turned": "Turned a quarter",
+  "message.arcforgetransmission.cable_termination.unwire_to_turn": "Unwire it first to turn it"
 }

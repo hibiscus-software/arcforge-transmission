@@ -76,7 +76,8 @@ Reactors drive turbines through their steam, so a reactor connects through its S
 - Its HUD names the plant, with the FE/t it gives now and its nameplate. Its comparator reads the plant's load (what it
   gives over its nameplate).
 - A plant on a unit transformer of another tier gives nothing: the HUD says so ("Steam Turbine Array connects at EHV").
-- A Pin Insulator takes FE from a plant only at LV.
+- A Pin Insulator or Cable Termination takes FE from a plant only at the plant's own tier, up to its nameplate (below it,
+  nothing; above it, an overvoltage that breaks the plant).
 
 The ratings are the data map `arcforgetransmission:generator` (on blocks: a `tier`, and a `rating` in FE/t or `auto` to
 read the plant's own max), so a datapack can map another mod's generators. An FE block without an entry works as it
@@ -160,8 +161,8 @@ A transformer section's rating is one full circuit at its primary tier, so its s
 largest busway. All of these are in the config's `factory` section.
 
 **Cable Terminations.** Where a tray cable ends: a whole circuit (A, B and C) in one block, mounted on any face of a block
-like a Pin Insulator. LV and MV are compact stress-cone potheads, HV three porcelain-skirted terminations 2 blocks tall,
-EHV three tall composite ones with corona rings, 3 blocks tall. On top of a block it stands on it; on a side it stands
+like a Pin Insulator. LV and MV are compact stress-cone potheads, HV three glass-skirted terminations 2 blocks tall,
+EHV three taller glass ones with corona rings, 3 blocks tall. On top of a block it stands on it; on a side it stands
 upright on a wall bracket; under one it hangs. On a machine it's that block's port (Wrench: Configure the mode, Sneak +
 Configure the current limit), with a Pin Insulator's rules: above LV a foreign block is an overvoltage. On a lineup
 section or a busway tap-off it joins its cable through instead. Rotate swaps B and C; Port switches an LV termination to

@@ -90,7 +90,7 @@ public final class FactoryContent {
     }
 
     private static DeferredBlock<SectionBlock> section(DeferredBlock<SectionBlock> block) {
-        add(Tab.YARD, ITEMS.registerItem(block.getId().getPath(), p -> new SectionItem(block.get(), p)));
+        add(Tab.YARD, ITEMS.registerItem(block.getId().getPath(), p -> new SectionItem(block.get(), p), p -> p.useBlockDescriptionPrefix()));
         return block;
     }
 

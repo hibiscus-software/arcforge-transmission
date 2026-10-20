@@ -10,7 +10,7 @@ A scene is a few placed blocks of one block (its blockstate's multipart picks ea
   barbed_close     a close look: two fences and a corner, with their barbed wire
   busway_<tier>    a busway run for lv / mv / hv / ehv: feed-in, straights (one with its feature), supports, elbow, tee,
                    riser with vertical elbows, end caps, tap-offs and a reducer
-  busway_sizes_<tier>, busway_close_<tier>    the three sizes side by side; two blocks and a tap-off close up
+  busway_sizes_<tier>, busway_close_<tier>    the three sizes side by side; a feed-in, two blocks and a tap-off close up
   tray_standard, tray_wide, tray_heavy (and _close)    cable tray runs with their mounts and cables laid in them
   factory          every busway and tray scene above
 Each scene is drawn from the front, the side and 45 degrees. Not a generator: it writes nothing under src.
@@ -333,9 +333,11 @@ def busway_layout(tier, name):
                 items[(x, 0, 3 * k)] = dict(tier=tier, kind="busway", size=size, feature=(x == 1))
         return items, context
     if name.startswith("busway_close"):
-        items[(0, 0, 0)] = B(support="floor" if tier in ("hv", "ehv") else "none")
-        items[(1, 0, 0)] = B(feature=True)
-        items[(1, 0, 1)] = dict(tier=tier, kind="tap_off", facing="north", closed=True, tripped=False)
+        # A feed-in, two blocks of busway from it and a tap-off: how each meets the next.
+        items[(0, 0, 0)] = dict(tier=tier, kind="feed_in", facing="east")
+        items[(1, 0, 0)] = B(support="floor" if tier in ("hv", "ehv") else "none")
+        items[(2, 0, 0)] = B(feature=True)
+        items[(2, 0, 1)] = dict(tier=tier, kind="tap_off", facing="north", closed=True, tripped=False)
         return items, context
     gis = tier in ("hv", "ehv")
     context[(0, 0, 0)] = "switchgear"

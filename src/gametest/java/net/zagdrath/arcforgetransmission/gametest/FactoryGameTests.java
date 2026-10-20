@@ -62,6 +62,8 @@ public final class FactoryGameTests {
         TESTS.put("cable_terminations_carry_a_circuit", FactoryGameTests::terminationsCarryACircuit);
         TESTS.put("tall_terminations_stand_into_their_parts", FactoryGameTests::tallTerminations);
         TESTS.put("termination_above_lv_overvoltages_a_foreign_block", FactoryGameTests::terminationOvervoltage);
+        TESTS.put("every_item_has_a_name", FactoryGameTests::everyItemNamed);
+        TESTS.put("terminations_place_on_every_face", FactoryGameTests::placeOnEveryFace);
     }
 
     private FactoryGameTests() {}
@@ -88,6 +90,14 @@ public final class FactoryGameTests {
     // A stone floor under the test, x from -4 to size and z from -8 to 16, the space above it cleared (these tests build
     // past their structure's bounds, where an earlier test's blocks may still stand).
     static void floor(GameTestHelper helper, int size) {
+        // The test only keeps the chunks round its (one-block) structure loaded: keep the whole floor's, or a machine out
+        // at its far end is in an unloaded chunk (and a unit transformer there finds no FE block).
+        BlockPos lo = helper.absolutePos(new BlockPos(-4, 0, -8)), hi = helper.absolutePos(new BlockPos(size, 0, 16));
+        for (int cx = Math.min(lo.getX(), hi.getX()) >> 4; cx <= Math.max(lo.getX(), hi.getX()) >> 4; cx++) {
+            for (int cz = Math.min(lo.getZ(), hi.getZ()) >> 4; cz <= Math.max(lo.getZ(), hi.getZ()) >> 4; cz++) {
+                helper.getLevel().setChunkForced(cx, cz, true);
+            }
+        }
         for (int x = -4; x <= size; x++) {
             for (int z = -8; z <= 16; z++) {
                 for (int y = 8; y >= 1; y--) {
@@ -155,6 +165,64 @@ public final class FactoryGameTests {
     }
 
     // --- The tests ----------------------------------------------------------------------------------------------------
+
+    // A player places a termination of each tier from its item on each face of a block: on top, on each side and under.
+    private static void placeOnEveryFace(GameTestHelper helper) {
+        floor(helper, 40);
+        ServerLevel level = helper.getLevel();
+        net.minecraft.world.entity.player.Player player = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
+        List<String> failed = new java.util.ArrayList<>();
+        int x = 2;
+        for (VoltageTier tier : VoltageTier.values()) {
+            for (Direction face : Direction.values()) {
+                BlockPos mount = helper.absolutePos(new BlockPos(x, 4, 4));
+                level.setBlock(mount, Blocks.STONE.defaultBlockState(), Block.UPDATE_ALL);
+                // The player stands just off the face (beside it, for the top and bottom), as one placing it would.
+                BlockPos stand = mount.relative(face, 2);
+                if (face.getAxis() == Direction.Axis.Y) {
+                    stand = mount.north(2).below(face == Direction.UP ? 0 : 2);
+                }
+                player.setPos(stand.getX() + 0.5, stand.getY(), stand.getZ() + 0.5);
+                // Looking east: on top or under, it's turned (its row of conductors north to south).
+                player.setYRot(-90.0F);
+                ItemStack stack = new ItemStack(FactoryContent.TERMINATIONS.get(tier).get());
+                player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, stack);
+                net.minecraft.world.phys.Vec3 hit = net.minecraft.world.phys.Vec3.atCenterOf(mount).add(face.getStepX() * 0.5, face.getStepY() * 0.5,
+                        face.getStepZ() * 0.5);
+                var result = stack.useOn(new net.minecraft.world.item.context.UseOnContext(player, net.minecraft.world.InteractionHand.MAIN_HAND,
+                        new net.minecraft.world.phys.BlockHitResult(hit, face, mount, false)));
+                BlockState placed = level.getBlockState(mount.relative(face));
+                if (!(placed.getBlock() instanceof CableTerminationBlock) || placed.getValue(CableTerminationBlock.FACING) != face
+                        || placed.getValue(CableTerminationBlock.TURNED) != face.getAxis().isVertical()) {
+                    BlockState would = FactoryContent.TERMINATIONS.get(tier).get().defaultBlockState().setValue(CableTerminationBlock.FACING, face);
+                    failed.add(tier + " " + face + " (" + result + ", its collision " + would.getCollisionShape(level, mount.relative(face)).bounds() + ")");
+                }
+                x += 5;
+                if (x > 38) {
+                    x = 2;
+                }
+                level.setBlock(mount.relative(face), Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
+            }
+        }
+        helper.assertTrue(failed.isEmpty(), "Not placed: " + failed);
+        helper.succeed();
+    }
+
+    // Every item the addon registers has its name in the lang file under the key it really uses (a block's item may use
+    // its block's key or its own, by how it was registered).
+    private static void everyItemNamed(GameTestHelper helper) {
+        net.minecraft.locale.Language language = net.minecraft.locale.Language.getInstance();
+        helper.assertTrue(language.has("block." + ArcforgeTransmission.MODID + ".lv_cable_termination"), "The addon's lang file isn't loaded");
+        List<String> missing = new java.util.ArrayList<>();
+        for (var item : BuiltInRegistries.ITEM) {
+            Identifier id = BuiltInRegistries.ITEM.getKey(item);
+            if (id.getNamespace().equals(ArcforgeTransmission.MODID) && !language.has(item.getDescriptionId())) {
+                missing.add(item.getDescriptionId());
+            }
+        }
+        helper.assertTrue(missing.isEmpty(), "Items with no name: " + missing);
+        helper.succeed();
+    }
 
     // An LV termination on the north face of a filled energy cell (Input), a tray cable to one on top of an empty cell
     // (Output): the cable is three conductors, and the empty cell fills.

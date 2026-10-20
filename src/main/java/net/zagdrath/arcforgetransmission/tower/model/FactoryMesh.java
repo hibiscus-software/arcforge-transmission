@@ -15,8 +15,8 @@ import java.util.Map;
 // Factory distribution's models, on the towers' sheet with TowerMesh's materials and helpers (the same rules: every face
 // at 16 texels a block, never stretched, each plate shading itself, ramps across round parts):
 //
-//  - the Cable Termination (LV, MV: a compact stress-cone pothead; HV: three porcelain-skirted terminations, a block and a
-//    half; EHV: three tall composite terminations with corona rings, nearly three blocks), on top of a block, on a wall
+//  - the Cable Termination (LV, MV: a compact stress-cone pothead; HV: three glass-skirted terminations, a block and a
+//    half; EHV: three tall glass terminations with corona rings, nearly three blocks), on top of a block, on a wall
 //    bracket off its side, or hanging under it;
 //  - the switchgear lineups' sections: LV and MV metal-enclosed switchgear (1 wide, 2 tall: ANSI-61 grey on a dark plinth,
 //    doors, breakers), HV and EHV gas-insulated bays (2 wide, 3 tall: aluminium tanks, flanged joints, SF6 gauges, the
@@ -120,8 +120,8 @@ public final class FactoryMesh {
                 m.frame.add(new float[] { c - r - 0.4F, y0, c - r - 0.4F, c + r + 0.4F, pot1, c + r + 0.4F });
             }
             case 2 -> {
-                // Three outdoor porcelain terminations on a galvanized beam: each a support foot, the aluminium stress-cone
-                // housing, the brown porcelain with big and small sheds in turn, and the top fitting with its terminal.
+                // Three outdoor terminations on a galvanized beam: each a support foot, the aluminium stress-cone housing,
+                // the toughened glass (as the HV pin insulator's) with big and small sheds in turn, and the top fitting with its terminal.
                 if (!bracket) {
                     m.plateBox(0.5F, 0, 6.5F, 15.5F, 1.2F, 9.5F, TowerMesh.Mat.GALV);
                     y0 = 1.2F;
@@ -145,15 +145,15 @@ public final class FactoryMesh {
                         big = !big;
                     }
                     profile.add(new float[] { 28.0F, 1.2F });
-                    m.turned(x, c, profile.toArray(new float[0][]), 8, TowerMesh.Ramp.PORCELAIN, false, false);
+                    m.turned(x, c, profile.toArray(new float[0][]), 8, TowerMesh.Ramp.GLASS, false, false);
                     m.turned(x, c, new float[][] { { 28.0F, 1.6F }, { 29.2F, 1.6F }, { 29.2F, 0.6F }, { 30.4F, 0.6F } }, 8, TowerMesh.Ramp.ALUM, true, true);
                     m.swatchBox(x - 0.3F, 29.4F, c - 1.2F, x + 0.3F, 30.4F, c + 1.2F, TowerMesh.GALV0 + 8);
                     m.insulators.add(new float[] { x - 2.4F, y0, c - 2.4F, x + 2.4F, 30.4F, c + 2.4F });
                 }
             }
             default -> {
-                // Three tall composite terminations: the aluminium stress-cone housing, the grey silicone core with sheds
-                // alternating big and small, the top fitting, and a corona ring on a stud above it.
+                // Three tall terminations: the aluminium stress-cone housing, the toughened glass (as the HV one's) with
+                // sheds alternating big and small, the top fitting, and a corona ring on a stud above it.
                 if (!bracket) {
                     m.plateBox(0.5F, 0, 6.5F, 15.5F, 1.2F, 9.5F, TowerMesh.Mat.GALV);
                     y0 = 1.2F;
@@ -178,19 +178,10 @@ public final class FactoryMesh {
                         big = !big;
                     }
                     profile.add(new float[] { 41.2F, 1.0F });
-                    m.turned(x, c, profile.toArray(new float[0][]), 8, TowerMesh.Ramp.SILICONE, false, false);
+                    m.turned(x, c, profile.toArray(new float[0][]), 8, TowerMesh.Ramp.GLASS, false, false);
                     m.turned(x, c, new float[][] { { 41.2F, 1.4F }, { 42.4F, 1.4F }, { 42.4F, 0.5F }, { 45.0F, 0.5F } }, 8, TowerMesh.Ramp.ALUM, true, false);
-                    // The corona ring: eight aluminium bars round the stud, on four spokes.
-                    float ry = 44.2F, rr = 2.2F;
-                    float[][] ring = TowerMesh.ring(x, c, rr, 8);
-                    for (int k = 0; k < 8; k++) {
-                        float[] a = { ring[k][0], ry, ring[k][2] }, b = { ring[(k + 1) % 8][0], ry, ring[(k + 1) % 8][2] };
-                        m.member(a, b, 0.6F, 0.6F, TowerMesh.UP, TowerMesh.Mat.ALUM, false);
-                    }
-                    for (int k = 0; k < 8; k += 2) {
-                        float[] mid = { (ring[k][0] + ring[(k + 1) % 8][0]) / 2, ry, (ring[k][2] + ring[(k + 1) % 8][2]) / 2 };
-                        m.rod(new float[] { x, ry, c }, mid, 0.3F, TowerMesh.ALUM0 + 3);
-                    }
+                    // The corona ring round the stud, on four spokes.
+                    coronaRing(m, x, c, 44.2F, 2.2F, 0.6F, 8, 0.3F);
                     m.turned(x, c, new float[][] { { 45.0F, 0.9F }, { 46.6F, 0.9F } }, 8, TowerMesh.Ramp.ALUM, true, false);
                     m.insulators.add(new float[] { x - 2.5F, y0, c - 2.5F, x + 2.5F, 46.6F, c + 2.5F });
                 }
@@ -488,18 +479,15 @@ public final class FactoryMesh {
 
     // --- HV and EHV: gas-insulated bays ---
 
-    // A bay 2 wide and 3 tall: the galvanized base frame; the mechanism cabinet across the front at the bottom; the
+    // A bay 2 wide and 3 tall: the solid plinth (meeting the next bay's); the mechanism cabinet across the front at the bottom; the
     // breaker (HV one three-phase tank, EHV a tank a phase) with flanged joints and SF6 density gauges; above it the
     // disconnector and earthing switch module; and the bus tube along the top, its flange meeting the next bay's.
     private static void gisBay(TowerMesh m, Section section, int tier) {
         boolean ehv = tier == 3;
         float cz = 10;
-        m.plateBox(0.5F, 0, 1.0F, 31.5F, 1.6F, 3.0F, TowerMesh.Mat.GALV);
-        m.plateBox(0.5F, 0, 13.0F, 31.5F, 1.6F, 15.0F, TowerMesh.Mat.GALV);
-        for (float x : new float[] { 1.5F, 30.5F }) {
-            m.plateBox(x - 1.0F, 0, 3.0F, x + 1.0F, 1.6F, 13.0F, TowerMesh.Mat.GALV);
-        }
-        m.frame.add(new float[] { 0.5F, 0, 1.0F, 31.5F, 1.6F, 15.0F });
+        // The plinth: solid, the bay's whole width, so a lineup's bays stand on one.
+        m.plateBox(0, 0, 0.5F, 32, 1.6F, 16, TowerMesh.Mat.PLINTH);
+        m.frame.add(new float[] { 0, 0, 0.5F, 32, 1.6F, 16 });
         if (section == Section.TRANSFORMER) {
             oilTransformer(m);
             bus(m, tier, false, true);
@@ -596,7 +584,7 @@ public final class FactoryMesh {
         m.frame.add(new float[] { 0, 36.0F, cz - 5.0F, 32, 48, cz + 5.0F });
     }
 
-    // An incoming bay's SF6-to-air bushings, one a phase standing off the bus: HV brown porcelain, EHV grey composite
+    // An incoming bay's SF6-to-air bushings, one a phase standing off the bus: HV toughened glass (as its pin insulators), EHV grey composite
     // with a corona ring on top, their tops the overhead line's attach points.
     private static void airBushings(TowerMesh m, int tier) {
         boolean ehv = tier == 3;
@@ -617,21 +605,24 @@ public final class FactoryMesh {
                 big = !big;
             }
             profile.add(new float[] { top - 2.4F, core });
-            m.turned(x, cz, profile.toArray(new float[0][]), 8, ehv ? TowerMesh.Ramp.SILICONE : TowerMesh.Ramp.PORCELAIN, false, false);
+            m.turned(x, cz, profile.toArray(new float[0][]), 8, ehv ? TowerMesh.Ramp.SILICONE : TowerMesh.Ramp.GLASS, false, false);
             m.turned(x, cz, new float[][] { { top - 2.4F, 1.8F }, { top - 1.2F, 1.8F }, { top - 1.2F, 0.6F }, { top, 0.6F } }, 8, TowerMesh.Ramp.ALUM, true, false);
             if (ehv) {
-                float ry = top - 1.8F;
-                float[][] ring = TowerMesh.ring(x, cz, 3.6F, 10);
-                for (int k = 0; k < 10; k++) {
-                    m.member(new float[] { ring[k][0], ry, ring[k][2] }, new float[] { ring[(k + 1) % 10][0], ry, ring[(k + 1) % 10][2] }, 0.7F, 0.7F,
-                            TowerMesh.UP, TowerMesh.Mat.ALUM, false);
-                }
-                for (int k = 0; k < 10; k += 2) {
-                    m.rod(new float[] { x, ry, cz }, new float[] { (ring[k][0] + ring[(k + 1) % 10][0]) / 2, ry, (ring[k][2] + ring[(k + 1) % 10][2]) / 2 },
-                            0.35F, TowerMesh.ALUM0 + 3);
-                }
+                coronaRing(m, x, cz, top - 1.8F, 3.6F, 0.7F, 10, 0.35F);
             }
             m.insulators.add(new float[] { x - 3.2F, 44.0F, cz - 3.2F, x + 3.2F, top, cz + 3.2F });
+        }
+    }
+
+    // A corona ring: one closed aluminium band (its outside, top, inside and underside: no corners to open at), `width`
+    // square in section round radius r at y, on spokes from the stud at its middle to every other corner.
+    private static void coronaRing(TowerMesh m, float x, float z, float y, float r, float width, int sides, float spoke) {
+        float h = width / 2, in = r - h, out = r + h;
+        m.turned(x, z, new float[][] { { y - h, in }, { y - h, out }, { y + h, out }, { y + h, in }, { y - h, in } }, sides, TowerMesh.Ramp.ALUM, false,
+                false);
+        float[][] corners = TowerMesh.ring(x, z, in, sides);
+        for (int k = 0; k < sides; k += 2) {
+            m.rod(new float[] { x, y, z }, new float[] { corners[k][0], y, corners[k][2] }, spoke, TowerMesh.ALUM0 + 3);
         }
     }
 

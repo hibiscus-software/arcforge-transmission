@@ -772,7 +772,17 @@ public final class GridManager {
     public static void tick(ServerLevel level) {
         CREATIVE_BREAKS.remove(level);
         GridData.Dimension dimension = GridData.of(level);
+        // Nothing wired anywhere: nothing to solve, but whatever reacts to the tick still does (a lineup plans itself, and
+        // its bus is made only then), as everything dead does in a world with wires elsewhere.
         if (dimension.graph().edges().isEmpty()) {
+            LAST_VIEW.put(level, TickView.EMPTY);
+            LAST_AMPS.put(level, Map.of());
+            LAST_LOSS.put(level, Map.of());
+            for (GridEndpointBlockEntity endpoint : new ArrayList<>(loadedIn(level))) {
+                if (!endpoint.isRemoved() && endpoint instanceof PortSource source) {
+                    source.afterTick(level, dimension, TickView.EMPTY);
+                }
+            }
             return;
         }
         List<PortHandler> handlers = new ArrayList<>();

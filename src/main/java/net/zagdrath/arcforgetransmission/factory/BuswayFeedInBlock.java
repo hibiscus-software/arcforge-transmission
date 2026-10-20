@@ -11,6 +11,7 @@ import org.jspecify.annotations.Nullable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -18,6 +19,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.ScheduledTickAccess;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.RenderShape;
@@ -41,13 +44,15 @@ import net.zagdrath.arcforgetransmission.grid.world.GridManager;
 public class BuswayFeedInBlock extends BaseEntityBlock {
     public static final EnumProperty<Direction> FACING = EnumProperty.create("facing", Direction.class, Direction.NORTH, Direction.EAST, Direction.SOUTH,
             Direction.WEST, Direction.UP);
+    // Facing up: the way the busway above it runs (its riser's tubes or duct turned to meet it).
+    public static final EnumProperty<Direction.Axis> AXIS = EnumProperty.create("axis", Direction.Axis.class, Direction.Axis.X, Direction.Axis.Z);
 
     private final VoltageTier tier;
 
     public BuswayFeedInBlock(VoltageTier tier, BlockBehaviour.Properties properties) {
         super(properties);
         this.tier = tier;
-        registerDefaultState(stateDefinition.any().setValue(FACING, Direction.UP));
+        registerDefaultState(stateDefinition.any().setValue(FACING, Direction.UP).setValue(AXIS, Direction.Axis.X));
     }
 
     public VoltageTier tier() {
@@ -56,14 +61,69 @@ public class BuswayFeedInBlock extends BaseEntityBlock {
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(FACING);
+        builder.add(FACING, AXIS);
     }
 
-    // Leaving upward, or toward a side clicked from (placed against a busway run's end).
+    // Leaving toward a busway of its tier beside it or above (the side clicked from first); with none, upward, or toward
+    // the side clicked from (placed against a run's end).
     @Override
     public @Nullable BlockState getStateForPlacement(BlockPlaceContext context) {
         Direction face = context.getClickedFace();
-        return defaultBlockState().setValue(FACING, face == Direction.DOWN || face == Direction.UP ? Direction.UP : face.getOpposite());
+        Direction way = face == Direction.DOWN || face == Direction.UP ? Direction.UP : face.getOpposite();
+        if (!busway(context.getLevel().getBlockState(context.getClickedPos().relative(way)))) {
+            for (Direction side : FACING.getPossibleValues()) {
+                if (busway(context.getLevel().getBlockState(context.getClickedPos().relative(side)))) {
+                    way = side;
+                    break;
+                }
+            }
+        }
+        BlockState state = defaultBlockState().setValue(FACING, way);
+        return way == Direction.UP ? aimed(state, context.getLevel().getBlockState(context.getClickedPos().above())) : state;
+    }
+
+    // Facing up, turned to the way the busway above runs (its arms east and west, or north and south).
+    private BlockState aimed(BlockState state, BlockState above) {
+        if (!busway(above)) {
+            return state;
+        }
+        boolean x = above.getValue(BuswayBlock.SIDES.get(Direction.EAST)) || above.getValue(BuswayBlock.SIDES.get(Direction.WEST));
+        boolean z = above.getValue(BuswayBlock.SIDES.get(Direction.NORTH)) || above.getValue(BuswayBlock.SIDES.get(Direction.SOUTH));
+        return x == z ? state : state.setValue(AXIS, x ? Direction.Axis.X : Direction.Axis.Z);
+    }
+
+    private boolean busway(BlockState state) {
+        return state.getBlock() instanceof BuswayBlock busway && busway.tier() == tier;
+    }
+
+    // Busway of its tier laid beside it (or above) while none is where it faces: it turns to it.
+    @Override
+    protected BlockState updateShape(BlockState state, LevelReader level, ScheduledTickAccess ticks, BlockPos pos, Direction direction,
+            BlockPos neighborPos, BlockState neighborState, RandomSource random) {
+        if (direction != Direction.DOWN && direction != state.getValue(FACING) && busway(neighborState)
+                && !busway(level.getBlockState(pos.relative(state.getValue(FACING))))) {
+            return direction == Direction.UP ? aimed(state.setValue(FACING, direction), neighborState) : state.setValue(FACING, direction);
+        }
+        if (direction == Direction.UP && state.getValue(FACING) == Direction.UP) {
+            return aimed(state, neighborState);
+        }
+        return super.updateShape(state, level, ticks, pos, direction, neighborPos, neighborState, random);
+    }
+
+    // Turned (by the Wrench, or toward busway laid beside it): it and the busway now before it join again.
+    @Override
+    protected void onPlace(BlockState state, Level level, BlockPos pos, BlockState old, boolean movedByPiston) {
+        super.onPlace(state, level, pos, old, movedByPiston);
+        if (level instanceof ServerLevel server && old.is(this) && old.getValue(FACING) != state.getValue(FACING)) {
+            if (level.getBlockEntity(pos) instanceof BuswayFeedInBlockEntity feed) {
+                feed.rejoin(server);
+            }
+            for (Direction way : new Direction[] { old.getValue(FACING), state.getValue(FACING) }) {
+                if (level.getBlockEntity(pos.relative(way)) instanceof BusPieceBlockEntity piece) {
+                    piece.rejoin(server);
+                }
+            }
+        }
     }
 
     @Override

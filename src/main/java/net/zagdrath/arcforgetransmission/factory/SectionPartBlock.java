@@ -151,4 +151,16 @@ public class SectionPartBlock extends BaseEntityBlock {
         BlockPos main = mainOf(level, pos);
         return main == null ? InteractionResult.PASS : SectionBlock.use(ItemStack.EMPTY, level, main, player, hit);
     }
+
+    // Drawn by its block entity: it dims no light and casts no ambient-occlusion shade on its neighbours, however much of
+    // its block its shape fills.
+    @Override
+    protected int getLightDampening(BlockState state) {
+        return 0;
+    }
+
+    @Override
+    protected float getShadeBrightness(BlockState state, BlockGetter level, BlockPos pos) {
+        return 1.0F;
+    }
 }

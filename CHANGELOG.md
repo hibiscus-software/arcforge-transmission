@@ -5,7 +5,7 @@
 ### Added
 - **Cable Termination** (LV, MV, HV, EHV; Wiring & Tools tab): one whole circuit (A, B and C) where a tray cable ends,
   mounted on any face of a block. LV and MV are compact stress-cone potheads (a cast pot with three porcelain outlets);
-  HV is three porcelain-skirted terminations, 2 blocks tall; EHV three tall grey composite ones with corona rings, 3
+  HV is three toughened-glass terminations, 2 blocks tall; EHV three taller glass ones with corona rings, 3
   blocks tall (its invisible parts give it a matching hitbox). On top of a block it stands on it, on a side it stands
   upright on a wall bracket, under one it hangs. On an FE block it's that block's port, with a Pin Insulator's mode,
   current limit, status and overvoltage rule (above LV a foreign block is destroyed). Its labels are fixed: the Wrench
@@ -65,6 +65,26 @@
 ### Changed
 - The Pin Insulator's port is now shared with the Cable Termination (`MountedPort`, `MountedPortBlockEntity`): one set of
   rules for a block's port, however its conductors are mounted.
+
+### Fixed
+- Switchgear lineups planned themselves only while some wire existed in the dimension: with none, every lineup said
+  "not yet planned" (and made no bus). The grid now runs its blocks' after-tick work with nothing to solve.
+- Wires strung to a Cable Termination weren't drawn.
+- A Cable Termination couldn't be mounted on a switchgear section (any item in hand worked its handle); the sections'
+  items showed their translation keys.
+- A busway feed-in placed on a block faced up and never joined busway laid beside it: it now turns to busway of its
+  tier placed next to it. A termination on top of or under a block is lined up across the way the player faces (Sneak
+  + Wrench on Rotate turns it a quarter, while unwired), to meet a busway either way.
+- HV and EHV Cable Terminations and the HV GIS air bushings are toughened glass, as the pin insulators are; EHV corona
+  rings are one closed band; GIS bays stand on a solid plinth that meets the next bay's; switchgear and terminations
+  cast no shade on the blocks round them; the switchgear's aluminium and paint is shaded facet by facet (smooth, not
+  fluted); cable tray elbows' rungs no longer flicker.
+- A Pin Insulator or Cable Termination on a mapped power plant of its own tier (an EHV termination on a Steam Turbine
+  Array) was an overvoltage and broke the plant: it now takes the plant's FE, up to its nameplate (refused below its
+  tier, an overvoltage only above it).
+- A feed-in facing up turns its riser to the busway above it (tubes or duct along x or z, the blockstate's `axis`).
+- Busway aluminium and paint are a step darker and shaded smoothly (round faces blended between tones, flat faces a
+  gentle gradient), not flat and near white.
 
 ## Unreleased: tier voltages, gantry jumpers, station fences, sound and particles, power plants on the grid
 

@@ -38,10 +38,13 @@ import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import net.zagdrath.arcforge.item.tool.WrenchItem;
+import net.zagdrath.arcforge.item.tool.WrenchMode;
 import net.zagdrath.arcforgetransmission.ArcforgeTransmission;
 import net.zagdrath.arcforgetransmission.grid.VoltageTier;
 import net.zagdrath.arcforgetransmission.grid.block.GridInteractions;
@@ -53,18 +56,21 @@ import net.zagdrath.arcforgetransmission.tower.model.FactoryMesh;
 // of the block it serves (FACING points away from that block) as a Pin Insulator is. On top of a block it stands on it;
 // on a block's side it stands upright on a wall bracket beside it; under one it hangs. LV and MV fit their block; an HV
 // termination stands two blocks tall and an EHV one three, the cells above it (below, hanging) its parts
-// (CableTerminationPartBlock). See CableTerminationBlockEntity.
+// (CableTerminationPartBlock). On top of a block or under one, TURNED gives it a quarter turn (its row of conductors
+// north to south rather than west to east), to line up with what it serves: set as it's placed by the way the player
+// faces, and the Wrench on Rotate, sneaking, turns it while nothing's wired to it. See CableTerminationBlockEntity.
 public class CableTerminationBlock extends BaseEntityBlock {
     public static final EnumProperty<Direction> FACING = BlockStateProperties.FACING;
+    public static final BooleanProperty TURNED = BooleanProperty.create("turned");
 
     private final VoltageTier tier;
-    // Each facing's shape, by the cell (0 its own, 1 and 2 its parts').
-    private final Map<Direction, Map<Integer, VoxelShape>> shapes = new EnumMap<>(Direction.class);
+    // Each facing's shape (and turned, on top or under), by the cell (0 its own, 1 and 2 its parts').
+    private final Map<String, Map<Integer, VoxelShape>> shapes = new java.util.concurrent.ConcurrentHashMap<>();
 
     public CableTerminationBlock(VoltageTier tier, BlockBehaviour.Properties properties) {
         super(properties);
         this.tier = tier;
-        registerDefaultState(stateDefinition.any().setValue(FACING, Direction.UP));
+        registerDefaultState(stateDefinition.any().setValue(FACING, Direction.UP).setValue(TURNED, false));
     }
 
     public VoltageTier tier() {
@@ -77,8 +83,9 @@ public class CableTerminationBlock extends BaseEntityBlock {
     }
 
     // The quarter turns its model takes (a wall bracket's back to the wall).
-    public static int turns(Direction facing) {
-        return facing.getAxis().isHorizontal() ? TowerPlacement.turns(facing) : 0;
+    public static int turns(BlockState state) {
+        Direction facing = state.getValue(FACING);
+        return facing.getAxis().isHorizontal() ? TowerPlacement.turns(facing) : state.getValue(TURNED) ? 1 : 0;
     }
 
     // How many blocks it takes up, and which way its parts go from it (up, or down when hanging).
@@ -91,24 +98,28 @@ public class CableTerminationBlock extends BaseEntityBlock {
     }
 
     // Its shape in one of its cells (step blocks from it, the way its parts go).
-    public VoxelShape shape(Direction facing, int step) {
-        return shapes.computeIfAbsent(facing, f -> new HashMap<>()).computeIfAbsent(step, s -> {
+    public VoxelShape shape(BlockState state, int step) {
+        Direction facing = state.getValue(FACING);
+        int turns = turns(state);
+        return shapes.computeIfAbsent(facing + ":" + turns, f -> new java.util.concurrent.ConcurrentHashMap<>()).computeIfAbsent(step, s -> {
             int dy = partsWay(facing) == Direction.UP ? s : -s;
-            VoxelShape shape = FactoryShapes.cell(FactoryMesh.termination(tier.ordinal(), mount(facing)).shapes(), turns(facing), 0, dy, 0);
+            VoxelShape shape = FactoryShapes.cell(FactoryMesh.termination(tier.ordinal(), mount(facing)).shapes(), turns, 0, dy, 0);
             return shape.isEmpty() ? Block.box(7, 7, 7, 9, 9, 9) : shape;
         });
     }
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(FACING);
+        builder.add(FACING, TURNED);
     }
 
     // Pointing away from the face it's put on, with room for its parts.
     @Override
     public @Nullable BlockState getStateForPlacement(BlockPlaceContext context) {
         Direction facing = context.getClickedFace();
-        BlockState state = defaultBlockState().setValue(FACING, facing);
+        // On top or under: its row of conductors across the way the player looks.
+        BlockState state = defaultBlockState().setValue(FACING, facing)
+                .setValue(TURNED, facing.getAxis().isVertical() && context.getHorizontalDirection().getAxis() == Direction.Axis.X);
         if (!state.canSurvive(context.getLevel(), context.getClickedPos())) {
             return null;
         }
@@ -158,7 +169,8 @@ public class CableTerminationBlock extends BaseEntityBlock {
 
     @Override
     protected BlockState rotate(BlockState state, Rotation rotation) {
-        return state.setValue(FACING, rotation.rotate(state.getValue(FACING)));
+        boolean quarter = rotation == Rotation.CLOCKWISE_90 || rotation == Rotation.COUNTERCLOCKWISE_90;
+        return state.setValue(FACING, rotation.rotate(state.getValue(FACING))).setValue(TURNED, state.getValue(TURNED) != quarter);
     }
 
     @Override
@@ -179,7 +191,7 @@ public class CableTerminationBlock extends BaseEntityBlock {
 
     @Override
     protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return shape(state.getValue(FACING), 0);
+        return shape(state, 0);
     }
 
     // Drawn by its block entity (CableTerminationRenderer).
@@ -192,6 +204,17 @@ public class CableTerminationBlock extends BaseEntityBlock {
     protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand,
             BlockHitResult hit) {
         if (level.getBlockEntity(pos) instanceof CableTerminationBlockEntity termination) {
+            // Sneaking with the Wrench on Rotate: on top or under, a quarter turn (Rotate alone swaps B and C).
+            if (GridInteractions.isWrench(stack) && WrenchItem.mode(stack) == WrenchMode.ROTATE && player.isSecondaryUseActive()
+                    && state.getValue(FACING).getAxis().isVertical()) {
+                if (!GridInteractions.mayChange(player, level, pos)) {
+                    return InteractionResult.FAIL;
+                }
+                if (level instanceof ServerLevel server) {
+                    player.sendOverlayMessage(termination.turn(server));
+                }
+                return InteractionResult.SUCCESS;
+            }
             InteractionResult result = GridInteractions.wrench(stack, level, termination, player, hit.getLocation(), true);
             if (result != null) {
                 return result;
@@ -224,5 +247,22 @@ public class CableTerminationBlock extends BaseEntityBlock {
     // Its name as a status line names it.
     static Component name(VoltageTier tier) {
         return Component.translatable("block." + ArcforgeTransmission.MODID + "." + tier.id() + "_cable_termination");
+    }
+
+    @Override
+    protected boolean propagatesSkylightDown(BlockState state) {
+        return true;
+    }
+
+    // Drawn by its block entity: it dims no light and casts no ambient-occlusion shade on its neighbours, however much of
+    // its block its shape fills.
+    @Override
+    protected int getLightDampening(BlockState state) {
+        return 0;
+    }
+
+    @Override
+    protected float getShadeBrightness(BlockState state, BlockGetter level, BlockPos pos) {
+        return 1.0F;
     }
 }

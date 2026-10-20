@@ -30,6 +30,7 @@ import net.zagdrath.arcforge.client.renderer.blockentity.MeshRendering;
 import net.zagdrath.arcforge.client.renderer.blockentity.StructureRenderer;
 import net.zagdrath.arcforgetransmission.factory.CableTerminationBlock;
 import net.zagdrath.arcforgetransmission.factory.CableTerminationBlockEntity;
+import net.zagdrath.arcforgetransmission.grid.client.WireRenderer;
 import net.zagdrath.arcforgetransmission.tower.client.TowerRenderer;
 import net.zagdrath.arcforgetransmission.tower.model.FactoryMesh;
 import net.zagdrath.arcforgetransmission.tower.model.TowerMesh;
@@ -45,6 +46,7 @@ public class CableTerminationRenderer implements StructureRenderer<CableTerminat
         public @Nullable TextureAtlasSprite sheet;
         public int light;
         public java.util.List<float[]> drops = java.util.List.of();
+        public java.util.List<WireRenderer.Prepared> wires = java.util.List.of();
         public java.util.List<Integer> dropTiers = java.util.List.of();
     }
 
@@ -64,7 +66,7 @@ public class CableTerminationRenderer implements StructureRenderer<CableTerminat
     public void extractRenderState(CableTerminationBlockEntity termination, State state, float partialTicks, Vec3 cameraPosition,
             ModelFeatureRenderer.@Nullable CrumblingOverlay breakProgress) {
         StructureRenderer.super.extractRenderState(termination, state, partialTicks, cameraPosition, breakProgress);
-        int tier = termination.tier().ordinal(), turns = CableTerminationBlock.turns(termination.facing());
+        int tier = termination.tier().ordinal(), turns = CableTerminationBlock.turns(termination.getBlockState());
         FactoryMesh.Mount mount = termination.mountKind();
         state.solid = TURNED.computeIfAbsent(tier + ":" + mount + ":" + turns, k -> TowerMesh.turned(FactoryMesh.termination(tier, mount).solid(), turns));
         state.sheet = Minecraft.getInstance().getAtlasManager().getAtlasOrThrow(AtlasIds.BLOCKS).getSprite(TowerRenderer.SHEET);
@@ -82,6 +84,8 @@ public class CableTerminationRenderer implements StructureRenderer<CableTerminat
         }
         state.drops = drops;
         state.dropTiers = tiers;
+        // The wires strung to its terminals.
+        state.wires = WireRenderer.prepare(termination.wires(), termination.getBlockPos(), level);
     }
 
     @Override
@@ -93,6 +97,7 @@ public class CableTerminationRenderer implements StructureRenderer<CableTerminat
         if (!state.drops.isEmpty()) {
             CableTrayRenderer.submitTubes(state.drops, state.dropTiers, state.light, poseStack, collector);
         }
+        WireRenderer.submit(state.wires, poseStack, collector);
     }
 
     @Override

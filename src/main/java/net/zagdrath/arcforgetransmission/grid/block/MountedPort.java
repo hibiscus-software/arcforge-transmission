@@ -36,7 +36,8 @@ import net.zagdrath.arcforgetransmission.grid.world.VoltageRatings;
 // status goes back to whatever mounted it. The rules are the same for both:
 //  - a foreign FE block may feed or be fed only at LV; switched on at a higher tier it's an overvoltage
 //    (GridConfig.OVERVOLTAGE: broken, destroyed or blown up);
-//  - a mapped power plant (Generators) gives a mounted port FE only at LV;
+//  - a mapped power plant (Generators) gives a mounted port FE only at its own tier, up to its nameplate (refused below
+//    it, an overvoltage above);
 //  - a mapped machine (Loads) takes FE only at its own tier: at a lower one the port says WRONG_TIER_LOAD and delivers
 //    nothing, at a higher one it's an overvoltage; and at most its share of its rating among all its feeds.
 public final class MountedPort implements GridManager.PortHandler {
@@ -95,17 +96,24 @@ public final class MountedPort implements GridManager.PortHandler {
         EnergyHandler handler = cache.handler(level, mount, side);
         // Overvoltage once it's live: switched on, against a block that can't take the tier, with a wire on any conductor.
         boolean wired = nodes.stream().anyMatch(id -> dimension.graph().networkOf(id) != null);
-        // A mapped machine takes its own tier and below (below, nothing); any other foreign block LV only.
+        // A mapped machine takes its own tier and below (below, nothing), and a mapped plant stands its own tier (it's
+        // refused, below); any other foreign block LV only.
         Loads.Machine machine = handler == null ? null : Loads.at(level, mount, handler);
-        boolean over = machine != null ? tier.ordinal() > machine.tier().ordinal() : !VoltageRatings.accepts(level, mount, tier);
+        Generators.Plant plant = handler == null ? null : Generators.at(level, mount);
+        boolean over = machine != null ? tier.ordinal() > machine.tier().ordinal()
+                : plant != null ? tier.ordinal() > plant.tier().ordinal() : !VoltageRatings.accepts(level, mount, tier);
         if (mode != PinInsulatorMode.OFF && wired && handler != null && over && GridConfig.OVERVOLTAGE.get() != GridConfig.Overvoltage.NONE) {
             overvoltage(level, mount, nodes.get(0), tier);
             return;
         }
-        // A mapped plant that connects above LV gives a mounted port nothing: it needs a unit transformer of its tier.
-        Generators.Plant plant = handler == null ? null : Generators.at(level, mount);
-        if (plant != null && plant.tier() != VoltageTier.LV) {
+        // A mapped plant gives a mounted port FE only at its own tier (as its unit transformer does), up to its nameplate;
+        // at a lower one, nothing.
+        if (plant != null && plant.tier() != tier) {
             out.add(new MountedPort(level, holders, tier, nodes, null, mode, limitAmps, plant, null, false, 0));
+            return;
+        }
+        if (plant != null) {
+            out.add(new MountedPort(level, holders, tier, nodes, handler, mode, limitAmps, null, null, false, plant.nameplate()));
             return;
         }
         if (machine != null && tier != machine.tier()) {

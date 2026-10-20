@@ -1,21 +1,39 @@
 {
   "variants": {
-    "facing=down": {
+    "facing=down,turned=false": {
       "model": "arcforgetransmission:block/cable_termination"
     },
-    "facing=up": {
+    "facing=down,turned=true": {
       "model": "arcforgetransmission:block/cable_termination"
     },
-    "facing=north": {
+    "facing=up,turned=false": {
       "model": "arcforgetransmission:block/cable_termination"
     },
-    "facing=south": {
+    "facing=up,turned=true": {
       "model": "arcforgetransmission:block/cable_termination"
     },
-    "facing=west": {
+    "facing=north,turned=false": {
       "model": "arcforgetransmission:block/cable_termination"
     },
-    "facing=east": {
+    "facing=north,turned=true": {
+      "model": "arcforgetransmission:block/cable_termination"
+    },
+    "facing=south,turned=false": {
+      "model": "arcforgetransmission:block/cable_termination"
+    },
+    "facing=south,turned=true": {
+      "model": "arcforgetransmission:block/cable_termination"
+    },
+    "facing=west,turned=false": {
+      "model": "arcforgetransmission:block/cable_termination"
+    },
+    "facing=west,turned=true": {
+      "model": "arcforgetransmission:block/cable_termination"
+    },
+    "facing=east,turned=false": {
+      "model": "arcforgetransmission:block/cable_termination"
+    },
+    "facing=east,turned=true": {
       "model": "arcforgetransmission:block/cable_termination"
     }
   }

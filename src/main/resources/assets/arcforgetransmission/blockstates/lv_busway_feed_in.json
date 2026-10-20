@@ -34,10 +34,20 @@
     },
     {
       "when": {
-        "facing": "up"
+        "facing": "up",
+        "axis": "x"
       },
       "apply": {
         "model": "arcforgetransmission:block/busway/lv_busway_feed_in/feed_in_up"
+      }
+    },
+    {
+      "when": {
+        "facing": "up",
+        "axis": "z"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/lv_busway_feed_in/feed_in_up_z"
       }
     }
   ]

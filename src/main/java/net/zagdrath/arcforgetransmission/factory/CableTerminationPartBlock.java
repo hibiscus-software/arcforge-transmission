@@ -66,7 +66,7 @@ public class CableTerminationPartBlock extends Block {
         if (main == null) {
             return Shapes.block();
         }
-        return ((CableTerminationBlock) main.getBlock()).shape(main.getValue(CableTerminationBlock.FACING), state.getValue(STEP));
+        return ((CableTerminationBlock) main.getBlock()).shape(main, state.getValue(STEP));
     }
 
     @Override
@@ -132,5 +132,17 @@ public class CableTerminationPartBlock extends Block {
         BlockPos main = mainOf(pos, state);
         BlockState mainState = main(level, pos, state);
         return mainState == null ? InteractionResult.PASS : mainState.useWithoutItem(level, player, hit.withPosition(main));
+    }
+
+    // Drawn by its block entity: it dims no light and casts no ambient-occlusion shade on its neighbours, however much of
+    // its block its shape fills.
+    @Override
+    protected int getLightDampening(BlockState state) {
+        return 0;
+    }
+
+    @Override
+    protected float getShadeBrightness(BlockState state, BlockGetter level, BlockPos pos) {
+        return 1.0F;
     }
 }

@@ -46,7 +46,8 @@ def pal(*cs):
 
 GALV = pal("#4E555C", "#6B737B", "#7D858D", "#89919A", "#8F979F", "#959DA5", "#9BA3AA", "#A6AEB5", "#B6BDC3", "#C9CFD4")
 PAINT = pal("#4A4E4C", "#5E6360", "#727774", "#868B88", "#9A9F9C", "#AEB3B0", "#C2C6C3")
-ALU = pal("#565C62", "#6C737A", "#828990", "#989FA5", "#AEB4B9", "#C4C9CD", "#DADDE0")
+# Aluminium a step darker than bare metal reads in the sun: the game's top-face light takes its top tones to white.
+ALU = pal("#4C5258", "#61686E", "#767D84", "#8A9198", "#9DA4AA", "#AFB5BA", "#C0C5C9")
 STEEL = pal("#16181B", "#2B2F34", "#383C42", "#40454C", "#474C53", "#575D65", "#727982", "#959DA6")
 JACKET = pal("#141516", "#1C1E20", "#26292B", "#313437", "#3D4144")
 STRIPE = {"mv": pal("#E5483C", "#8E231C"), "hv": pal("#E8913A", "#9E5A1C"), "ehv": pal("#8A55C2", "#52307E")}
@@ -370,7 +371,21 @@ def round_tone(b, p, normal):
         d = [c / k for c in d]
     bright = sum(d[i] * LIGHT[i] for i in range(3))
     t = m["lo"] + (m["hi"] - m["lo"]) * (bright + 1) / 2
+    if b.mat in SMOOTH:
+        return blend(m["ramp"], max(m["lo"], min(m["hi"], t)))
     return m["ramp"][max(m["lo"], min(m["hi"], int(round(t))))]
+
+
+# Materials shaded smoothly (between their ramp's tones, not stepped): the switchgear's aluminium and paint.
+SMOOTH = ("alu", "paint")
+
+
+def blend(ramp, t):
+    """The colour t of the way along a ramp (t in tones), blended between its two nearest tones."""
+    i = max(0, min(len(ramp) - 2, int(math.floor(t))))
+    f = max(0.0, min(1.0, t - i))
+    a, b = ramp[i], ramp[i + 1]
+    return tuple(int(round(a[k] + (b[k] - a[k]) * f)) for k in range(3)) + (255,)
 
 
 def paint_face(b, face, cw, ch, w, h):
@@ -416,6 +431,10 @@ def paint_face(b, face, cw, ch, w, h):
         for j in range(ch):
             for i in range(cw):
                 px[j][i] = m["ramp"][m["fill"]]
+                # Smooth materials: a gentle fall from the top-left (half a tone lighter) to the bottom-right.
+                if b.mat in SMOOTH and not tiny:
+                    k = ((i + 0.5) / cw + (j + 0.5) / ch) / 2
+                    px[j][i] = blend(m["ramp"], m["fill"] + 0.5 - 1.3 * k)
         if not tiny:
             eu = cw >= 3 and ua not in b.cont
             ev = ch >= 3 and va not in b.cont
@@ -438,19 +457,21 @@ def deco_ribs(px, b, face, cw, ch, w, h, deco):
     m = MATS[b.mat]
     ua, _, va, _ = uv_axes(face)
     along = deco[1]
+    # Over the face's fill (graded or not), not its edge lines.
+    edges = {m["ramp"][m["lit"]], m["ramp"][m["dark"]], m["ramp"][m["shade"]]}
     if along == ua:
         for j in range(1, ch - 1):
             k = (j - 1) % 3
             if k in (1, 2):
                 for i in range(cw):
-                    if px[j][i] == m["ramp"][m["fill"]]:
+                    if px[j][i] not in edges:
                         px[j][i] = m["ramp"][m["lit"] if k == 1 else m["dark"]]
     elif along == va:
         for i in range(1, cw - 1):
             k = (i - 1) % 3
             if k in (1, 2):
                 for j in range(ch):
-                    if px[j][i] == m["ramp"][m["fill"]]:
+                    if px[j][i] not in edges:
                         px[j][i] = m["ramp"][m["lit"] if k == 1 else m["dark"]]
 
 
@@ -1204,9 +1225,10 @@ class Fitting(Busway):
         return out + self.duct_cover(fr, (14, 16))
 
     # Feed-in -------------------------------------------------------------------------------------------------------
-    def feed_in(self, facing):
+    def feed_in(self, facing, axis="x"):
         if facing == "up":
-            return self.feed_in_up(Frame("upz"))
+            # Rising to busway that runs along `axis`: its tubes (or duct) turned as that busway's riser is.
+            return self.feed_in_up(Frame(arm_frame("up", "z" if axis == "x" else "x")))
         fr = Frame(facing)
         if self.gis:
             return self.gis_feed(fr, False)
@@ -1423,7 +1445,11 @@ class Fitting(Busway):
     def build(self):
         facings = dict(self.domain.props)["facing"]
         for f in facings:
-            if self.kind == "feed_in":
+            if self.kind == "feed_in" and f == "up":
+                for axis in ("x", "z"):
+                    self.add(f"feed_in_up" + ("" if axis == "x" else "_z"), self.feed_in(f, axis),
+                             (lambda a: lambda st: st["facing"] == "up" and st["axis"] == a)(axis))
+            elif self.kind == "feed_in":
                 self.add(f"feed_in_{f}", self.feed_in(f), (lambda f: lambda st: st["facing"] == f)(f))
             elif self.kind == "tap_off":
                 self.add(f"tap_off_{f}", self.tap_body(f), (lambda f: lambda st: st["facing"] == f)(f))
@@ -1437,7 +1463,8 @@ class Fitting(Busway):
 
 def fitting_domain(kind):
     if kind == "feed_in":
-        return Domain([("facing", ("north", "east", "south", "west", "up"))])
+        # axis: facing up, the way the busway it rises to runs.
+        return Domain([("facing", ("north", "east", "south", "west", "up")), ("axis", ("x", "z"))])
     if kind == "tap_off":
         return Domain([("facing", DIRS), ("closed", (False, True)), ("tripped", (False, True))])
     return Domain([("facing", DIRS)])
@@ -1597,9 +1624,11 @@ class Tray:
         t = self.t
         P = (t["l1"], t["l1"])
         k, l0, rw = t["k"], t["l0"], t["rw"]
-        h0, h1 = self.rung_h()
         out = []
-        for deg in (0, 22.5, 45, 67.5, 90):
+        for i, deg in enumerate((0, 22.5, 45, 67.5, 90)):
+            # Each a fiftieth of a px above the last (and off the rails' underside): where they overlap near the corner, or
+            # run into a rail, no two faces lie in one plane to fight.
+            h0, h1 = (h + 0.02 * (i + 1) for h in self.rung_h())
             a = math.radians(deg)
             u = (-math.sin(a), -math.cos(a))  # 0: north, 90: west
             ends = []

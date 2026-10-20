@@ -756,12 +756,14 @@ ITEMS["mv_sectionalizer"] = sectionalizer_sprite()
 # --- Factory distribution -----------------------------------------------------------------------------------------
 AL, AM, AD = ALUM[5], ALUM[3], ALUM[1]
 SL, SM, SD = SILICONE[4], SILICONE[2], SILICONE[0]
+# The HV termination's toughened glass (as the HV pin insulator's).
+GLL, GLM, GLD = GLASS[5], GLASS[3], GLASS[1]
 
 
 def termination_sprite(tier):
     """A Cable Termination: LV / MV a cast pot (can paint) with three brown porcelain outlets on its lid (MV taller, with
-    sheds); HV three brown porcelain terminations with their sheds on aluminium housings; EHV three grey composite ones
-    with a corona ring on top. All on a galvanized foot."""
+    sheds); HV three toughened-glass terminations with their sheds on aluminium housings; EHV three taller glass ones with
+    a corona ring on top. All on a galvanized foot."""
     shapes = box(2, 14, 13, 15, GL, GD)
     if tier <= 1:
         top = 7 if tier == 0 else 5
@@ -778,7 +780,7 @@ def termination_sprite(tier):
             shapes += box(x - 1, 11, x + 2, 13, AL, AD, AM)
             for y in range(3 if ehv else 4, 11):
                 shed = (y % 2 == 0)
-                lit, mid, dark = (SL, SM, SD) if ehv else (PL, PM, PD)
+                lit, mid, dark = GLL, GLM, GLD
                 shapes += [(x, y, lit), (x + 1, y, mid)]
                 if shed:
                     shapes += [(x - 1, y, mid), (x + 2, y, dark)]

@@ -43,8 +43,8 @@ import net.zagdrath.arcforgetransmission.grid.VoltageTier;
 // connects at and its nameplate rating (FE/t), or "auto" to read the plant's own max output (a Steam Turbine Array's
 // grows with its sections). A mapped plant feeds the grid only through a Unit Transformer of its own tier (its generator
 // step-up), at no more than its nameplate and the transformer's rating (and what it has to give: a plant with a full
-// buffer makes nothing, so what it makes this tick is no cap on what it can give); a pin
-// insulator takes FE from a mapped plant only at LV. A block without an entry is as it always was. Arcforge's plants are
+// buffer makes nothing, so what it makes this tick is no cap on what it can give); a Pin
+// Insulator or Cable Termination takes FE from a mapped plant only at the plant's own tier, up to its nameplate. A block without an entry is as it always was. Arcforge's plants are
 // mapped out of the box (data/arcforgetransmission/data_maps/block/generator.json); a datapack can map any mod's.
 public final class Generators {
     // A plant's entry: its tier, and its nameplate (empty: "auto").

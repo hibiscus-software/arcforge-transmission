@@ -162,6 +162,8 @@ public final class TowerMesh extends MeshBuilder {
     }
 
     static final int RAMP_X = 64, RAMP_H = 16;
+    // The 14 px ramp's tones dark to light (its texels by brightness), for a flat facet's tone by its facing.
+    static final int[] FLAT_TONES = { 12, 11, 9, 8, 7, 5 };
     // The pole skins: LV (16 wide, the whole way round) and MV / HV (ten 3 px facets), 512 tall.
     static final int SKIN_LV_X = 0, SKIN_LV_W = 16, SKIN_MV_X = 16, SKIN_MV_W = 30, SKIN_H = 512;
     // Disc tops, cap (top row) to rim, 8 x 8.
@@ -1955,6 +1957,18 @@ public final class TowerMesh extends MeshBuilder {
     // part (repeating so it's at most 14 px); a band wider round than it is long takes the ramp across its length
     // instead, the same all the way round.
     void rampFacet(float[] p0, float[] p1, float[] p2, float[] p3, int i, int sides, float fw, float len, float round, Ramp ramp) {
+        // The switchgear's aluminium and paint (big tanks, tubes, housings): a wide facet is one flat tone, by how it
+        // faces the light round the part, so the part reads smooth and round rather than fluted (each facet carrying the
+        // whole ramp).
+        if (fw >= 3.0F && (ramp == Ramp.ALUM || ramp == Ramp.PAINT)) {
+            float[] n = normalize(cross(sub(p1, p0), sub(p3, p0)));
+            // The light from above and the north-west, as the sheet's ramps are lit.
+            float t = 0.5F + 0.5F * (-0.4F * n[0] + 0.75F * n[1] - 0.53F * n[2]);
+            int tone = FLAT_TONES[Math.max(0, Math.min(FLAT_TONES.length - 1, Math.round(t * (FLAT_TONES.length - 1))))];
+            float u = (RAMP_X + rampX(14) + tone + 0.5F) / SHEET_W, v = (ramp.row + 1.5F) / SHEET_H;
+            strip(p0, p1, p2, p3, 0, 1, 0, 1, u, u, v);
+            return;
+        }
         if (fw >= 3.0F && len < fw) {
             float v = (ramp.row + 1.5F) / SHEET_H;
             int period = Math.max(2, Math.min(14, Math.round(len)));

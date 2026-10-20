@@ -65,7 +65,7 @@ public class CableTerminationBlockEntity extends MountedPortBlockEntity implemen
         Direction facing = facing();
         FactoryMesh.Mount mount = CableTerminationBlock.mount(facing);
         List<float[]> boxes = FactoryMesh.termination(tier.ordinal(), mount).insulators();
-        int turns = CableTerminationBlock.turns(facing);
+        int turns = CableTerminationBlock.turns(getBlockState());
         List<Insulator> out = new ArrayList<>(3);
         for (int i = 0; i < 3 && i < boxes.size(); i++) {
             float[] b = boxes.get(i);
@@ -75,6 +75,21 @@ public class CableTerminationBlockEntity extends MountedPortBlockEntity implemen
             out.add(new Insulator(tier, THREE[i], at, 0, "termination_" + THREE[i].id()));
         }
         return out;
+    }
+
+    // A quarter turn on top of a block or under one, while nothing's wired to it (its wires and cables would be left
+    // where its conductors were).
+    public Component turn(ServerLevel level) {
+        String m = ArcforgeTransmission.MODID;
+        for (int i = 0; i < 3; i++) {
+            if (GridManager.isWired(level, new GridData.Anchor(worldPosition, i))) {
+                return Component.translatable("message." + m + ".cable_termination.unwire_to_turn");
+            }
+        }
+        BlockState state = getBlockState();
+        level.setBlock(worldPosition, state.setValue(CableTerminationBlock.TURNED, !state.getValue(CableTerminationBlock.TURNED)), net.minecraft.world.level.block.Block.UPDATE_ALL);
+        level.playSound(null, worldPosition, net.minecraft.sounds.SoundEvents.UI_BUTTON_CLICK.value(), net.minecraft.sounds.SoundSource.BLOCKS, 0.3F, 1.4F);
+        return Component.translatable("message." + m + ".cable_termination.turned");
     }
 
     // Where a cable leaves it: its gland, at the middle of its foot (its top, hanging).
