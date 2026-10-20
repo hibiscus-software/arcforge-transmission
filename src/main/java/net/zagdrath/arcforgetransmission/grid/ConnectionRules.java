@@ -6,6 +6,9 @@
 
 package net.zagdrath.arcforgetransmission.grid;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.jspecify.annotations.Nullable;
 
 // Whether a wire of a tier may join two insulators. A network is one tier and one circuit type (transformers are the
@@ -34,6 +37,52 @@ public final class ConnectionRules {
     }
 
     private ConnectionRules() {}
+
+    // A 3-conductor connection (a tray cable, a busway joint, a lineup's internal bus): one circuit's conductors joined to
+    // another's phase to phase, A to A, B to B, C to C (or L1, N, L2). Each pair, from's node then to's, in from's order;
+    // or why not: a node missing, the two of different tiers or circuit types, a label without its match, or a pair
+    // already joined.
+    public record Pairing(List<long[]> pairs, @Nullable Refusal refusal) {}
+
+    public static Pairing pairByPhase(GridGraph graph, List<Long> from, List<Long> to) {
+        List<long[]> pairs = new ArrayList<>();
+        if (from.isEmpty() || from.size() != to.size()) {
+            return new Pairing(List.of(), Refusal.MISSING);
+        }
+        for (long a : from) {
+            GridNode na = graph.node(a);
+            if (na == null) {
+                return new Pairing(List.of(), Refusal.MISSING);
+            }
+            GridNode match = null;
+            for (long b : to) {
+                GridNode nb = graph.node(b);
+                if (nb == null) {
+                    return new Pairing(List.of(), Refusal.MISSING);
+                }
+                if (nb.tier() != na.tier()) {
+                    return new Pairing(List.of(), Refusal.MIXED_TIER);
+                }
+                if (nb.circuit() != na.circuit()) {
+                    return new Pairing(List.of(), Refusal.MIXED_CIRCUIT);
+                }
+                if (nb.phase() == na.phase()) {
+                    match = nb;
+                }
+            }
+            if (match == null) {
+                return new Pairing(List.of(), Refusal.MISSING);
+            }
+            if (a == match.id()) {
+                return new Pairing(List.of(), Refusal.SAME_ENDPOINT);
+            }
+            if (graph.connected(a, match.id())) {
+                return new Pairing(List.of(), Refusal.ALREADY_CONNECTED);
+            }
+            pairs.add(new long[] { a, match.id() });
+        }
+        return new Pairing(pairs, null);
+    }
 
     // Null when a wire of wireTier may span `span` blocks from a to b.
     public static @Nullable Refusal check(GridGraph graph, long a, long b, VoltageTier wireTier, double span, GridSettings settings) {

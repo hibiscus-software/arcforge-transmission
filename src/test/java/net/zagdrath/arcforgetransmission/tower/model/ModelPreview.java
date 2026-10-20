@@ -54,11 +54,13 @@ public final class ModelPreview {
             String spec = three ? name.substring(0, name.length() - 2) : name;
             String base = spec.contains("@") ? spec.substring(0, spec.indexOf('@')) : spec;
             boolean alt = base.endsWith("~ALT");
-            // POLE_LV / POLE_MV: the pole-mount transformers (blocks of their own, not designs).
-            TowerMesh.Design design = base.startsWith("POLE_") ? null : TowerMesh.Design.valueOf(base.replace("~ALT", ""));
-            TowerMesh.Built built = design == null ? (base.equals("POLE_MV") ? TowerMesh.poleTransformerMv() : TowerMesh.poleTransformer())
-                    : alt ? TowerMesh.variant(design) : TowerMesh.get(design);
-            float[] solid = built.solid();
+            // POLE_LV / POLE_MV: the pole-mount transformers (blocks of their own, not designs); F_...: a factory
+            // distribution scene (FactoryPreview: terminations, lineups of sections).
+            boolean factory = base.startsWith("F_");
+            TowerMesh.Design design = base.startsWith("POLE_") || factory ? null : TowerMesh.Design.valueOf(base.replace("~ALT", ""));
+            float[] solid = factory ? FactoryPreview.scene(base.substring(2))
+                    : (design == null ? (base.equals("POLE_MV") ? TowerMesh.poleTransformerMv() : TowerMesh.poleTransformer())
+                            : alt ? TowerMesh.variant(design) : TowerMesh.get(design)).solid();
             List<double[]> extra = design == null ? List.of() : jumpers(design);
             if (spec.contains("@")) {
                 String[] range = spec.substring(spec.indexOf('@') + 1).split(":");
@@ -78,7 +80,8 @@ public final class ModelPreview {
             g.setColor(Color.WHITE);
             g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
             g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 16));
-            g.drawString(name + "   (" + (design == null ? 1 : design.height) + " blocks tall; grid squares are blocks)"
+            g.drawString((factory ? FactoryPreview.title(base.substring(2)) : name) + "   (" + (design == null ? blocksTall(solid) : design.height)
+                    + " blocks tall; grid squares are blocks)"
                     + (three ? "   front, side, 45 degrees" : ""), 10, 20);
             g.dispose();
             ImageIO.write(image, "png", new File(out, name.toLowerCase().replaceAll("[~@:#]", "_") + ".png"));
@@ -151,6 +154,14 @@ public final class ModelPreview {
             }
         }
         return quads;
+    }
+
+    private static int blocksTall(float[] solid) {
+        float top = 0;
+        for (int i = 1; i < solid.length; i += 8) {
+            top = Math.max(top, solid[i]);
+        }
+        return (int) Math.ceil(top - 1.0E-3);
     }
 
     private static double[] scaled(double[] v, double s) {

@@ -28,6 +28,7 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.zagdrath.arcforgetransmission.ArcforgeTransmission;
+import net.zagdrath.arcforgetransmission.factory.FactoryContent;
 import net.zagdrath.arcforgetransmission.grid.block.GridContent;
 import net.zagdrath.arcforgetransmission.material.MaterialContent;
 
@@ -173,6 +174,10 @@ public final class TowerContent {
             if (tabOf(item.getId().getPath()) == tab) {
                 out.add(item.get());
             }
+        }
+        // Factory distribution: its lineups in the yard, the rest with the wiring.
+        if (tab == Tab.YARD || tab == Tab.WIRING) {
+            FactoryContent.tabItems(tab == Tab.YARD ? FactoryContent.Tab.YARD : FactoryContent.Tab.WIRING).forEach(item -> out.add(item.get()));
         }
         return out;
     }

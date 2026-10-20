@@ -26,6 +26,48 @@ public interface GridSettings {
         return tier.defaultReactance();
     }
 
+    // --- One wire, by what it is (a tier's wire, a tray cable, busway of a size) ---
+
+    // The current (A) it carries indefinitely: its tier's wire rating, times busway's size, times a cable's derating.
+    default double ratedAmps(GridEdge edge) {
+        return ratedAmps(edge.tier()) * edge.size() * edge.derate();
+    }
+
+    // Its ohms: per block by what it is, times its length.
+    default double resistance(GridEdge edge) {
+        double perBlock = switch (edge.kind()) {
+            case BUS -> busResistance(edge.tier()) / edge.size();
+            case CABLE -> cableResistance(edge.tier());
+            default -> resistance(edge.tier());
+        };
+        return perBlock * edge.length();
+    }
+
+    // Its ohms of reactance (busway's conductors, a size's worth in parallel in their enclosure).
+    default double reactance(GridEdge edge) {
+        return reactance(edge.tier()) * edge.length() / (edge.kind() == GridEdge.Kind.BUS ? edge.size() : 1);
+    }
+
+    // Ticks in a row over its rating before it burns out (busway, its heat spread through its enclosure, takes longer).
+    default int burnoutTicks(GridEdge edge) {
+        return edge.kind() == GridEdge.Kind.BUS ? (int) Math.min(Integer.MAX_VALUE, Math.round(burnoutTicks() * busHeat())) : burnoutTicks();
+    }
+
+    // Ohms per block of busway sized like one wire (a size's worth in parallel divides it): about half a wire's.
+    default double busResistance(VoltageTier tier) {
+        return resistance(tier) * 0.5;
+    }
+
+    // Ohms per block of one conductor of a tray cable.
+    default double cableResistance(VoltageTier tier) {
+        return resistance(tier);
+    }
+
+    // How many times longer than a wire busway takes to burn out.
+    default double busHeat() {
+        return 4.0;
+    }
+
     // A load's power factor (1: none of its current reactive).
     default double loadPowerFactor() {
         return 1.0;

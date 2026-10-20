@@ -26,6 +26,13 @@ The layout is TowerMesh's (keep the two in step):
     disc slants (176, 32) / (184, 32)  8x8: porcelain / glass disc tops, cap (top row) to rim (bottom row)
     modules     sign (176, 40, 10, 12), end grain (192, 40, 12, 12), pole tag (208, 40, 3, 4), lid (212, 40, 12, 12)
     swatches    4x4 flat tones from (64, 224), 32 a row (SWATCHES, in order)
+  Factory distribution (switchgear, GIS, terminations):
+    PAINT       (64, 400, 128, 56) ANSI-61 enclosure paint field: a faint orange-peel mottle
+    ALUM        (64, 456, 128, 56) GIS cast aluminium field, brushed along x
+    PLINTH      (192, 336, 64, 32) the plinth's darker paint field
+    edge rows   (48, 182..187)     paint lit, paint dark, plinth lit, plinth dark, aluminium lit, aluminium dark
+    edge cols   (54..59, 192)      the same order
+    ramps       (64, 336 + 16k)    paint, aluminium, silicone, rubber
 """
 import os
 import random
@@ -58,6 +65,15 @@ ALU = [hx(c) for c in ("#3A3F44", "#9AA1A6", "#C8CDD0")]
 HAZ_YELLOW, HAZ_BLACK = hx("#E0B020"), hx("#1A1A1A")
 RED, RED_DARK = hx("#E5483C"), hx("#8E231C")
 MARKER = hx("#5FD4C4")
+# Factory distribution: ANSI-61 light grey enclosure paint (switchgear, bus duct), the darker plinth paint, GIS cast
+# aluminium, the black rubber of cable boots and jackets, and the grey silicone of composite terminations.
+PAINT = [hx(c) for c in ("#4A4E4C", "#5E6360", "#727774", "#868B88", "#9A9F9C", "#AEB3B0", "#C2C6C3")]
+PLINTH = [hx(c) for c in ("#2E3130", "#3C403E", "#4A4E4C", "#585C5A")]
+ALUM = [hx(c) for c in ("#565C62", "#6C737A", "#828990", "#989FA5", "#AEB4B9", "#C4C9CD", "#DADDE0")]
+RUBBER = [hx(c) for c in ("#141516", "#1C1E20", "#26292B", "#313437", "#3D4144")]
+SILICONE = [hx(c) for c in ("#3E4448", "#50575C", "#636B70", "#767E83", "#8A9297")]
+GREEN, GREEN_DARK = hx("#4FB04A"), hx("#2A6E33")
+WHITE, AMBER, BLUE = hx("#DCE8EE"), hx("#F5B574"), hx("#4A8FE0")
 
 # Flat swatches, in order (TowerMesh's swatch indices match this list; "marker" is unused for now).
 SWATCHES = (
@@ -70,6 +86,13 @@ SWATCHES = (
     + [("conc", i, c) for i, c in enumerate(CONC)]
     + [("alu", i, c) for i, c in enumerate(ALU)]
     + [("hazard", 0, HAZ_YELLOW), ("black", 0, HAZ_BLACK), ("red", 0, RED), ("marker", 0, MARKER)]
+    + [("paint", i, c) for i, c in enumerate(PAINT)]
+    + [("plinth", i, c) for i, c in enumerate(PLINTH)]
+    + [("alum", i, c) for i, c in enumerate(ALUM)]
+    + [("rubber", i, c) for i, c in enumerate(RUBBER)]
+    + [("silicone", i, c) for i, c in enumerate(SILICONE)]
+    + [("green", 0, GREEN), ("green_dark", 0, GREEN_DARK), ("red_dark", 0, RED_DARK), ("white", 0, WHITE), ("amber", 0, AMBER),
+       ("blue", 0, BLUE)]
 )
 
 img = Image.new("RGBA", (W, H), (0, 0, 0, 0))
@@ -207,6 +230,31 @@ for _ in range(9):
     put(kx - 1, ky, WOOD[6])
     put(kx + 3, ky + 1, WOOD[6])
 blotch_field(176, 0, 64, 32, CONC, (2, 3, 4), 2404)
+# Enclosure paint: an orange-peel mottle of three close greys round ANSI 61 (luminance steps of about 3), in flat blotches
+# 2-4 px across, no pits; the plinth the same a good deal darker; GIS aluminium brushed along its length.
+PAINT_FIELD = [hx(c) for c in ("#959A97", "#999E9B", "#9DA29F")]
+PLINTH_FIELD = [hx(c) for c in ("#474B49", "#4B4F4D", "#4F5351")]
+ALUM_FIELD = [hx(c) for c in ("#9EA5AB", "#A2A9AF", "#A6ADB3", "#AAB1B7")]
+
+
+def mottle_field(x0, y0, w, h, tones, seed):
+    """Paint's orange peel: the middle tone, with flat blotches 2-4 px across of the tones either side (never a lone px)."""
+    rnd = random.Random(seed)
+    rect(x0, y0, w, h, tones[1])
+    for _ in range(w * h // 7):
+        bw, bh = rnd.randint(2, 4), rnd.randint(2, 3)
+        bx, by = rnd.randrange(0, w), rnd.randrange(0, h)
+        c = tones[rnd.choice((0, 2))]
+        for yy in range(bh):
+            for xx in range(bw):
+                if xx in (0, bw - 1) and yy in (0, bh - 1) and bw > 2:
+                    continue
+                put(x0 + (bx + xx) % w, y0 + (by + yy) % h, c)
+
+
+mottle_field(64, 400, 128, 56, PAINT_FIELD, 2505)
+mottle_field(192, 336, 64, 32, PLINTH_FIELD, 2506)
+streak_field(64, 456, 128, 56, ALUM_FIELD, 1, 2507, along_x=True, min_run=8, max_run=36, bias=(-1, 0, 0, 1, 1, 2))
 
 # --- edge strips ------------------------------------------------------------------------------------------------
 # Rows (128 long) and columns (128 tall), grained: runs of two neighbouring tones.
@@ -214,6 +262,9 @@ EDGES = [  # (lit tones, dark tones)
     ((GALV[8], GALV[9]), (GALV[2], GALV[1])),
     ((WOOD[6], WOOD[7]), (WOOD[2], WOOD[1])),
     ((CONC[4], CONC[5]), (CONC[1], CONC[0])),
+    ((hx("#B2B7B4"), hx("#AEB3B0")), (hx("#6E7370"), hx("#727774"))),
+    ((hx("#626664"), hx("#5E6260")), (hx("#343736"), hx("#383B3A"))),
+    ((hx("#C4C9CD"), hx("#BEC4C8")), (hx("#767D84"), hx("#7C838A"))),
 ]
 for k, (lit, dark) in enumerate(EDGES):
     for j, pair in enumerate((lit, dark)):
@@ -248,7 +299,7 @@ def ramp_x(period):
     return (period - 1) * period // 2 - 1
 
 
-for row, tones in enumerate((GALV[1:9], PORC[:6], GLASS[:6], CAN, COPPER)):
+for row, tones in enumerate((GALV[1:9], PORC[:6], GLASS[:6], CAN, COPPER, PAINT, ALUM, SILICONE, RUBBER)):
     for p in range(2, 15):
         r = ramp(p, tones)
         # The glaze catches one glint on the widest ramps.
@@ -700,6 +751,46 @@ ITEMS["ehv_transposition_tower"] = lattice_dead_end_sprite(True)
 for tier, t in (("lv", 0), ("mv", 1), ("hv", 2), ("ehv", 3)):
     ITEMS[tier + "_cable_riser"] = riser_sprite(t)
 ITEMS["mv_sectionalizer"] = sectionalizer_sprite()
+
+
+# --- Factory distribution -----------------------------------------------------------------------------------------
+AL, AM, AD = ALUM[5], ALUM[3], ALUM[1]
+SL, SM, SD = SILICONE[4], SILICONE[2], SILICONE[0]
+
+
+def termination_sprite(tier):
+    """A Cable Termination: LV / MV a cast pot (can paint) with three brown porcelain outlets on its lid (MV taller, with
+    sheds); HV three brown porcelain terminations with their sheds on aluminium housings; EHV three grey composite ones
+    with a corona ring on top. All on a galvanized foot."""
+    shapes = box(2, 14, 13, 15, GL, GD)
+    if tier <= 1:
+        top = 7 if tier == 0 else 5
+        shapes += box(4, 9, 11, 13, CAN[5], CAN[1], CAN[3]) + box(3, 8, 12, 9, CAN[6], CAN[2])
+        for x in (4, 7, 10):
+            for y in range(top, 8):
+                shapes += [(x, y, PL if (y - top) % 2 == 0 or tier == 0 else PD), (x + 1, y, PM if (y - top) % 2 == 0 or tier == 0 else PD)]
+            shapes += [(x, top - 1, GL), (x + 1, top - 1, GM)]
+            if tier == 1:
+                shapes += [(x - 1, y, PM) for y in range(top + 1, 8, 2)] + [(x + 2, y, PD) for y in range(top + 1, 8, 2)]
+    else:
+        ehv = tier == 3
+        for x in (2, 7, 12):
+            shapes += box(x - 1, 11, x + 2, 13, AL, AD, AM)
+            for y in range(3 if ehv else 4, 11):
+                shed = (y % 2 == 0)
+                lit, mid, dark = (SL, SM, SD) if ehv else (PL, PM, PD)
+                shapes += [(x, y, lit), (x + 1, y, mid)]
+                if shed:
+                    shapes += [(x - 1, y, mid), (x + 2, y, dark)]
+            if ehv:
+                shapes += [(xx, 1, AL) for xx in range(x - 1, x + 3)] + [(x, 2, AM), (x + 1, 2, AD)]
+            else:
+                shapes += [(x, 3, AL), (x + 1, 3, AD)]
+    return sprite(shapes)
+
+
+for tier, t in (("lv", 0), ("mv", 1), ("hv", 2), ("ehv", 3)):
+    ITEMS[tier + "_cable_termination"] = termination_sprite(t)
 ITEMS["lv_transfer_switch"] = ats_sprite(False)
 ITEMS["mv_transfer_switch"] = ats_sprite(True)
 

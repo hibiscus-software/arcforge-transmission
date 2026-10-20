@@ -86,6 +86,23 @@ public final class GridConfig {
     public static final ModConfigSpec.IntValue YARD_RADIUS, GROUND_GRID_RADIUS;
     public static final ModConfigSpec.DoubleValue STEP_FRACTION;
     public static final ModConfigSpec.DoubleValue BARBED_WIRE_DAMAGE;
+    // Factory distribution.
+    private static final Map<VoltageTier, ModConfigSpec.DoubleValue> BUS_RESISTANCE = new EnumMap<>(VoltageTier.class);
+    private static final Map<VoltageTier, ModConfigSpec.DoubleValue> CABLE_RESISTANCE = new EnumMap<>(VoltageTier.class);
+    public static final ModConfigSpec.DoubleValue BUS_HEAT;
+    public static final ModConfigSpec.IntValue MAX_FREE_DROP, CABLE_BLOCKS_PER_ITEM;
+    public static final ModConfigSpec.IntValue TRAY_FILL_STANDARD, TRAY_FILL_WIDE, TRAY_FILL_HEAVY;
+    private static final Map<VoltageTier, ModConfigSpec.IntValue> CABLE_SLOTS = new EnumMap<>(VoltageTier.class);
+    public static final ModConfigSpec.BooleanValue SEGREGATE_TIERS;
+    public static final ModConfigSpec.IntValue DERATE_FULL_UP_TO, DERATE_MID_UP_TO;
+    public static final ModConfigSpec.DoubleValue DERATE_MID, DERATE_LOW;
+    public static final ModConfigSpec.IntValue MAX_FEEDER_SECTIONS;
+    public static final ModConfigSpec.BooleanValue ALLOW_PARALLEL_SOURCES;
+    public static final ModConfigSpec.DoubleValue LINEUP_TRANSFORMER_RATING, LINEUP_IMPEDANCE, LINEUP_RESISTANCE;
+    public static final ModConfigSpec.DoubleValue FAN_THRESHOLD, FAN_RATING;
+    public static final ModConfigSpec.IntValue OVERTEMP_TICKS;
+    public static final ModConfigSpec.DoubleValue OFFLOAD_TAP_STEP;
+    public static final ModConfigSpec.IntValue OFFLOAD_TAPS;
     public static final ModConfigSpec.DoubleValue FUSE_FACTOR;
     public static final ModConfigSpec.IntValue BREAKER_TRIP_TICKS;
     public static final ModConfigSpec.IntValue RECLOSE_DELAY;
@@ -178,6 +195,56 @@ public final class GridConfig {
         BARBED_WIRE_DAMAGE = BUILDER.comment("Damage (half-hearts) Station Fence Barbed Wire does to whatever touches it, as a sweet berry bush does",
                 "(0 for none).").defineInRange("barbedWireDamage", 1.0, 0.0, 100.0);
         BUILDER.pop();
+        BUILDER.comment("Factory distribution: switchgear lineups, busway, cable tray and insulated cable, machines at their tier.").push("factory");
+        BUILDER.comment("Busway (bus duct, gas-insulated bus) and tray cable, one section per tier.").push("conductors");
+        for (VoltageTier tier : VoltageTier.values()) {
+            BUILDER.push(tier.id());
+            BUS_RESISTANCE.put(tier, BUILDER.comment("Ohms per block of one conductor of busway the size of one wire (a 2W, 4W or 8W run is that",
+                    "many in parallel): about half a wire's.").defineInRange("busResistance", tier.defaultResistance() * 0.5, 0.0, 100.0));
+            CABLE_RESISTANCE.put(tier, BUILDER.comment("Ohms per block of one conductor of tray cable.")
+                    .defineInRange("cableResistance", tier.defaultResistance(), 0.0, 100.0));
+            CABLE_SLOTS.put(tier, BUILDER.comment("Tray slots one cable of this tier takes (a tray block's fill counts slots).")
+                    .defineInRange("cableSlots", tier.ordinal() <= 1 ? 1 : tier.ordinal(), 1, 64));
+            BUILDER.pop();
+        }
+        BUS_HEAT = BUILDER.comment("How many times longer than a wire busway runs over its rating before it's damaged.")
+                .defineInRange("busHeat", 4.0, 0.01, 1000.0);
+        BUILDER.pop();
+        BUILDER.comment("Cable tray.").push("tray");
+        MAX_FREE_DROP = BUILDER.comment("Blocks of cable that may hang free (no tray) at each end: from a termination to its tray, or a",
+                "tap-off's drop to its machine.").defineInRange("maxFreeDrop", 6, 0, 64);
+        CABLE_BLOCKS_PER_ITEM = BUILDER.comment("Blocks of cable one Insulated Cable item lays.").defineInRange("cableBlocksPerItem", 8, 1, 1024);
+        TRAY_FILL_STANDARD = BUILDER.comment("Slots in a block of standard tray.").defineInRange("fillStandard", 6, 1, 256);
+        TRAY_FILL_WIDE = BUILDER.comment("Slots in a block of wide tray.").defineInRange("fillWide", 12, 1, 256);
+        TRAY_FILL_HEAVY = BUILDER.comment("Slots in a block of heavy-duty tray.").defineInRange("fillHeavy", 6, 1, 256);
+        SEGREGATE_TIERS = BUILDER.comment("Whether LV cables are kept out of tray blocks with MV and higher cables in them (and HV and EHV",
+                "cables need heavy-duty tray).").define("segregateTiers", true);
+        DERATE_FULL_UP_TO = BUILDER.comment("Derating by how many cables share a tray block: up to this many, full ampacity...")
+                .defineInRange("fullUpTo", 3, 0, 256);
+        DERATE_MID_UP_TO = BUILDER.comment("...up to this many, derateMid of it...").defineInRange("midUpTo", 6, 0, 256);
+        DERATE_MID = BUILDER.comment("(share of ampacity)").defineInRange("derateMid", 0.8, 0.01, 1.0);
+        DERATE_LOW = BUILDER.comment("...and more than that, derateLow. A cable's rating is the lowest along its path.")
+                .defineInRange("derateLow", 0.7, 0.01, 1.0);
+        BUILDER.pop();
+        BUILDER.comment("Switchgear lineups.").push("lineup");
+        MAX_FEEDER_SECTIONS = BUILDER.comment("Feeder sections a bus half may have.").defineInRange("maxFeederSections", 8, 1, 64);
+        ALLOW_PARALLEL_SOURCES = BUILDER.comment("Whether a double-ended lineup's two mains and its tie may all be closed at once (its two",
+                "sources in parallel).").define("allowParallelSources", false);
+        LINEUP_TRANSFORMER_RATING = BUILDER.comment("A transformer section's rating, as a share of one full circuit at its primary tier.")
+                .defineInRange("transformerRating", 1.0, 0.01, 100.0);
+        LINEUP_IMPEDANCE = BUILDER.comment("Its impedance (per unit, %Z / 100): with the resistance, what it loses and how far its voltage",
+                "drops under load.").defineInRange("transformerImpedance", 0.0575, 0.0, 1.0);
+        LINEUP_RESISTANCE = BUILDER.comment("Its resistance (per unit, %R / 100): the share of its rated power it loses as heat at full load.")
+                .defineInRange("transformerResistance", 0.01, 0.0, 1.0);
+        FAN_THRESHOLD = BUILDER.comment("Its fans come on over this share of its rating...").defineInRange("fanThreshold", 1.0, 0.0, 10.0);
+        FAN_RATING = BUILDER.comment("...and let it carry up to this share (AA/FA, ONAN/ONAF); over it, it heats.")
+                .defineInRange("fanRating", 1.33, 0.01, 10.0);
+        OVERTEMP_TICKS = BUILDER.comment("Ticks over its fan rating before it reaches its trip temperature and trips the incomer (it cools at",
+                "the same rate under it).").defineInRange("overtempTicks", 600, 1, 1_728_000);
+        OFFLOAD_TAP_STEP = BUILDER.comment("Its off-load taps' step (per unit).").defineInRange("tapStep", 0.025, 0.0, 0.5);
+        OFFLOAD_TAPS = BUILDER.comment("Its taps either way from neutral.").defineInRange("taps", 2, 0, 16);
+        BUILDER.pop();
+        BUILDER.pop();
     }
 
     public static final ModConfigSpec SPEC = BUILDER.build();
@@ -240,7 +307,27 @@ public final class GridConfig {
         public double faultMultiple() {
             return FAULT_MULTIPLE.getAsDouble();
         }
+
+        @Override
+        public double busResistance(VoltageTier tier) {
+            return BUS_RESISTANCE.get(tier).getAsDouble();
+        }
+
+        @Override
+        public double cableResistance(VoltageTier tier) {
+            return CABLE_RESISTANCE.get(tier).getAsDouble();
+        }
+
+        @Override
+        public double busHeat() {
+            return BUS_HEAT.getAsDouble();
+        }
     };
+
+    // Tray slots one cable of a tier takes.
+    public static int cableSlots(VoltageTier tier) {
+        return CABLE_SLOTS.get(tier).getAsInt();
+    }
 
     // The settings a client shows, as the server it's on has them (GridPayloads.Settings): each tier's wire rating and
     // span, the fuse factor, the tap step and the sectionalizer's count. Null: its own config (single player, or before

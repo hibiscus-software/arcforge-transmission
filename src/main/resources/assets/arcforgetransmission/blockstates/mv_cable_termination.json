@@ -1,0 +1,22 @@
+{
+  "variants": {
+    "facing=down": {
+      "model": "arcforgetransmission:block/cable_termination"
+    },
+    "facing=up": {
+      "model": "arcforgetransmission:block/cable_termination"
+    },
+    "facing=north": {
+      "model": "arcforgetransmission:block/cable_termination"
+    },
+    "facing=south": {
+      "model": "arcforgetransmission:block/cable_termination"
+    },
+    "facing=west": {
+      "model": "arcforgetransmission:block/cable_termination"
+    },
+    "facing=east": {
+      "model": "arcforgetransmission:block/cable_termination"
+    }
+  }
+}

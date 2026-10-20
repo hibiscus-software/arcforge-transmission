@@ -283,5 +283,15 @@
   "itemGroup.arcforgetransmission.protection": "Transmission: Protection & Switching",
   "itemGroup.arcforgetransmission.yard": "Transmission: Substation Yard",
   "itemGroup.arcforgetransmission.wiring": "Transmission: Wiring & Tools",
-  "itemGroup.arcforgetransmission.materials": "Transmission: Materials"
+  "itemGroup.arcforgetransmission.materials": "Transmission: Materials",
+  "block.arcforgetransmission.lv_cable_termination": "LV Cable Termination",
+  "block.arcforgetransmission.mv_cable_termination": "MV Cable Termination",
+  "block.arcforgetransmission.hv_cable_termination": "HV Cable Termination",
+  "block.arcforgetransmission.ehv_cable_termination": "EHV Cable Termination",
+  "block.arcforgetransmission.cable_termination_part": "Cable Termination",
+  "tooltip.arcforgetransmission.info.cable_termination": "Where a tray cable ends: a whole circuit (A, B and C) in one block. Mount it on any face of a block: on a machine it's that block's port, set like a Pin Insulator (Wrench: Configure the mode, Sneak + Configure the current limit); on a lineup section or busway tap-off it joins the cable through. Rotate swaps B and C; Port switches an LV one to L1, N and L2. HV stands 2 blocks tall, EHV 3.",
+  "hud.arcforgetransmission.cable_termination.host": "Joined through what it's mounted on",
+  "message.arcforgetransmission.cable_termination.three_phase_only": "Only an LV termination can be split-phase",
+  "wire_kind.arcforgetransmission.cable": "tray cable",
+  "wire_kind.arcforgetransmission.bus": "busway"
 }

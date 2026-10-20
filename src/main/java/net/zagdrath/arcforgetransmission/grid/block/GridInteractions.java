@@ -38,8 +38,9 @@ import net.zagdrath.arcforgetransmission.tower.TowerTier;
 //              on a transformer or device, turns it (sneaking: the other way), its wires kept;
 //              on a tower's group of three-phase insulators, swaps B and C (ABC <-> ACB);
 //              on a lone insulator (a pin insulator), steps its label (A B C, or L1 L2 N)
-//   Port       switches the nearest insulator between three-phase and single-phase labels (only while it has no wires)
-//   Configure  on a pin insulator, its mode (sneaking: its current limit); elsewhere, says the labels
+//   Port       switches the nearest insulator between three-phase and single-phase labels (only while it has no wires);
+//              a Cable Termination's three together (A B C <-> L1 N L2, LV only)
+//   Configure  on a pin insulator or cable termination, its mode (sneaking: its current limit); elsewhere, says the labels
 //   Dismantle  (sneaking) on a pin insulator or transformer, takes it down whole
 public final class GridInteractions {
     private GridInteractions() {}
@@ -129,6 +130,11 @@ public final class GridInteractions {
                 GridManager.display(server, endpoint, true);
             }
             case PORT -> {
+                // A whole circuit (a Cable Termination) switches all its labels together.
+                if (endpoint instanceof WholeCircuit whole) {
+                    tell(player, whole.switchCircuit(server));
+                    break;
+                }
                 GridNode node = GridManager.node(server, anchor);
                 if (node == null) {
                     return InteractionResult.PASS;
@@ -147,15 +153,15 @@ public final class GridInteractions {
                 }
             }
             case CONFIGURE -> {
-                if (endpoint instanceof PinInsulatorBlockEntity pinInsulator) {
+                if (endpoint instanceof PortSettings port) {
                     if (sneaking) {
-                        int next = pinInsulator.limitEighths() % 8 + 1;
-                        pinInsulator.setForPort(pinInsulator.mode(), next);
+                        int next = port.limitEighths() % 8 + 1;
+                        port.setForPort(port.mode(), next);
                         tell(player, Component.translatable("message." + ArcforgeTransmission.MODID + ".pin_insulator.limit",
-                                format(pinInsulator.limitAmps()), next + "/8"));
+                                format(port.limitAmps()), next + "/8"));
                     } else {
-                        PinInsulatorMode next = pinInsulator.mode().next();
-                        pinInsulator.setForPort(next, pinInsulator.limitEighths());
+                        PinInsulatorMode next = port.mode().next();
+                        port.setForPort(next, port.limitEighths());
                         tell(player, Component.translatable("message." + ArcforgeTransmission.MODID + ".pin_insulator.mode",
                                 Component.translatable("pin_insulator_mode." + ArcforgeTransmission.MODID + "." + next.id())));
                     }

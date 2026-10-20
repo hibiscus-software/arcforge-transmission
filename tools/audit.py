@@ -13,7 +13,7 @@ Exits non-zero (listing every problem) when anything fails. Checks:
   models      element models: UVs inside the sheet; every face laid at 1 texel per px (its UV rect the face's size);
               no face samples a clear texel; no two faces facing the same way overlapping in one plane (z-fighting)
   attach      each pin insulator's attach point is its model's top, centred
-  registry    every block the code registers has a blockstate, a loot table (but the tower's invisible parts) and a
+  registry    every block the code registers has a blockstate, a loot table (but the invisible parts) and a
               name; every item an item definition and a name
   references  every model, texture and parent a blockstate, item definition or model names exists (this addon's own;
               Arcforge's and vanilla's against their jars when they're at hand)
@@ -46,6 +46,9 @@ GENERATORS = ["tools/transmission_tower_texture_gen.py", "tools/tower_attach_gro
 SHEET_SIZES = {"block/transmission_tower/towers.png": (256, 512)}
 # Isolated pixels that are deliberate details, by texture: the rivet shadows of Arcforge's machine casing.
 INTENTIONAL = {"block/wall_bushing.png": {(3, 3), (12, 3), (3, 12), (12, 12)}}
+
+# The invisible blocks a structure stands in: no item, no loot table of their own.
+PARTS = {"transmission_tower_part", "cable_termination_part"}
 
 problems = []
 
@@ -248,8 +251,8 @@ def registered(repo, sources):
     tiers = open(os.path.join(repo, "src/main/java/net/zagdrath/arcforgetransmission/tower/TowerTier.java"), encoding="utf-8").read()
     towers = re.findall(r'^    [A-Z0-9_]+\("([a-z0-9_]+)", Kind\.', tiers, re.M)
     blocks.update(towers)
-    # Every block has its item, but the tower's invisible parts.
-    items.update(b for b in blocks if b != "transmission_tower_part")
+    # Every block has its item, but the invisible parts (a tower's, a tall cable termination's).
+    items.update(b for b in blocks if b not in PARTS)
     return blocks, items
 
 
@@ -259,7 +262,7 @@ def check_registry(repo, blocks, items, lang):
     for block in sorted(blocks):
         if not os.path.exists(os.path.join(assets, "blockstates", block + ".json")):
             problem(f"registry: block {block} has no blockstate")
-        if block != "transmission_tower_part" and not os.path.exists(os.path.join(data, "loot_table/blocks", block + ".json")):
+        if block not in PARTS and not os.path.exists(os.path.join(data, "loot_table/blocks", block + ".json")):
             problem(f"registry: block {block} has no loot table")
         if f"block.{NS}.{block}" not in lang:
             problem(f"registry: block {block} has no name (block.{NS}.{block})")

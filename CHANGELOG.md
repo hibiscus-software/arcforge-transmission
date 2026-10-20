@@ -1,5 +1,27 @@
 # Changelog
 
+## Unreleased: factory distribution (switchgear lineups, busway, cable tray, machines at their tier)
+
+### Added
+- **Cable Termination** (LV, MV, HV, EHV; Wiring & Tools tab): one whole circuit (A, B and C) where a tray cable ends,
+  mounted on any face of a block. LV and MV are compact stress-cone potheads (a cast pot with three porcelain outlets);
+  HV is three porcelain-skirted terminations, 2 blocks tall; EHV three tall grey composite ones with corona rings, 3
+  blocks tall (its invisible parts give it a matching hitbox). On top of a block it stands on it, on a side it stands
+  upright on a wall bracket, under one it hangs. On an FE block it's that block's port, with a Pin Insulator's mode,
+  current limit, status and overvoltage rule (above LV a foreign block is destroyed). Its labels are fixed: the Wrench
+  on Rotate swaps B and C, and on Port an LV termination switches to L1, N and L2. Drawn from `FactoryMesh` on the
+  towers' sheet; its item sprite from `transmission_tower_texture_gen.py`. From three Pin Insulators of its tier, copper,
+  rubber and a steel plate.
+- **3-conductor connections**: a tray cable, a busway joint or a lineup's internal bus is three conductor edges, A to
+  A, B to B, C to C (`ConnectionRules.pairByPhase`, `GridManager.connectCircuit`), so the solver, phasor currents, loss,
+  burnout, the Clamp Meter and protection treat it as three wires. Edges now carry a size (busway: 2, 4 or 8 times its
+  tier's wire) and a derating (a cable's tray); `GridSettings` gives each edge's rating, resistance, reactance and burnout
+  time from them, all in the new `factory` config section.
+
+### Changed
+- The Pin Insulator's port is now shared with the Cable Termination (`MountedPort`, `MountedPortBlockEntity`): one set of
+  rules for a block's port, however its conductors are mounted.
+
 ## Unreleased: tier voltages, gantry jumpers, station fences, sound and particles, power plants on the grid
 
 ### Added

@@ -53,8 +53,9 @@ public class GridData extends SavedData {
                 Codec.STRING.optionalFieldOf("key", "").forGetter(NodeRecord::key)).apply(i, NodeRecord::new));
     }
 
-    // A wire as saved (wires saved before insulation load as bare), and a regulator's boost through a link.
-    public record EdgeRecord(long id, long a, long b, VoltageTier tier, double length, GridEdge.Kind kind, double boost) {
+    // A wire as saved (wires saved before insulation load as bare), a regulator's boost through a link, busway's size and
+    // a cable's derating.
+    public record EdgeRecord(long id, long a, long b, VoltageTier tier, double length, GridEdge.Kind kind, double boost, int size, double derate) {
         static final Codec<EdgeRecord> CODEC = RecordCodecBuilder.create(i -> i.group(
                 Codec.LONG.fieldOf("id").forGetter(EdgeRecord::id),
                 Codec.LONG.fieldOf("a").forGetter(EdgeRecord::a),
@@ -62,7 +63,9 @@ public class GridData extends SavedData {
                 WireView.TIER.fieldOf("tier").forGetter(EdgeRecord::tier),
                 Codec.DOUBLE.fieldOf("length").forGetter(EdgeRecord::length),
                 Codec.STRING.xmap(GridEdge.Kind::byId, GridEdge.Kind::id).optionalFieldOf("kind", GridEdge.Kind.BARE).forGetter(EdgeRecord::kind),
-                Codec.DOUBLE.optionalFieldOf("boost", 0.0).forGetter(EdgeRecord::boost)).apply(i, EdgeRecord::new));
+                Codec.DOUBLE.optionalFieldOf("boost", 0.0).forGetter(EdgeRecord::boost),
+                Codec.INT.optionalFieldOf("size", 1).forGetter(EdgeRecord::size),
+                Codec.DOUBLE.optionalFieldOf("derate", 1.0).forGetter(EdgeRecord::derate)).apply(i, EdgeRecord::new));
     }
 
     record DimensionRecord(String dimension, long nextId, List<NodeRecord> nodes, List<EdgeRecord> edges) {
@@ -152,7 +155,8 @@ public class GridData extends SavedData {
             }
             List<EdgeRecord> edgeList = new ArrayList<>();
             for (GridEdge edge : graph.edges()) {
-                edgeList.add(new EdgeRecord(edge.id(), edge.a(), edge.b(), edge.tier(), edge.length(), edge.kind(), edge.boost()));
+                edgeList.add(new EdgeRecord(edge.id(), edge.a(), edge.b(), edge.tier(), edge.length(), edge.kind(), edge.boost(), edge.size(),
+                        edge.derate()));
             }
             return new DimensionRecord(dimension, nextId, nodeList, edgeList);
         }
@@ -172,8 +176,9 @@ public class GridData extends SavedData {
             for (EdgeRecord edge : record.edges()) {
                 if (dimension.graph.node(edge.a()) != null && dimension.graph.node(edge.b()) != null) {
                     GridNode a = dimension.graph.node(edge.a());
-                    GridEdge loaded = new GridEdge(edge.id(), edge.a(), edge.b(), edge.tier(), a.circuit(), edge.length(), edge.kind());
+                    GridEdge loaded = new GridEdge(edge.id(), edge.a(), edge.b(), edge.tier(), a.circuit(), edge.length(), edge.kind(), edge.size());
                     loaded.setBoost(edge.boost());
+                    loaded.setDerate(edge.derate());
                     dimension.graph.addEdge(loaded);
                 }
             }

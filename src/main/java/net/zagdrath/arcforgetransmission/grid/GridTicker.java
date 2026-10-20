@@ -89,10 +89,10 @@ public final class GridTicker {
                 continue;
             }
             double amps = result.amps(edge.id());
-            if (amps > settings.ratedAmps(edge.tier()) + 1.0E-9) {
+            if (amps > settings.ratedAmps(edge) + 1.0E-9) {
                 edge.overTicks++;
                 GridFaults.raise(FaultEvent.edge(edge.id(), FaultEvent.Cause.OVERCURRENT, amps));
-                if (edge.overTicks >= settings.burnoutTicks()) {
+                if (edge.overTicks >= settings.burnoutTicks(edge)) {
                     burning.add(edge);
                 }
             } else {

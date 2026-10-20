@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "arcforgetransmission:item/ehv_cable_termination"
+  }
+}

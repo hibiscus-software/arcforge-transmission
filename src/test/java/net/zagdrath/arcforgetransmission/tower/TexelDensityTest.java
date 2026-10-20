@@ -13,6 +13,7 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
+import net.zagdrath.arcforgetransmission.tower.model.FactoryMesh;
 import net.zagdrath.arcforgetransmission.tower.model.TowerMesh;
 
 // No mixels: every quad of the towers and the transformer shows the sheet at 16 texels per block (1 texel per px) along
@@ -28,6 +29,20 @@ class TexelDensityTest {
             check(design.name(), TowerMesh.get(design).solid(), bad);
         }
         check("POLE_TRANSFORMER", TowerMesh.poleTransformer().solid(), bad);
+        // Factory distribution: the terminations every way they mount, every section of every tier, every operator.
+        for (int tier = 0; tier < 4; tier++) {
+            for (FactoryMesh.Mount mount : FactoryMesh.Mount.values()) {
+                check("TERMINATION_" + tier + "_" + mount, FactoryMesh.termination(tier, mount).solid(), bad);
+            }
+            for (FactoryMesh.Section section : FactoryMesh.Section.values()) {
+                check("SECTION_" + section + "_" + tier, FactoryMesh.section(section, tier).solid(), bad);
+            }
+            for (FactoryMesh.Op op : FactoryMesh.Op.values()) {
+                for (FactoryMesh.OpState state : FactoryMesh.OpState.values()) {
+                    check("OPERATOR_" + op + "_" + tier + "_" + state, FactoryMesh.operator(op, tier, state).solid(), bad);
+                }
+            }
+        }
         assertTrue(bad.isEmpty(), bad.size() + " quads off 1 texel per px, e.g. " + bad.subList(0, Math.min(8, bad.size())));
     }
 

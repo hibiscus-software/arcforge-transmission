@@ -78,7 +78,7 @@ public class ClampMeterItem extends Item {
             }
             GridNode a = dimension.graph().node(edge.a()), b = dimension.graph().node(edge.b());
             double amps = GridManager.lastAmps(level).getOrDefault(id, 0.0), loss = GridManager.lastLoss(level).getOrDefault(id, 0.0);
-            double rated = GridConfig.SETTINGS.ratedAmps(edge.tier());
+            double rated = GridConfig.SETTINGS.ratedAmps(edge);
             ChatFormatting colour = amps > rated + 1.0E-9 ? ChatFormatting.RED : amps > 0.8 * rated ? ChatFormatting.YELLOW : ChatFormatting.GREEN;
             player.sendSystemMessage(Component.translatable("message." + m + ".meter.wire",
                     Component.literal(edge.tier().name()), Component.translatable("wire_kind." + m + "." + edge.kind().name().toLowerCase(Locale.ROOT)),

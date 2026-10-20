@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test;
 import net.zagdrath.arcforgetransmission.grid.CircuitType;
 import net.zagdrath.arcforgetransmission.grid.Phase;
 import net.zagdrath.arcforgetransmission.grid.data.AttachGroups;
+import net.zagdrath.arcforgetransmission.tower.model.FactoryMesh;
 import net.zagdrath.arcforgetransmission.tower.model.TowerMesh;
 
 // The towers' attach groups (data/arcforgetransmission/attach_groups) match their models: every terminal and reserved
@@ -38,6 +39,23 @@ class TowerAttachGroupsTest {
             for (AttachGroups.Reserved point : groups.reserved()) {
                 double d = distanceToSurface(quads, point.pos());
                 assertTrue(d < 0.05, model + " " + point.name() + " is " + d + " px off the model");
+            }
+        }
+    }
+
+    // Each Cable Termination's three conductors' points (the top of each outlet, the bottom hanging: where its node is)
+    // are on its model, every tier and every way it mounts.
+    @Test
+    void theTerminationsConductorsAreOnTheirModels() {
+        for (int tier = 0; tier < 4; tier++) {
+            for (FactoryMesh.Mount mount : FactoryMesh.Mount.values()) {
+                TowerMesh.Built built = FactoryMesh.termination(tier, mount);
+                assertEquals(3, built.insulators().size(), "termination " + tier + " " + mount);
+                for (float[] b : built.insulators()) {
+                    double[] point = { (b[0] + b[3]) / 2, mount == FactoryMesh.Mount.BOTTOM ? b[1] : b[4], (b[2] + b[5]) / 2 };
+                    double d = distanceToSurface(built.solid(), point);
+                    assertTrue(d < 0.05, "termination " + tier + " " + mount + " conductor is " + d + " px off the model");
+                }
             }
         }
     }

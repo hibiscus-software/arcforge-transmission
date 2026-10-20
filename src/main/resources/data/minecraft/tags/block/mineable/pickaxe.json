@@ -54,6 +54,11 @@
     "arcforgetransmission:mv_distribution_transformer",
     "arcforgetransmission:station_fence",
     "arcforgetransmission:station_fence_barbed_wire",
-    "arcforgetransmission:ground_grid"
+    "arcforgetransmission:ground_grid",
+    "arcforgetransmission:lv_cable_termination",
+    "arcforgetransmission:mv_cable_termination",
+    "arcforgetransmission:hv_cable_termination",
+    "arcforgetransmission:ehv_cable_termination",
+    "arcforgetransmission:cable_termination_part"
   ]
 }

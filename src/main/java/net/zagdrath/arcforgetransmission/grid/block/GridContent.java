@@ -175,7 +175,8 @@ public final class GridContent {
             case INSULATED -> new ItemStack(INSULATED_COILS.containsKey(edge.tier()) ? INSULATED_COILS.get(edge.tier()).get() : coil(edge.tier()));
             case BURIED -> new ItemStack(UNDERGROUND_CABLES.containsKey(edge.tier()) ? UNDERGROUND_CABLES.get(edge.tier()).get() : coil(edge.tier()));
             case SHIELD -> new ItemStack(SHIELD_WIRE_COIL.get());
-            case JUMPER -> ItemStack.EMPTY;
+            // A tray cable is dropped whole by its record (FactoryCables), busway is its own blocks; a jumper is nothing.
+            case JUMPER, CABLE, BUS -> ItemStack.EMPTY;
         };
     }
 

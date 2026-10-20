@@ -143,6 +143,33 @@ breaker clunks), bigger with the fault current and the tier.
 **Creative tabs.** Everything is in six tabs: **Towers & Lines**, **Transformers**, **Protection & Switching**,
 **Substation Yard**, **Wiring & Tools** and **Materials**.
 
+## Factory distribution
+
+A transmission line's job is feeding factories, so a factory can take its line in at any tier, LV to EHV, and
+distribute it at whatever tier its machines need. Everything here scales from the wire's rated amps at each tier
+(W = 16 / 32 / 64 / 128 A):
+
+| Tier | Busway sizes (2W / 4W / 8W) | FE/t | Transformer section (steps one tier down) | Feeder / tap frames |
+|---|---|---|---|---|
+| LV | 32 / 64 / 128 A | 8,192 / 16,384 / 32,768 | n/a (lowest tier) | 16, 32, 64, 128 A |
+| MV | 64 / 128 / 256 A | 65,536 / 131,072 / 262,144 | MV→LV, 32,768 FE/t (LV bus 128 A) | 32, 64, 128, 256 A |
+| HV | 128 / 256 / 512 A | 524,288 / 1,048,576 / 2,097,152 | HV→MV, 262,144 FE/t (MV bus 256 A) | 64, 128, 256, 512 A |
+| EHV | 256 / 512 / 1,024 A | 4,194,304 / 8,388,608 / 16,777,216 | EHV→HV, 2,097,152 FE/t (HV bus 512 A) | 128, 256, 512, 1,024 A |
+
+A transformer section's rating is one full circuit at its primary tier, so its secondary bus carries that tier's
+largest busway. All of these are in the config's `factory` section.
+
+**Cable Terminations.** Where a tray cable ends: a whole circuit (A, B and C) in one block, mounted on any face of a block
+like a Pin Insulator. LV and MV are compact stress-cone potheads, HV three porcelain-skirted terminations 2 blocks tall,
+EHV three tall composite ones with corona rings, 3 blocks tall. On top of a block it stands on it; on a side it stands
+upright on a wall bracket; under one it hangs. On a machine it's that block's port (Wrench: Configure the mode, Sneak +
+Configure the current limit), with a Pin Insulator's rules: above LV a foreign block is an overvoltage. On a lineup
+section or a busway tap-off it joins its cable through instead. Rotate swaps B and C; Port switches an LV termination to
+L1, N and L2 (while no cable is on it).
+
+Inside the grid a cable, a busway joint or a lineup's bus is three conductors, A to A, B to B and C to C: the solver,
+loss, burnout, the Clamp Meter and protection treat it as three wires.
+
 ## Config
 
 Settings are in `arcforgetransmission-common.toml`; each player's sounds and particles (the hum, corona, arcs: their
@@ -172,7 +199,7 @@ by hand:
 
 | Generator | Writes |
 |---|---|
-| `transmission_tower_texture_gen.py` | `textures/block/transmission_tower/` (the towers' model sheet and particles), the tower item sprites |
+| `transmission_tower_texture_gen.py` | `textures/block/transmission_tower/` (the towers' model sheet, factory distribution's paint, aluminium, silicone and rubber included, and particles), the tower and Cable Termination item sprites |
 | `tower_attach_groups_gen.py` | `data/.../attach_groups/` for every tower, transformer and device |
 | `grid_block_model_gen.py` | the Pin Insulators', Pole-Mount Transformer's, Wall Bushing's and Surge Arrester's models, textures and attach groups; the Station Fence's and its Barbed Wire's models |
 | `wire_texture_gen.py` | `textures/block/wire/`, the coil and cable sprites, the Wire Cutters, Burnt Wire |
@@ -200,7 +227,8 @@ every translation key is both defined and used, and every recipe's items resolve
 | `effects` | Sounds and particles, the common side: their registries, the arc event (its packet too) and the hum's model (unit tested). |
 | `effects.client` | The transformers' hum, corona on wet EHV lines, the arcs, the particles, and the client config. |
 | `tower` | Everything placed whole: towers, transformers, devices, line hardware, the yard; the creative tabs. |
-| `tower.model` | The structures' models, built in code (`ModelPreview` in the test sources renders them). |
+| `tower.model` | The structures' models, built in code (`ModelPreview` in the test sources renders them; `FactoryPreview` its factory scenes). `FactoryMesh`: the Cable Terminations, the lineups' sections and their operators. |
 | `tower.client` | Structure rendering and outlines. |
+| `factory` | Factory distribution: Cable Terminations (and their tall parts). `factory.client`: their rendering. |
 | `material` | Bauxite and aluminium: ore, raw ore, dust, ingot, blocks, and their world generation. |
 | `gametest` (src/gametest) | Game tests: the grid built from real blocks in a running world. Its own source set, run by `runGameTestServer`, never shipped. |

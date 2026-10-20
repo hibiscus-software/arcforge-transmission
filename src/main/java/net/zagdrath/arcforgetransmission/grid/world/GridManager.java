@@ -385,7 +385,7 @@ public final class GridManager {
                 double length = edge.isJumper() ? 0.0 : Catenary.length(array(a.at()), array(b.at()));
                 if (Math.abs(length - edge.length()) > 1.0E-6) {
                     dimension.graph().removeEdge(edge.id());
-                    dimension.graph().addEdge(new GridEdge(edge.id(), edge.a(), edge.b(), edge.tier(), edge.circuit(), length, edge.kind()));
+                    dimension.graph().addEdge(edge.withLength(length));
                 }
             }
         }
@@ -557,6 +557,59 @@ public final class GridManager {
         return null;
     }
 
+    // Joins two whole circuits with three conductors, phase to phase (ConnectionRules.pairByPhase): a tray cable between
+    // terminations, a busway joint, a lineup's internal bus. Each conductor `length` blocks of `kind`, busway's `size`,
+    // a cable's `derate`. The new edges' ids, in from's order; or none, with why, in `refusal` (its first element).
+    public static List<Long> connectCircuit(ServerLevel level, List<Long> from, List<Long> to, GridEdge.Kind kind, double length, int size, double derate,
+            ConnectionRules.@Nullable Refusal[] refusal) {
+        GridData.Dimension dimension = GridData.of(level);
+        ConnectionRules.Pairing pairing = ConnectionRules.pairByPhase(dimension.graph(), from, to);
+        if (refusal != null && refusal.length > 0) {
+            refusal[0] = pairing.refusal();
+        }
+        if (pairing.refusal() != null) {
+            return List.of();
+        }
+        List<Long> made = new ArrayList<>();
+        Set<BlockPos> ends = new LinkedHashSet<>();
+        for (long[] pair : pairing.pairs()) {
+            GridNode node = dimension.graph().node(pair[0]);
+            GridEdge edge = new GridEdge(dimension.newId(), pair[0], pair[1], node.tier(), node.circuit(), length, kind, size);
+            edge.setDerate(derate);
+            dimension.graph().addEdge(edge);
+            made.add(edge.id());
+            for (long id : pair) {
+                GridData.NodeRecord record = dimension.node(id);
+                if (record != null) {
+                    ends.add(record.pos());
+                }
+            }
+        }
+        dimension.markDirty();
+        ends.forEach(pos -> refresh(level, dimension, pos));
+        return made;
+    }
+
+    // Takes edges off the grid (a cable pulled, a busway joint parted) without dropping anything, both ends told.
+    public static void disconnect(ServerLevel level, List<Long> edges) {
+        GridData.Dimension dimension = GridData.of(level);
+        Set<BlockPos> ends = new LinkedHashSet<>();
+        for (long id : edges) {
+            GridEdge edge = dimension.graph().removeEdge(id);
+            if (edge == null) {
+                continue;
+            }
+            for (long node : new long[] { edge.a(), edge.b() }) {
+                GridData.NodeRecord record = dimension.node(node);
+                if (record != null) {
+                    ends.add(record.pos());
+                }
+            }
+        }
+        dimension.markDirty();
+        ends.forEach(pos -> refresh(level, dimension, pos));
+    }
+
     // A wire a ray passes near: its edge, the point on it nearest the ray, and how far along the ray that is.
     public record WireHit(long edge, Vec3 at, double along) {}
 
@@ -621,7 +674,7 @@ public final class GridManager {
         double bestDistance = radius;
         double[] o = array(from), d = array(dir.scale(reach));
         for (GridEdge edge : dimension.graph().edges()) {
-            if (edge.isJumper() || edge.kind() == GridEdge.Kind.BURIED) {
+            if (!edge.kind().hangs()) {
                 continue;
             }
             GridData.NodeRecord a = dimension.node(edge.a()), b = dimension.node(edge.b());
@@ -676,7 +729,7 @@ public final class GridManager {
                 continue;
             }
             for (GridEdge edge : dimension.graph().edgesOf(id)) {
-                if (edge.a() != id || edge.isJumper() || edge.kind() == GridEdge.Kind.BURIED) {
+                if (edge.a() != id || !edge.kind().hangs()) {
                     continue;
                 }
                 GridData.NodeRecord a = dimension.node(edge.a()), b = dimension.node(edge.b());

@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "I": "arcforgetransmission:mv_pin_insulator",
+    "C": "#c:ingots/copper",
+    "R": "#c:rubbers",
+    "P": "#c:plates/steel"
+  },
+  "pattern": [
+    "III",
+    "CRC",
+    " P "
+  ],
+  "result": {
+    "id": "arcforgetransmission:mv_cable_termination"
+  }
+}

@@ -126,7 +126,11 @@ public final class TowerMesh extends MeshBuilder {
     enum Mat {
         GALV(48, 0, 128, 128, 176, 177, 48, 49, 4),
         WOOD(48, 128, 128, 48, 178, 179, 50, 51, 14),
-        CONCRETE(176, 0, 64, 32, 180, 181, 52, 53, 46);
+        CONCRETE(176, 0, 64, 32, 180, 181, 52, 53, 46),
+        // Factory distribution: ANSI-61 enclosure paint, the plinth's darker paint, GIS cast aluminium.
+        PAINT(64, 400, 128, 56, 182, 183, 54, 55, 60),
+        PLINTH(192, 336, 64, 32, 184, 185, 56, 57, 65),
+        ALUM(64, 456, 128, 56, 186, 187, 58, 59, 71);
 
         final int fx, fy, fw, fh, litRow, darkRow, litCol, darkCol, corner;
 
@@ -148,7 +152,7 @@ public final class TowerMesh extends MeshBuilder {
     // The ramps round round parts (periods 2 to 14 side by side from x 64, at x = (p - 1)p/2 - 1), each a block 16 rows
     // tall with every row alike, so a facet shows it at 1:1 down its length.
     enum Ramp {
-        GALV(256), PORCELAIN(272), GLASS(288), CAN(304), COPPER(320);
+        GALV(256), PORCELAIN(272), GLASS(288), CAN(304), COPPER(320), PAINT(336), ALUM(352), SILICONE(368), RUBBER(384);
 
         final int row;
 
@@ -167,18 +171,19 @@ public final class TowerMesh extends MeshBuilder {
 
     // Flat swatches (4x4 from (64, 224), 32 a row), in the generator's order.
     static final int GALV0 = 0, WOOD0 = 10, PORC0 = 19, GLASS0 = 26, CAN0 = 33, COPPER0 = 40, CONC0 = 44, ALU0 = 50, HAZARD = 53, BLACK = 54,
-            RED = 55, MARKER = 56;
+            RED = 55, MARKER = 56, PAINT0 = 57, PLINTH0 = 64, ALUM0 = 68, RUBBER0 = 75, SIL0 = 80, GREEN = 85, GREEN_DARK = 86, RED_DARK = 87,
+            WHITE = 88, AMBER = 89, BLUE = 90;
 
-    private static final float[] UP = { 0, 1, 0 };
+    static final float[] UP = { 0, 1, 0 };
 
-    private final List<float[]> boxes = new ArrayList<>();
+    final List<float[]> boxes = new ArrayList<>();
     // The uniform frame boxes (poles, crossarms, peaks, the lattice's bays) and every insulator's box.
-    private final List<float[]> frame = new ArrayList<>();
-    private final List<float[]> insulators = new ArrayList<>();
+    final List<float[]> frame = new ArrayList<>();
+    final List<float[]> insulators = new ArrayList<>();
     // Where each face's grain window comes from: a running count, mixed with where the face is.
     private long faceSeed;
 
-    private TowerMesh() {
+    TowerMesh() {
         super(SHEET_W, SHEET_H);
     }
 
@@ -774,7 +779,7 @@ public final class TowerMesh extends MeshBuilder {
     // A transformer's bushing at (x, y, z) in its tier's insulator (0 LV: the porcelain pin, 1 MV: the porcelain post,
     // 2 HV: four glass discs, 3 EHV: six larger ones; a unit transformer's a little smaller). Returns its top, where the
     // wire attaches (tools/tower_attach_groups_gen.py works the same).
-    private float bushing(int tier, float x, float y, float z, boolean unit) {
+    float bushing(int tier, float x, float y, float z, boolean unit) {
         return switch (tier) {
             case 0 -> {
                 pinInsulator(x, y, z);
@@ -792,7 +797,7 @@ public final class TowerMesh extends MeshBuilder {
 
     // An upright stack of cap-and-pin glass discs on a clevis (an HV or EHV bushing): each a steel pin, the glass rim and
     // glazed top stepping in, and the steel cap; a line clamp on top. Returns the clamp's top.
-    private float glassStack(float x, float y, float z, int discs, float rim) {
+    float glassStack(float x, float y, float z, int discs, float rim) {
         turned(x, z, new float[][] { { y, 1.0F }, { y + 1.0F, 1.0F } }, 8, Ramp.GALV, true, false);
         float s = y + 1.0F;
         for (int i = 0; i < discs; i++) {
@@ -1092,7 +1097,7 @@ public final class TowerMesh extends MeshBuilder {
         frame.add(new float[] { cx - r, y0, cz - r, cx + r, y1, cz + r });
     }
 
-    private static float[][] ring(float cx, float cz, float r, int sides) {
+    static float[][] ring(float cx, float cz, float r, int sides) {
         float[][] rim = new float[sides][];
         for (int i = 0; i < sides; i++) {
             double angle = Math.PI / sides + i * 2.0 * Math.PI / sides;
@@ -1109,14 +1114,14 @@ public final class TowerMesh extends MeshBuilder {
     }
 
     // A concrete box (a footing step).
-    private void concrete(float x0, float y0, float z0, float x1, float y1, float z1) {
+    void concrete(float x0, float y0, float z0, float x1, float y1, float z1) {
         float[] a = { x0, (y0 + y1) / 2, (z0 + z1) / 2 }, b = { x1, (y0 + y1) / 2, (z0 + z1) / 2 };
         member(a, b, z1 - z0, y1 - y0, UP, Mat.CONCRETE, true);
     }
 
     // A porcelain pin insulator standing at (x, y, z): a steel pin, two skirts and a crown with the tie groove (where a
     // wire will be tied).
-    private void pinInsulator(float x, float y, float z) {
+    void pinInsulator(float x, float y, float z) {
         turned(x, z, new float[][] { { y, 0.6F }, { y + 2.0F, 0.6F } }, 6, Ramp.GALV, false, false);
         float b = y + 2.0F;
         turned(x, z, new float[][] { { b, 1.0F }, { b, 2.7F }, { b + 0.9F, 2.7F }, { b + 2.0F, 1.6F }, { b + 2.6F, 1.6F }, { b + 2.6F, 2.2F },
@@ -1127,12 +1132,12 @@ public final class TowerMesh extends MeshBuilder {
 
     // A porcelain line post insulator standing at (x, y, z), `height` px: a steel base flange, the core with a shed every
     // 2 px, and a steel line clamp on top.
-    private void postInsulator(float x, float y, float z, float height) {
+    void postInsulator(float x, float y, float z, float height) {
         postInsulator(x, y, z, height, Ramp.PORCELAIN);
     }
 
     // The same in another glaze: HV and EHV posts are the towers' blue-green glass.
-    private void postInsulator(float x, float y, float z, float height, Ramp glaze) {
+    void postInsulator(float x, float y, float z, float height, Ramp glaze) {
         turned(x, z, new float[][] { { y, 2.2F }, { y + 1.0F, 2.2F } }, 8, Ramp.GALV, true, false);
         float top = y + height - 1.6F;
         List<float[]> profile = new ArrayList<>();
@@ -1171,7 +1176,7 @@ public final class TowerMesh extends MeshBuilder {
 
     // One cap-and-pin glass disc whose cap top is at y: the steel cap, the glazed top falling from cap to rim (its own
     // ramp from rim to cap, and the ramp round it), the rim, the underside and the pin down to the next cap.
-    private void disc(float x, float z, float y) {
+    void disc(float x, float z, float y) {
         turned(x, z, new float[][] { { y - 0.7F, 1.0F }, { y, 1.0F }, { y, 0.0F } }, 8, Ramp.GALV, false, false);
         coneTop(x, z, y - 1.9F, 3.0F, y - 0.7F, 1.0F, 8, DISC_GLASS_X);
         turned(x, z, new float[][] { { y - 2.5F, 3.0F }, { y - 1.9F, 3.0F } }, 8, Ramp.GLASS, false, false);
@@ -1234,7 +1239,7 @@ public final class TowerMesh extends MeshBuilder {
     }
 
     // An axis-aligned box plated in m.
-    private void plateBox(float x0, float y0, float z0, float x1, float y1, float z1, Mat m) {
+    void plateBox(float x0, float y0, float z0, float x1, float y1, float z1, Mat m) {
         member(new float[] { x0, (y0 + y1) / 2, (z0 + z1) / 2 }, new float[] { x1, (y0 + y1) / 2, (z0 + z1) / 2 }, z1 - z0, y1 - y0, UP, m, true);
     }
 
@@ -1325,7 +1330,7 @@ public final class TowerMesh extends MeshBuilder {
     }
 
     // A thin run in one flat tone from point to point (a jumper, a cable), w px square, its sides only.
-    private void rod(float[] a, float[] b, float w, int swatch) {
+    void rod(float[] a, float[] b, float w, int swatch) {
         float[] d = normalize(sub(b, a));
         float[] u = Math.abs(d[1]) < 0.9F ? UP : new float[] { 1, 0, 0 };
         float[] s = scale(normalize(cross(d, u)), w / 2), t = scale(normalize(cross(s, d)), w / 2);
@@ -1346,7 +1351,7 @@ public final class TowerMesh extends MeshBuilder {
     }
 
     // A copper jumper through the points in order.
-    private void jumper(float[]... points) {
+    void jumper(float[]... points) {
         for (int i = 0; i + 1 < points.length; i++) {
             rod(points[i], points[i + 1], 0.8F, COPPER0 + 1);
         }
@@ -1770,7 +1775,7 @@ public final class TowerMesh extends MeshBuilder {
     // A member from a to b (its centre line), w px across and d px deep (depth along depthHint, squared to the axis),
     // each long face plated in m with its grain along the member, its ends capped when caps is set. Its solid boxes go
     // in steps of 2 px along it (a slanted member as a stair).
-    private void member(float[] a, float[] b, float w, float d, float[] depthHint, Mat m, boolean caps) {
+    void member(float[] a, float[] b, float w, float d, float[] depthHint, Mat m, boolean caps) {
         float[] axis = normalize(sub(b, a));
         float[] e = sub(depthHint, scale(axis, dot(depthHint, axis)));
         if (length(e) < 1.0E-4F) {
@@ -1816,7 +1821,7 @@ public final class TowerMesh extends MeshBuilder {
     // A flat convex face (points in any winding; outward given) plated as one plate of m: its frame's up is the in-plane
     // direction nearest world up (or north, on a face looking up or down), kept along or across `along` when given so
     // the grain runs with the member; its window of the grain field and edge strips picked from where it is.
-    private void face(List<float[]> points, float[] outward, float[] along, Mat m) {
+    void face(List<float[]> points, float[] outward, float[] along, Mat m) {
         float[] n = normalize(outward);
         float[] ref = Math.abs(n[1]) > 0.9F ? new float[] { 0, 0, -1 } : UP;
         float[] up;
@@ -1902,7 +1907,7 @@ public final class TowerMesh extends MeshBuilder {
     // between two profile points a frustum carrying the ramp round it (or across its length, on a band wider round than
     // it is long), each step in radius at one height a flat ring (lit swatch looking up, dark looking down), and flat
     // caps on the ends when asked.
-    private void turned(float cx, float cz, float[][] profile, int sides, Ramp ramp, boolean capTop, boolean capBottom) {
+    void turned(float cx, float cz, float[][] profile, int sides, Ramp ramp, boolean capTop, boolean capBottom) {
         float rMax = 0;
         for (int k = 0; k + 1 < profile.length; k++) {
             float ya = profile[k][0], ra = profile[k][1], yb = profile[k + 1][0], rb = profile[k + 1][1];
@@ -1949,7 +1954,7 @@ public final class TowerMesh extends MeshBuilder {
     // square): a facet 3 px or more round carries the whole ramp; narrower ones share one ramp that carries on round the
     // part (repeating so it's at most 14 px); a band wider round than it is long takes the ramp across its length
     // instead, the same all the way round.
-    private void rampFacet(float[] p0, float[] p1, float[] p2, float[] p3, int i, int sides, float fw, float len, float round, Ramp ramp) {
+    void rampFacet(float[] p0, float[] p1, float[] p2, float[] p3, int i, int sides, float fw, float len, float round, Ramp ramp) {
         if (fw >= 3.0F && len < fw) {
             float v = (ramp.row + 1.5F) / SHEET_H;
             int period = Math.max(2, Math.min(14, Math.round(len)));
@@ -2012,7 +2017,7 @@ public final class TowerMesh extends MeshBuilder {
 
     // The glazed top of a disc: a cone from (rim radius at yRim) up to (cap radius at yCap), each facet showing the disc
     // ramp from rim (bottom) to cap at 1:1 (the facet's own plane, its rim edge as across).
-    private void coneTop(float cx, float cz, float yRim, float rRim, float yCap, float rCap, int sides, int rampX) {
+    void coneTop(float cx, float cz, float yRim, float rRim, float yCap, float rCap, int sides, int rampX) {
         float[][] lo = ring(cx, cz, rRim, sides), hi = ring(cx, cz, rCap, sides);
         for (int i = 0; i < sides; i++) {
             float[] p0 = { lo[(i + 1) % sides][0], yRim, lo[(i + 1) % sides][2] }, p1 = { lo[i][0], yRim, lo[i][2] };
@@ -2035,7 +2040,7 @@ public final class TowerMesh extends MeshBuilder {
 
     // A flat ring (a disc when inner is 0) across the upright axis at y, looking up or down, in the ramp's lit or dark
     // end as one tone (a small round face; caps on the big parts carry modules instead).
-    private void annulus(float cx, float cz, float y, float inner, float outer, int sides, boolean up, Ramp ramp) {
+    void annulus(float cx, float cz, float y, float inner, float outer, int sides, boolean up, Ramp ramp) {
         float[][] o = ring(cx, cz, outer, sides), in = ring(cx, cz, inner, sides);
         int tone = switch (ramp) {
             case GALV -> up ? GALV0 + 7 : GALV0 + 3;
@@ -2043,6 +2048,10 @@ public final class TowerMesh extends MeshBuilder {
             case GLASS -> up ? GLASS0 + 4 : GLASS0 + 1;
             case CAN -> up ? CAN0 + 4 : CAN0 + 2;
             case COPPER -> COPPER0 + 2;
+            case PAINT -> up ? PAINT0 + 5 : PAINT0 + 2;
+            case ALUM -> up ? ALUM0 + 5 : ALUM0 + 2;
+            case SILICONE -> up ? SIL0 + 3 : SIL0 + 1;
+            case RUBBER -> up ? RUBBER0 + 3 : RUBBER0 + 1;
         };
         float[] uv = swatchUv(tone);
         for (int i = 0; i < sides; i++) {
@@ -2059,7 +2068,7 @@ public final class TowerMesh extends MeshBuilder {
     }
 
     // An axis-aligned box in one flat tone (a small part: a bolt, a staple, a clamp, a barb).
-    private void swatchBox(float x0, float y0, float z0, float x1, float y1, float z1, int swatch) {
+    void swatchBox(float x0, float y0, float z0, float x1, float y1, float z1, int swatch) {
         float[] uv = swatchUv(swatch);
         float[][] c = { { x0, y0, z0 }, { x1, y0, z0 }, { x1, y1, z0 }, { x0, y1, z0 }, { x0, y0, z1 }, { x1, y0, z1 }, { x1, y1, z1 }, { x0, y1, z1 } };
         int[][] faces = { { 1, 0, 3, 2 }, { 4, 5, 6, 7 }, { 0, 4, 7, 3 }, { 5, 1, 2, 6 }, { 3, 7, 6, 2 }, { 0, 1, 5, 4 } };
@@ -2069,7 +2078,7 @@ public final class TowerMesh extends MeshBuilder {
     }
 
     // The same, leaving out one face (1 north, 2 south), where a painted plane stands in for it.
-    private void swatchBoxOpen(float x0, float y0, float z0, float x1, float y1, float z1, int swatch, int open) {
+    void swatchBoxOpen(float x0, float y0, float z0, float x1, float y1, float z1, int swatch, int open) {
         float[] uv = swatchUv(swatch);
         float[][] c = { { x0, y0, z0 }, { x1, y0, z0 }, { x1, y1, z0 }, { x0, y1, z0 }, { x0, y0, z1 }, { x1, y0, z1 }, { x1, y1, z1 }, { x0, y1, z1 } };
         int[][] faces = { { 1, 0, 3, 2 }, { 4, 5, 6, 7 }, { 0, 4, 7, 3 }, { 5, 1, 2, 6 }, { 3, 7, 6, 2 }, { 0, 1, 5, 4 } };
@@ -2091,11 +2100,11 @@ public final class TowerMesh extends MeshBuilder {
         return new float[] { u, v, u, v, u, v, u, v };
     }
 
-    private static float[] add(float[] a, float[] b) {
+    static float[] add(float[] a, float[] b) {
         return new float[] { a[0] + b[0], a[1] + b[1], a[2] + b[2] };
     }
 
-    private static float[] scale(float[] a, float s) {
+    static float[] scale(float[] a, float s) {
         return new float[] { a[0] * s, a[1] * s, a[2] * s };
     }
 

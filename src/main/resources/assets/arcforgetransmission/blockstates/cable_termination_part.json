@@ -1,0 +1,16 @@
+{
+  "variants": {
+    "hanging=false,step=1": {
+      "model": "arcforgetransmission:block/cable_termination"
+    },
+    "hanging=false,step=2": {
+      "model": "arcforgetransmission:block/cable_termination"
+    },
+    "hanging=true,step=1": {
+      "model": "arcforgetransmission:block/cable_termination"
+    },
+    "hanging=true,step=2": {
+      "model": "arcforgetransmission:block/cable_termination"
+    }
+  }
+}

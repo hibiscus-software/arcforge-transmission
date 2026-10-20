@@ -490,7 +490,7 @@ public final class FlowSolver {
             for (int e = 0; e < m; e++) {
                 GridEdge edge = t.edges[e];
                 r[e] = edge.resistance(settings);
-                x[e] = settings.reactance(edge.tier()) * edge.length();
+                x[e] = settings.reactance(edge);
                 anyBoost |= edge.boost() != 0;
             }
             boosted = anyBoost;
@@ -1641,7 +1641,7 @@ public final class FlowSolver {
                         ordered.add(edge);
                         if (first) {
                             r += edge.resistance(settings) * refer;
-                            x += settings.reactance(edge.tier()) * edge.length() * refer;
+                            x += settings.reactance(edge) * refer;
                         }
                     }
                     first = false;

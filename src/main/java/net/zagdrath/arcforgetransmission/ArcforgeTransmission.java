@@ -24,6 +24,7 @@ import net.zagdrath.arcforgetransmission.effects.TransmissionSounds;
 import net.zagdrath.arcforgetransmission.grid.VoltageTier;
 import net.zagdrath.arcforgetransmission.grid.data.AttachGroups;
 import net.zagdrath.arcforgetransmission.tower.TowerTier;
+import net.zagdrath.arcforgetransmission.factory.FactoryContent;
 import net.zagdrath.arcforgetransmission.grid.block.GridContent;
 import net.zagdrath.arcforgetransmission.grid.world.GridConfig;
 import net.zagdrath.arcforgetransmission.grid.world.GridPayloads;
@@ -38,6 +39,7 @@ public class ArcforgeTransmission {
     public ArcforgeTransmission(IEventBus modEventBus, ModContainer modContainer) {
         TowerContent.register(modEventBus);
         GridContent.register(modEventBus);
+        FactoryContent.register(modEventBus);
         MaterialContent.register(modEventBus);
         TransmissionSounds.register(modEventBus);
         TransmissionParticles.register(modEventBus);
