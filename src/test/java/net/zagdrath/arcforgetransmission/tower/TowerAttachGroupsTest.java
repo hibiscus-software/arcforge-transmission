@@ -60,6 +60,20 @@ class TowerAttachGroupsTest {
         }
     }
 
+    // Each lineup incomer's bushing tops (its overhead line's attach points) are on its model, every tier.
+    @Test
+    void theIncomersBushingsAreOnTheirModels() {
+        for (int tier = 0; tier < 4; tier++) {
+            TowerMesh.Built built = FactoryMesh.section(FactoryMesh.Section.INCOMING, tier);
+            assertEquals(3, built.insulators().size(), "incomer " + tier);
+            for (float[] b : built.insulators()) {
+                double[] point = { (b[0] + b[3]) / 2, b[4], (b[2] + b[5]) / 2 };
+                double d = distanceToSurface(built.solid(), point);
+                assertTrue(d < 0.05, "incomer " + tier + " bushing is " + d + " px off the model");
+            }
+        }
+    }
+
     // The Pole-Mount Transformer's primaries' tops and secondaries' tips are on its model too.
     @Test
     void theTransformersTerminalsAreOnItsModel() {

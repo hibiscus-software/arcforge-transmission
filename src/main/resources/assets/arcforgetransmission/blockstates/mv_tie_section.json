@@ -1,0 +1,16 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "arcforgetransmission:block/switchgear_section"
+    },
+    "facing=south": {
+      "model": "arcforgetransmission:block/switchgear_section"
+    },
+    "facing=west": {
+      "model": "arcforgetransmission:block/switchgear_section"
+    },
+    "facing=east": {
+      "model": "arcforgetransmission:block/switchgear_section"
+    }
+  }
+}

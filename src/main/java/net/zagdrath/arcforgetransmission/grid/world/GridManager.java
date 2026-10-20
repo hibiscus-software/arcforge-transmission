@@ -590,6 +590,19 @@ public final class GridManager {
         return made;
     }
 
+    // Joins two nodes with a link of no length (a lineup's bus between sections, a termination to its host); false if
+    // either is missing, they're of different tiers or circuit types, or they're already joined.
+    public static boolean jumper(ServerLevel level, long a, long b) {
+        GridData.Dimension dimension = GridData.of(level);
+        GridNode na = dimension.graph().node(a), nb = dimension.graph().node(b);
+        if (na == null || nb == null || a == b || na.tier() != nb.tier() || na.circuit() != nb.circuit() || dimension.graph().connected(a, b)) {
+            return false;
+        }
+        dimension.graph().addEdge(new GridEdge(dimension.newId(), a, b, na.tier(), na.circuit(), 0.0, GridEdge.Kind.JUMPER));
+        dimension.markDirty();
+        return true;
+    }
+
     // Takes edges off the grid (a cable pulled, a busway joint parted) without dropping anything, both ends told.
     public static void disconnect(ServerLevel level, List<Long> edges) {
         GridData.Dimension dimension = GridData.of(level);

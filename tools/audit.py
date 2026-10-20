@@ -48,7 +48,7 @@ SHEET_SIZES = {"block/transmission_tower/towers.png": (256, 512)}
 INTENTIONAL = {"block/wall_bushing.png": {(3, 3), (12, 3), (3, 12), (12, 12)}}
 
 # The invisible blocks a structure stands in: no item, no loot table of their own.
-PARTS = {"transmission_tower_part", "cable_termination_part"}
+PARTS = {"transmission_tower_part", "cable_termination_part", "switchgear_section_part"}
 
 problems = []
 
@@ -229,6 +229,8 @@ def check_attach(repo):
 TIERS = ["lv", "mv", "hv", "ehv"]
 # VoltageTier.insulatable(): LV and MV.
 INSULATABLE = ["lv", "mv"]
+# Blocks registered per tier but not at LV: a lineup's transformer section steps down to the tier below.
+NOT_LV = ["_transformer_section"]
 
 
 def java_sources(repo):
@@ -245,7 +247,7 @@ def registered(repo, sources):
         blocks.update(re.findall(r'register(?:Simple)?Block\("([a-z0-9_]+)"', text))
         items.update(re.findall(r'register(?:Simple)?Item\("([a-z0-9_]+)"', text))
         for suffix in re.findall(r'BLOCKS\.registerBlock\(tier\.id\(\) \+ "([a-z0-9_]+)"', text):
-            blocks.update(t + suffix for t in TIERS)
+            blocks.update(t + suffix for t in TIERS if not (t == "lv" and suffix in NOT_LV))
         for suffix in re.findall(r'ITEMS\.registerItem\(tier\.id\(\) \+ "([a-z0-9_]+)"', text):
             items.update(t + suffix for t in (INSULATABLE if "insulated" in suffix else TIERS))
     tiers = open(os.path.join(repo, "src/main/java/net/zagdrath/arcforgetransmission/tower/TowerTier.java"), encoding="utf-8").read()

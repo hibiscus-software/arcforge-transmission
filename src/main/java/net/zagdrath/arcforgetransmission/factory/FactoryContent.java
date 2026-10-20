@@ -24,8 +24,10 @@ import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.zagdrath.arcforgetransmission.ArcforgeTransmission;
 import net.zagdrath.arcforgetransmission.grid.VoltageTier;
+import net.zagdrath.arcforgetransmission.tower.model.FactoryMesh.Section;
 
-// Factory distribution's content: per tier a Cable Termination (and the invisible cells the tall ones stand up into).
+// Factory distribution's content: per tier a Cable Termination (and the invisible cells the tall ones stand up into)
+// and a switchgear lineup's sections (and their other blocks).
 // Call register(modEventBus) from the mod's constructor.
 public final class FactoryContent {
     private static final String MODID = ArcforgeTransmission.MODID;
@@ -57,6 +59,49 @@ public final class FactoryContent {
     public static final DeferredBlock<CableTerminationPartBlock> TERMINATION_PART = BLOCKS.registerBlock("cable_termination_part",
             CableTerminationPartBlock::new, p -> p.mapColor(MapColor.METAL).strength(2.0F, 6.0F).sound(SoundType.METAL).noOcclusion().noLootTable()
                     .pushReaction(PushReaction.IMMOVEABLE));
+
+    // The lineups' sections, per tier: incoming, transformer (MV, HV, EHV: one tier down), main, feeder and bus tie.
+    public static final Map<VoltageTier, Map<Section, DeferredBlock<SectionBlock>>> SECTIONS = new EnumMap<>(VoltageTier.class);
+
+    static {
+        for (VoltageTier tier : VoltageTier.values()) {
+            Map<Section, DeferredBlock<SectionBlock>> sections = new EnumMap<>(Section.class);
+            SECTIONS.put(tier, sections);
+            sections.put(Section.INCOMING, section(BLOCKS.registerBlock(tier.id() + "_incoming_section", p -> new SectionBlock(tier, Section.INCOMING, p),
+                    p -> sectionProperties(p, tier))));
+            if (tier != VoltageTier.LV) {
+                sections.put(Section.TRANSFORMER, section(BLOCKS.registerBlock(tier.id() + "_transformer_section",
+                        p -> new SectionBlock(tier, Section.TRANSFORMER, p), p -> sectionProperties(p, tier))));
+            }
+            sections.put(Section.MAIN, section(BLOCKS.registerBlock(tier.id() + "_main_section", p -> new SectionBlock(tier, Section.MAIN, p),
+                    p -> sectionProperties(p, tier))));
+            sections.put(Section.FEEDER, section(BLOCKS.registerBlock(tier.id() + "_feeder_section", p -> new SectionBlock(tier, Section.FEEDER, p),
+                    p -> sectionProperties(p, tier))));
+            sections.put(Section.TIE, section(BLOCKS.registerBlock(tier.id() + "_tie_section", p -> new SectionBlock(tier, Section.TIE, p),
+                    p -> sectionProperties(p, tier))));
+        }
+    }
+
+    private static net.minecraft.world.level.block.state.BlockBehaviour.Properties sectionProperties(
+            net.minecraft.world.level.block.state.BlockBehaviour.Properties p, VoltageTier tier) {
+        return p.mapColor(MapColor.METAL).strength(5.0F, 9.0F).sound(SoundType.METAL).noOcclusion().requiresCorrectToolForDrops()
+                .pushReaction(PushReaction.IMMOVEABLE);
+    }
+
+    private static DeferredBlock<SectionBlock> section(DeferredBlock<SectionBlock> block) {
+        add(Tab.YARD, ITEMS.registerItem(block.getId().getPath(), p -> new SectionItem(block.get(), p)));
+        return block;
+    }
+
+    // A section's other blocks: drop nothing of their own.
+    public static final DeferredBlock<SectionPartBlock> SECTION_PART = BLOCKS.registerBlock("switchgear_section_part", SectionPartBlock::new,
+            p -> p.mapColor(MapColor.METAL).strength(5.0F, 9.0F).sound(SoundType.METAL).noOcclusion().noLootTable().pushReaction(PushReaction.IMMOVEABLE));
+
+    public static final Supplier<BlockEntityType<SectionBlockEntity>> SECTION_ENTITY = BLOCK_ENTITY_TYPES.register("switchgear_section",
+            () -> new BlockEntityType<>(SectionBlockEntity::new, SECTIONS.values().stream().flatMap(m -> m.values().stream()).map(DeferredBlock::get)
+                    .toArray(SectionBlock[]::new)));
+    public static final Supplier<BlockEntityType<SectionPartBlockEntity>> SECTION_PART_ENTITY = BLOCK_ENTITY_TYPES.register("switchgear_section_part",
+            () -> new BlockEntityType<>(SectionPartBlockEntity::new, SECTION_PART.get()));
 
     public static final Supplier<BlockEntityType<CableTerminationBlockEntity>> TERMINATION_ENTITY = BLOCK_ENTITY_TYPES.register("cable_termination",
             () -> new BlockEntityType<>(CableTerminationBlockEntity::new,

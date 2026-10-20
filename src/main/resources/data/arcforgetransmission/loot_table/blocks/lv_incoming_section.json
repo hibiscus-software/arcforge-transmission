@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:block",
+  "pools": [
+    {
+      "condition": {
+        "type": "minecraft:survives_explosion"
+      },
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "arcforgetransmission:lv_incoming_section"
+        }
+      ],
+      "rolls": 1
+    }
+  ],
+  "random_sequence": "arcforgetransmission:blocks/lv_incoming_section"
+}

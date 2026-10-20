@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "P": "#c:plates/steel",
+    "C": "#c:ingots/aluminum",
+    "B": "arcforgetransmission:hv_circuit_breaker",
+    "R": "minecraft:comparator",
+    "A": "#c:ingots/hardened_alloy"
+  },
+  "pattern": [
+    "PRP",
+    "CBC",
+    "APP"
+  ],
+  "result": {
+    "id": "arcforgetransmission:hv_main_section"
+  }
+}

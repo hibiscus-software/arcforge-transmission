@@ -791,6 +791,64 @@ def termination_sprite(tier):
 
 for tier, t in (("lv", 0), ("mv", 1), ("hv", 2), ("ehv", 3)):
     ITEMS[tier + "_cable_termination"] = termination_sprite(t)
+
+PL_, PM_, PD_ = PAINT[5], PAINT[3], PAINT[1]
+
+
+def section_sprite(kind, tier):
+    """A lineup section. LV and MV: the ANSI-61 grey cubicle on its dark plinth, its doors, and its kind's mark: the
+    incomer's bushings and fuse window, the transformer's coils behind bars, the main's big breaker, the feeder's two, the
+    tie's mimic. HV and EHV: the GIS bay's aluminium tank(s) (one at HV, three at EHV) on the mechanism cabinet under the
+    bus tube, the incomer's air bushings above, the transformer's radiators."""
+    shapes = []
+    if tier <= 1:
+        top = 3 if kind == "incoming" else 1
+        shapes += box(3, top, 12, 14, PL_, PD_, PM_) + box(3, 14, 12, 15, PLINTH[3], PLINTH[0], PLINTH[1])
+        shapes += [(x, 8, PD_) for x in range(4, 12)]
+        if kind == "incoming":
+            for x in (4, 7, 10):
+                shapes += [(x, 1, PL), (x + 1, 1, PM), (x, 2, PM), (x + 1, 2, PD)]
+            shapes += box(5, 4, 10, 6, RUBBER[1], RUBBER[0]) + [(6, 5, GL), (8, 5, GL)]
+            shapes += [(7, 10, RED), (7, 11, RED), (7, 12, RED)]
+        elif kind == "transformer":
+            for x in (5, 7, 9):
+                shapes += [(x, y, SILICONE[3] if x % 4 == 1 else SILICONE[1]) for y in range(3, 12)]
+            shapes += [(x, y, GM) for x in (4, 6, 8, 10) for y in range(3, 12)]
+        elif kind == "main":
+            shapes += box(5, 3, 10, 6, RUBBER[1], RUBBER[0]) + box(5, 10, 10, 13, PAINT[1], PAINT[0])
+            shapes += [(7, 11, RUBBER[4]), (7, 12, RUBBER[4]), (7, 10, RED)]
+        elif kind == "feeder":
+            for y0 in (3, 10):
+                shapes += box(4, y0, 8, y0 + 3, PAINT[1], PAINT[0]) + [(6, y0 + 1, RED), (6, y0 + 2, RUBBER[4])]
+            shapes += [(10, y, PD_) for y in range(3, 13, 2)]
+        else:
+            shapes += [(x, 5, OUTLINE) for x in range(4, 12)] + box(6, 4, 9, 6, OUTLINE, OUTLINE, PL_)
+            shapes += box(5, 10, 10, 13, PAINT[1], PAINT[0]) + [(7, 11, GREEN)]
+    else:
+        ehv = tier == 3
+        shapes += box(1, 13, 14, 15, GL, GD) + box(3, 10, 12, 13, PL_, PD_, PM_) + [(5, 11, RED), (6, 11, GREEN)]
+        shapes += [(x, 2, ALUM[5]) for x in range(0, 16)] + [(x, 3, ALUM[2]) for x in range(0, 16)]
+        if kind == "transformer":
+            shapes += box(4, 4, 11, 12, PL_, PD_, PM_)
+            shapes += [(x, y, PM_ if x % 2 == 0 else PD_) for x in (1, 2, 13, 14) for y in range(5, 11)]
+        else:
+            for x in ((2, 7, 12) if ehv else (6,)):
+                w = 2 if ehv else 4
+                shapes += [(xx, y, ALUM[5] if xx == x else ALUM[3] if xx < x + w - 1 else ALUM[1]) for xx in range(x, x + w) for y in range(4, 10)]
+                shapes += [(xx, 6, ALUM[6]) for xx in range(x, x + w)]
+            if kind == "incoming":
+                for x in (3, 7, 11):
+                    shapes += [(x, 0, SL if ehv else PL), (x + 1, 0, SD if ehv else PD), (x, 1, SM if ehv else PM), (x + 1, 1, SD if ehv else PD)]
+            elif kind == "tie":
+                shapes += [(7, 2, RED), (8, 2, RED), (7, 3, RED_DARK), (8, 3, RED_DARK)]
+    return sprite(shapes)
+
+
+for tier, t in (("lv", 0), ("mv", 1), ("hv", 2), ("ehv", 3)):
+    for kind in ("incoming", "transformer", "main", "feeder", "tie"):
+        if kind == "transformer" and t == 0:
+            continue
+        ITEMS[f"{tier}_{kind}_section"] = section_sprite(kind, t)
 ITEMS["lv_transfer_switch"] = ats_sprite(False)
 ITEMS["mv_transfer_switch"] = ats_sprite(True)
 

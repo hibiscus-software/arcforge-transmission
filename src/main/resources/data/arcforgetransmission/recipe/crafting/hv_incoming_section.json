@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "P": "#c:plates/steel",
+    "C": "#c:ingots/aluminum",
+    "I": "arcforgetransmission:hv_pin_insulator",
+    "B": "arcforgetransmission:hv_circuit_breaker",
+    "A": "#c:ingots/hardened_alloy"
+  },
+  "pattern": [
+    "III",
+    "CBC",
+    "PAP"
+  ],
+  "result": {
+    "id": "arcforgetransmission:hv_incoming_section"
+  }
+}

@@ -48,6 +48,9 @@ public final class GridEdge {
     private final int size;
     // A cable's derating (1: none), from the tray it's laid in (the most crowded block on its path).
     private double derate = 1.0;
+    // A link with an impedance of its own (a transformer section's winding: its %R and %Z as ohms), NaN for none: set by
+    // what owns it each tick before the solve, never saved.
+    private double ohms = Double.NaN, reactanceOhms = Double.NaN;
     int overTicks;
     // A voltage regulator's boost through this link (a jumper), per unit, from a to b (the other way it bucks).
     private double boost;
@@ -85,6 +88,19 @@ public final class GridEdge {
 
     public double derate() {
         return derate;
+    }
+
+    public double ohms() {
+        return ohms;
+    }
+
+    public double reactanceOhms() {
+        return reactanceOhms;
+    }
+
+    public void setImpedance(double ohms, double reactanceOhms) {
+        this.ohms = ohms;
+        this.reactanceOhms = reactanceOhms;
     }
 
     public void setDerate(double derate) {

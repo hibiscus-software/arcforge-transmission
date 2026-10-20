@@ -68,7 +68,8 @@ public final class InsulatorHud {
             return null;
         }
         GridEndpointBlockEntity endpoint = WireCoilItem.endpointAt(level, hit.getBlockPos());
-        if (endpoint == null) {
+        // A lineup's section has its own HUD (LineupHud).
+        if (endpoint == null || endpoint instanceof net.zagdrath.arcforgetransmission.factory.SectionBlockEntity) {
             return null;
         }
         Vec3 at = hit.getLocation();

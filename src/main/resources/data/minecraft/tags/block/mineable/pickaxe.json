@@ -59,6 +59,26 @@
     "arcforgetransmission:mv_cable_termination",
     "arcforgetransmission:hv_cable_termination",
     "arcforgetransmission:ehv_cable_termination",
-    "arcforgetransmission:cable_termination_part"
+    "arcforgetransmission:cable_termination_part",
+    "arcforgetransmission:lv_incoming_section",
+    "arcforgetransmission:lv_main_section",
+    "arcforgetransmission:lv_feeder_section",
+    "arcforgetransmission:lv_tie_section",
+    "arcforgetransmission:mv_incoming_section",
+    "arcforgetransmission:mv_transformer_section",
+    "arcforgetransmission:mv_main_section",
+    "arcforgetransmission:mv_feeder_section",
+    "arcforgetransmission:mv_tie_section",
+    "arcforgetransmission:hv_incoming_section",
+    "arcforgetransmission:hv_transformer_section",
+    "arcforgetransmission:hv_main_section",
+    "arcforgetransmission:hv_feeder_section",
+    "arcforgetransmission:hv_tie_section",
+    "arcforgetransmission:ehv_incoming_section",
+    "arcforgetransmission:ehv_transformer_section",
+    "arcforgetransmission:ehv_main_section",
+    "arcforgetransmission:ehv_feeder_section",
+    "arcforgetransmission:ehv_tie_section",
+    "arcforgetransmission:switchgear_section_part"
   ]
 }

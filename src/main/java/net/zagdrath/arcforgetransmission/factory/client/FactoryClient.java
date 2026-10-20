@@ -13,7 +13,7 @@ import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.zagdrath.arcforgetransmission.ArcforgeTransmission;
 import net.zagdrath.arcforgetransmission.factory.FactoryContent;
 
-// Factory distribution's client side: its renderers.
+// Factory distribution's client side: its renderers (the lineup's HUD is LineupHud).
 @EventBusSubscriber(modid = ArcforgeTransmission.MODID, value = Dist.CLIENT)
 public final class FactoryClient {
     private FactoryClient() {}
@@ -21,5 +21,6 @@ public final class FactoryClient {
     @SubscribeEvent
     static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerBlockEntityRenderer(FactoryContent.TERMINATION_ENTITY.get(), CableTerminationRenderer::new);
+        event.registerBlockEntityRenderer(FactoryContent.SECTION_ENTITY.get(), SectionRenderer::new);
     }
 }

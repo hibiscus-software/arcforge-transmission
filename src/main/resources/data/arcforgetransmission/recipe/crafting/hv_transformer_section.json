@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "P": "#c:plates/steel",
+    "C": "#c:ingots/aluminum",
+    "S": "arcforgetransmission:hv_substation_transformer",
+    "R": "minecraft:comparator",
+    "A": "#c:ingots/hardened_alloy"
+  },
+  "pattern": [
+    "PRP",
+    "CSC",
+    "APP"
+  ],
+  "result": {
+    "id": "arcforgetransmission:hv_transformer_section"
+  }
+}

@@ -499,7 +499,7 @@ public final class FactoryMesh {
         for (float x : new float[] { 1.5F, 30.5F }) {
             m.plateBox(x - 1.0F, 0, 3.0F, x + 1.0F, 1.6F, 13.0F, TowerMesh.Mat.GALV);
         }
-        m.frame.add(new float[] { 0, 0, 0, 32, 48, 16 });
+        m.frame.add(new float[] { 0.5F, 0, 1.0F, 31.5F, 1.6F, 15.0F });
         if (section == Section.TRANSFORMER) {
             oilTransformer(m);
             bus(m, tier, false, true);
@@ -508,6 +508,7 @@ public final class FactoryMesh {
         // The mechanism cabinet: its door, local controls and nameplate (the operators apart).
         m.plateBox(3, 1.6F, 0.5F, 29, 12.4F, 3.6F, TowerMesh.Mat.PAINT);
         m.plateBox(3.6F, 2.2F, 0.2F, 28.4F, 11.8F, 0.5F, TowerMesh.Mat.PAINT);
+        m.frame.add(new float[] { 3, 1.6F, 0.2F, 29, 12.4F, 3.6F });
         m.swatchBox(6.0F, 3.4F, 0.0F, 14.0F, 10.6F, 0.2F, TowerMesh.RUBBER0 + 1);
         m.swatchBox(15.4F, 3.6F, -0.1F, 16.4F, 4.6F, 0.2F, TowerMesh.GREEN);
         m.swatchBox(17.0F, 3.6F, -0.1F, 18.0F, 4.6F, 0.2F, TowerMesh.RED);
@@ -519,6 +520,7 @@ public final class FactoryMesh {
         for (float x : xs) {
             m.turned(x, cz, new float[][] { { t0, r - 0.6F }, { t0 + 0.6F, r }, { 12.6F, r }, { 12.6F, fl }, { 13.6F, fl }, { 13.6F, r }, { 28.4F, r },
                     { 28.4F, fl }, { 29.4F, fl }, { 29.4F, r - 0.4F }, { t1, r - 0.4F } }, ehv ? 10 : 14, TowerMesh.Ramp.ALUM, true, true);
+            m.frame.add(new float[] { x - fl, t0, cz - fl, x + fl, t1, Math.min(16, cz + fl) });
             bolts(m, x, cz, 13.6F, fl, ehv ? 6 : 10);
             bolts(m, x, cz, 29.4F, fl, ehv ? 6 : 10);
             gauge(m, x + (ehv ? 0 : 3.0F), 22.0F, cz - r);
@@ -545,6 +547,10 @@ public final class FactoryMesh {
                     { 19.2F, 3.6F }, { 20.0F, 3.6F } }, 12, TowerMesh.Ramp.ALUM, true, true);
             m.plateBox(26.0F, 33.4F, cz - 2.0F, 28.6F, 38.6F, cz + 2.0F, TowerMesh.Mat.PAINT);
             gauge(m, 10.0F, 36.0F, cz - 3.0F);
+        }
+        m.frame.add(ehv ? new float[] { 3, 30, cz - 3, 29, 37, cz + 3 } : new float[] { 6, 30, cz - 3.6F, 28.6F, 39.6F, cz + 3.6F });
+        if (section == Section.FEEDER) {
+            m.frame.add(new float[] { 4, 1.6F, cz - 2.2F, 28, 9, cz + 4.2F });
         }
         bus(m, tier, section == Section.TIE, false);
         if (section == Section.INCOMING) {
@@ -656,6 +662,9 @@ public final class FactoryMesh {
             m.turned(fx, cz + 0.6F, new float[][] { { 4.6F, 2.0F }, { 4.6F, 0.6F }, { 5.0F, 0.6F }, { 5.0F, 0.0F } }, 8, TowerMesh.Ramp.RUBBER, false, false);
             m.frame.add(new float[] { x0, 1.6F, 3.0F, x1, 28.4F, 14.2F });
         }
+        m.frame.add(new float[] { 7.4F, 1.6F, 1.9F, 24.6F, 31.4F, 15.1F });
+        m.frame.add(new float[] { 9.0F, 31.4F, 3.0F, 23.0F, 38.2F, 9.0F });
+        m.frame.add(new float[] { 17.8F, 31.4F, 7.8F, 22.2F, 40.0F, 12.2F });
         // The conservator on its saddles.
         along(m, new float[] { 9.0F, 35.2F, 6.0F }, 14.0F, new float[][] { { 0, 3.0F }, { 14.0F, 3.0F } }, 12, TowerMesh.Ramp.PAINT, true, true);
         for (float x : new float[] { 11.0F, 21.0F }) {

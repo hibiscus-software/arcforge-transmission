@@ -141,7 +141,7 @@ public final class FactoryGameTests {
         ConnectionRules.Refusal[] why = new ConnectionRules.Refusal[1];
         List<Long> edges = GridManager.connectCircuit(level, a.nodes(dimension), b.nodes(dimension), GridEdge.Kind.CABLE, length, 1, 1.0, why);
         if (edges.isEmpty()) {
-            throw new IllegalStateException("Cable refused: " + why[0]);
+            helper.fail("Cable refused: " + why[0]);
         }
         return edges;
     }

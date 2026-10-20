@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "P": "#c:plates/steel",
+    "C": "#c:ingots/copper",
+    "B": "arcforgetransmission:lv_recloser",
+    "R": "minecraft:comparator"
+  },
+  "pattern": [
+    "PRP",
+    "CBC",
+    "PPP"
+  ],
+  "result": {
+    "id": "arcforgetransmission:lv_main_section"
+  }
+}

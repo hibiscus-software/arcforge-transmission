@@ -77,6 +77,8 @@ public class WireCoilItem extends Item {
                 return null;
             }
             at = main;
+        } else if (level.getBlockEntity(pos) instanceof net.zagdrath.arcforgetransmission.factory.SectionPartBlockEntity part) {
+            at = part.mainPos();
         } else if (level.getBlockState(pos).getBlock() instanceof net.zagdrath.arcforgetransmission.factory.CableTerminationPartBlock) {
             at = net.zagdrath.arcforgetransmission.factory.CableTerminationPartBlock.mainOf(pos, level.getBlockState(pos));
         }

@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "P": "#c:plates/steel",
+    "C": "#c:ingots/copper",
+    "I": "arcforgetransmission:lv_pin_insulator",
+    "F": "arcforgetransmission:fuse_link"
+  },
+  "pattern": [
+    "III",
+    "PFP",
+    "PCP"
+  ],
+  "result": {
+    "id": "arcforgetransmission:lv_incoming_section"
+  }
+}

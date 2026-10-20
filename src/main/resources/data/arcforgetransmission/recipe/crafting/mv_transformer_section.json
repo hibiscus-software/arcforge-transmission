@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "P": "#c:plates/steel",
+    "C": "#c:ingots/copper",
+    "S": "arcforgetransmission:mv_substation_transformer",
+    "R": "minecraft:comparator"
+  },
+  "pattern": [
+    "PRP",
+    "CSC",
+    "PPP"
+  ],
+  "result": {
+    "id": "arcforgetransmission:mv_transformer_section"
+  }
+}

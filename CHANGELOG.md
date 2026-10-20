@@ -17,6 +17,21 @@
   burnout, the Clamp Meter and protection treat it as three wires. Edges now carry a size (busway: 2, 4 or 8 times its
   tier's wire) and a derating (a cable's tray); `GridSettings` gives each edge's rating, resistance, reactance and burnout
   time from them, all in the new `factory` config section.
+- **Switchgear lineups** (Substation Yard tab), at every tier: LV and MV metal-enclosed switchgear (1 x 2 sections in
+  ANSI-61 grey on a dark plinth, doors, breakers, flags), HV and EHV gas-insulated bays (2 x 3: aluminium tanks with
+  flanged joints and SF6 gauges, the mechanism cabinet with its handle and flag, the bus tube joining bay to bay).
+  Incoming (LV/MV a fused load-break switch; HV/EHV a breaker, disconnector and earthing switch, interlocked), Transformer
+  (MV, HV, EHV: one tier down, rated one circuit of its tier, %Z and %R from config, fan cooled to 133%, then heating
+  until it trips its incomer on over-temperature; off-load taps ±2 x 2.5%), Main Breaker (frame sized to what feeds it,
+  long-time / short-time / instantaneous settings), Feeder (two breakers a section at LV and MV, one a bay at HV and
+  EHV; frames 1W to 8W) and Bus Tie. Single- or double-ended; sections join on their own when side by side, facing the
+  same way, one tier and in order, and report what's wrong otherwise. Breakers run on the grid's graded protection
+  (`Overcurrent`, `FuseElement`, `Interlocks`), work by hand and by redstone and give comparators their load. A lineup
+  HUD shows every incomer, transformer, main, tie and feeder, big numbers in kFE/t and MFE/t. Models from `FactoryMesh`,
+  item sprites from `transmission_tower_texture_gen.py`. Game tests at every tier: carrying the transformer's rating with
+  its %R loss, a feeder fault tripping only its feeder, over-temperature, EHV straight through at 2,097,152 FE/t, a
+  double-ended lineup tying a lost half, mixed tiers, and saved state.
+- Links may carry an impedance of their own (a transformer section's winding), set each tick before the solve.
 
 ### Changed
 - The Pin Insulator's port is now shared with the Cable Termination (`MountedPort`, `MountedPortBlockEntity`): one set of

@@ -33,8 +33,11 @@ public interface GridSettings {
         return ratedAmps(edge.tier()) * edge.size() * edge.derate();
     }
 
-    // Its ohms: per block by what it is, times its length.
+    // Its ohms: per block by what it is, times its length (or a link's own, a transformer winding's).
     default double resistance(GridEdge edge) {
+        if (!Double.isNaN(edge.ohms())) {
+            return edge.ohms();
+        }
         double perBlock = switch (edge.kind()) {
             case BUS -> busResistance(edge.tier()) / edge.size();
             case CABLE -> cableResistance(edge.tier());
@@ -45,6 +48,9 @@ public interface GridSettings {
 
     // Its ohms of reactance (busway's conductors, a size's worth in parallel in their enclosure).
     default double reactance(GridEdge edge) {
+        if (!Double.isNaN(edge.reactanceOhms())) {
+            return edge.reactanceOhms();
+        }
         return reactance(edge.tier()) * edge.length() / (edge.kind() == GridEdge.Kind.BUS ? edge.size() : 1);
     }
 

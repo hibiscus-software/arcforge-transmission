@@ -103,6 +103,7 @@ public final class GridConfig {
     public static final ModConfigSpec.IntValue OVERTEMP_TICKS;
     public static final ModConfigSpec.DoubleValue OFFLOAD_TAP_STEP;
     public static final ModConfigSpec.IntValue OFFLOAD_TAPS;
+    public static final ModConfigSpec.DoubleValue TRANSFORMER_LIMIT, INCOMER_MARGIN, FEEDER_DIAL, MAIN_DIAL;
     public static final ModConfigSpec.DoubleValue FUSE_FACTOR;
     public static final ModConfigSpec.IntValue BREAKER_TRIP_TICKS;
     public static final ModConfigSpec.IntValue RECLOSE_DELAY;
@@ -243,6 +244,13 @@ public final class GridConfig {
                 "the same rate under it).").defineInRange("overtempTicks", 600, 1, 1_728_000);
         OFFLOAD_TAP_STEP = BUILDER.comment("Its off-load taps' step (per unit).").defineInRange("tapStep", 0.025, 0.0, 0.5);
         OFFLOAD_TAPS = BUILDER.comment("Its taps either way from neutral.").defineInRange("taps", 2, 0, 16);
+        TRANSFORMER_LIMIT = BUILDER.comment("The most it passes, as a share of its rating (past its fan rating it heats, and its incomer trips",
+                "on over-temperature before this).").defineInRange("transformerLimit", 2.0, 0.01, 100.0);
+        INCOMER_MARGIN = BUILDER.comment("An incomer's pickup over the most its main (or transformer) passes, so the main trips first.")
+                .defineInRange("incomerMargin", 1.25, 1.0, 10.0);
+        FEEDER_DIAL = BUILDER.comment("A feeder breaker's long-time time dial (its inverse curve: the bigger, the slower).")
+                .defineInRange("feederDial", 0.5, 0.01, 10.0);
+        MAIN_DIAL = BUILDER.comment("A main, bus tie or incomer breaker's long-time time dial.").defineInRange("mainDial", 1.0, 0.01, 10.0);
         BUILDER.pop();
         BUILDER.pop();
     }

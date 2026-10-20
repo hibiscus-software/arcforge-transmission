@@ -167,6 +167,37 @@ Configure the current limit), with a Pin Insulator's rules: above LV a foreign b
 section or a busway tap-off it joins its cable through instead. Rotate swaps B and C; Port switches an LV termination to
 L1, N and L2 (while no cable is on it).
 
+**Switchgear lineups** (Substation Yard tab). A factory's switchboard, built from sections placed side by side, facing
+the same way: metal-enclosed switchgear at LV and MV (1 wide, 2 tall, ANSI-61 grey), gas-insulated bays at HV and EHV
+(2 wide, 3 tall, aluminium tanks under a bus tube that runs from bay to bay).
+
+- **Incoming**: where the circuit comes in, overhead wires on its roof (or air) bushings or a tray cable on a Cable
+  Termination mounted on it. LV and MV: a load-break switch with current-limiting fuses. HV and EHV: a breaker with a
+  disconnector (it won't operate under load) and an earthing switch (it won't close on a live line; the breaker won't
+  close while it's earthed).
+- **Transformer** (MV, HV, EHV; optional): steps the bus one tier down, rated one full circuit of its own tier (its %Z
+  and %R in config). Its fans come on over 100% and let it carry up to 133%; past that it heats and trips its incomer on
+  over-temperature (`factory.lineup.overtempTicks`). MV→LV is dry-type in the lineup's enclosure, HV→MV and EHV→HV
+  oil-filled with radiators in a bay's footprint. Off-load taps ±2 × 2.5% (Wrench on Configure, with its incomer open).
+  Without one, the lineup distributes at its incoming tier: EHV straight to EHV feeders.
+- **Main Breaker**: between the incomer (or transformer) and the bus, its frame sized to what feeds it. Its trip unit
+  (long-time, short-time, instantaneous) is set with the Wrench (Sneak + Configure picks the setting, Configure steps it).
+  It won't close onto a faulted or earthed bus.
+- **Feeder**: two breakers a section at LV and MV, one a bay at HV and EHV; Configure steps the nearest one's frame. Each
+  leaves by a Cable Termination on its block (at LV and MV the lower breaker's on the lower block, the upper's on the
+  upper) or a busway feed-in on the roof. Graded with the main: the feeder nearest a fault trips, the main holds.
+- **Bus Tie** (optional): a double-ended lineup is Incoming, (Transformer), Main, Feeders, Bus Tie, Feeders, Main,
+  (Transformer), Incoming. The tie is normally open; lose an incomer and close it (by hand or redstone) to carry both
+  halves from the other. The two mains and the tie never all close at once (`factory.lineup.allowParallelSources`).
+
+A lineup is one tier; at most `factory.lineup.maxFeederSections` (8) feeder sections a bus half. Its bus is inside it:
+sections join their neighbours on their own. A gap, a wrong order or mixed tiers splits it, and each piece says what's
+wrong ("Lineup: missing Main Breaker Section") and does nothing. An empty hand on a handle opens or closes it (a tripped
+one resets to open first): the flags show red closed, green open, yellow tripped. A rising redstone signal into a
+breaker's block works it, and a comparator on it reads its load. Look at any section for the whole lineup: each
+incomer's voltage, current and power, each transformer's load and temperature, the mains and the tie, each feeder's
+current against its setting.
+
 Inside the grid a cable, a busway joint or a lineup's bus is three conductors, A to A, B to B and C to C: the solver,
 loss, burnout, the Clamp Meter and protection treat it as three wires.
 
@@ -229,6 +260,6 @@ every translation key is both defined and used, and every recipe's items resolve
 | `tower` | Everything placed whole: towers, transformers, devices, line hardware, the yard; the creative tabs. |
 | `tower.model` | The structures' models, built in code (`ModelPreview` in the test sources renders them; `FactoryPreview` its factory scenes). `FactoryMesh`: the Cable Terminations, the lineups' sections and their operators. |
 | `tower.client` | Structure rendering and outlines. |
-| `factory` | Factory distribution: Cable Terminations (and their tall parts). `factory.client`: their rendering. |
+| `factory` | Factory distribution: Cable Terminations (and their tall parts); switchgear lineups (`Lineup` plans a row of sections, unit tested; `SectionBreaker` runs a breaker on the grid's protection; `SectionBlockEntity` the section in the world). `factory.client`: their rendering and the lineup HUD. |
 | `material` | Bauxite and aluminium: ore, raw ore, dust, ingot, blocks, and their world generation. |
 | `gametest` (src/gametest) | Game tests: the grid built from real blocks in a running world. Its own source set, run by `runGameTestServer`, never shipped. |

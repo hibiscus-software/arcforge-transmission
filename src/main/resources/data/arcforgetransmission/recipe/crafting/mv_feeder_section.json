@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "P": "#c:plates/steel",
+    "C": "#c:ingots/copper",
+    "B": "arcforgetransmission:mv_recloser",
+    "R": "minecraft:redstone"
+  },
+  "pattern": [
+    "PBP",
+    "CBC",
+    "PRP"
+  ],
+  "result": {
+    "id": "arcforgetransmission:mv_feeder_section"
+  }
+}
