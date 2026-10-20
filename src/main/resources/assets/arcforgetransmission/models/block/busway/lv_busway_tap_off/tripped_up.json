@@ -1,0 +1,80 @@
+{
+  "credit": "tools/factory_block_model_gen.py",
+  "parent": "block/block",
+  "ambientocclusion": false,
+  "textures": {
+    "sheet": "arcforgetransmission:block/busway/lv_busway_tap_off",
+    "particle": "arcforgetransmission:block/busway/lv_busway_tap_off"
+  },
+  "elements": [
+    {
+      "name": "trip_flag",
+      "from": [
+        10.75,
+        10.25,
+        13
+      ],
+      "to": [
+        11.25,
+        11.75,
+        14.5
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            14.5,
+            2.75,
+            14.625,
+            3.125
+          ],
+          "texture": "#sheet"
+        },
+        "south": {
+          "uv": [
+            14.5,
+            2.75,
+            14.625,
+            3.125
+          ],
+          "texture": "#sheet"
+        },
+        "east": {
+          "uv": [
+            8.5,
+            2.75,
+            8.875,
+            3.125
+          ],
+          "texture": "#sheet"
+        },
+        "west": {
+          "uv": [
+            8.5,
+            2.75,
+            8.875,
+            3.125
+          ],
+          "texture": "#sheet"
+        },
+        "up": {
+          "uv": [
+            14.5,
+            2.75,
+            14.625,
+            3.125
+          ],
+          "texture": "#sheet"
+        },
+        "down": {
+          "uv": [
+            14.5,
+            2.75,
+            14.625,
+            3.125
+          ],
+          "texture": "#sheet"
+        }
+      }
+    }
+  ]
+}

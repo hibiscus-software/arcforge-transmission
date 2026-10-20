@@ -1,0 +1,44 @@
+{
+  "multipart": [
+    {
+      "when": {
+        "facing": "north"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_feed_in/feed_in_north"
+      }
+    },
+    {
+      "when": {
+        "facing": "east"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_feed_in/feed_in_east"
+      }
+    },
+    {
+      "when": {
+        "facing": "south"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_feed_in/feed_in_south"
+      }
+    },
+    {
+      "when": {
+        "facing": "west"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_feed_in/feed_in_west"
+      }
+    },
+    {
+      "when": {
+        "facing": "up"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_feed_in/feed_in_up"
+      }
+    }
+  ]
+}

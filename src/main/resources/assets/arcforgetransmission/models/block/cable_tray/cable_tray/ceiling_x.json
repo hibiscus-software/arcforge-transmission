@@ -1,0 +1,458 @@
+{
+  "credit": "tools/factory_block_model_gen.py",
+  "parent": "block/block",
+  "ambientocclusion": false,
+  "textures": {
+    "sheet": "arcforgetransmission:block/cable_tray/cable_tray",
+    "particle": "arcforgetransmission:block/cable_tray/cable_tray"
+  },
+  "elements": [
+    {
+      "name": "strut",
+      "from": [
+        7.25,
+        3.5,
+        0.5
+      ],
+      "to": [
+        8.75,
+        5.0,
+        15.5
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            10.5,
+            4.75,
+            10.875,
+            5.125
+          ],
+          "texture": "#sheet"
+        },
+        "south": {
+          "uv": [
+            10.5,
+            4.75,
+            10.875,
+            5.125
+          ],
+          "texture": "#sheet"
+        },
+        "east": {
+          "uv": [
+            3.75,
+            4.75,
+            7.5,
+            5.125
+          ],
+          "texture": "#sheet"
+        },
+        "west": {
+          "uv": [
+            3.75,
+            4.75,
+            7.5,
+            5.125
+          ],
+          "texture": "#sheet"
+        },
+        "up": {
+          "uv": [
+            2.5,
+            0.0,
+            2.875,
+            3.75
+          ],
+          "texture": "#sheet"
+        },
+        "down": {
+          "uv": [
+            2.5,
+            0.0,
+            2.875,
+            3.75
+          ],
+          "texture": "#sheet"
+        }
+      }
+    },
+    {
+      "name": "threaded_rod",
+      "from": [
+        7.75,
+        3.5,
+        0.0
+      ],
+      "to": [
+        8.25,
+        15.5,
+        0.5
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            3.25,
+            0.0,
+            3.375,
+            3.0
+          ],
+          "texture": "#sheet"
+        },
+        "south": {
+          "uv": [
+            3.0,
+            0.0,
+            3.125,
+            3.0
+          ],
+          "texture": "#sheet"
+        },
+        "east": {
+          "uv": [
+            3.0,
+            0.0,
+            3.125,
+            3.0
+          ],
+          "texture": "#sheet"
+        },
+        "west": {
+          "uv": [
+            3.25,
+            0.0,
+            3.375,
+            3.0
+          ],
+          "texture": "#sheet"
+        }
+      }
+    },
+    {
+      "name": "anchor",
+      "from": [
+        7.25,
+        15.5,
+        0.0
+      ],
+      "to": [
+        8.75,
+        16,
+        1.0
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            7.5,
+            6.0,
+            7.875,
+            6.125
+          ],
+          "texture": "#sheet"
+        },
+        "south": {
+          "uv": [
+            7.5,
+            6.0,
+            7.875,
+            6.125
+          ],
+          "texture": "#sheet"
+        },
+        "east": {
+          "uv": [
+            11.25,
+            6.0,
+            11.5,
+            6.125
+          ],
+          "texture": "#sheet"
+        },
+        "west": {
+          "uv": [
+            11.25,
+            6.0,
+            11.5,
+            6.125
+          ],
+          "texture": "#sheet"
+        },
+        "up": {
+          "uv": [
+            8.5,
+            6.0,
+            8.875,
+            6.25
+          ],
+          "texture": "#sheet"
+        },
+        "down": {
+          "uv": [
+            8.5,
+            6.0,
+            8.875,
+            6.25
+          ],
+          "texture": "#sheet"
+        }
+      }
+    },
+    {
+      "name": "nut",
+      "from": [
+        7.5,
+        2.75,
+        0.0
+      ],
+      "to": [
+        8.5,
+        3.5,
+        0.75
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            11.75,
+            6.0,
+            12.0,
+            6.1875
+          ],
+          "texture": "#sheet"
+        },
+        "south": {
+          "uv": [
+            11.75,
+            6.0,
+            12.0,
+            6.1875
+          ],
+          "texture": "#sheet"
+        },
+        "east": {
+          "uv": [
+            10.5,
+            6.0,
+            10.6875,
+            6.1875
+          ],
+          "texture": "#sheet"
+        },
+        "west": {
+          "uv": [
+            10.5,
+            6.0,
+            10.6875,
+            6.1875
+          ],
+          "texture": "#sheet"
+        },
+        "up": {
+          "uv": [
+            11.75,
+            6.0,
+            12.0,
+            6.1875
+          ],
+          "texture": "#sheet"
+        },
+        "down": {
+          "uv": [
+            11.75,
+            6.0,
+            12.0,
+            6.1875
+          ],
+          "texture": "#sheet"
+        }
+      }
+    },
+    {
+      "name": "threaded_rod",
+      "from": [
+        7.75,
+        3.5,
+        15.5
+      ],
+      "to": [
+        8.25,
+        15.5,
+        16.0
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            3.25,
+            0.0,
+            3.375,
+            3.0
+          ],
+          "texture": "#sheet"
+        },
+        "south": {
+          "uv": [
+            3.0,
+            0.0,
+            3.125,
+            3.0
+          ],
+          "texture": "#sheet"
+        },
+        "east": {
+          "uv": [
+            3.0,
+            0.0,
+            3.125,
+            3.0
+          ],
+          "texture": "#sheet"
+        },
+        "west": {
+          "uv": [
+            3.25,
+            0.0,
+            3.375,
+            3.0
+          ],
+          "texture": "#sheet"
+        }
+      }
+    },
+    {
+      "name": "anchor",
+      "from": [
+        7.25,
+        15.5,
+        15.0
+      ],
+      "to": [
+        8.75,
+        16,
+        16.0
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            7.5,
+            6.0,
+            7.875,
+            6.125
+          ],
+          "texture": "#sheet"
+        },
+        "south": {
+          "uv": [
+            7.5,
+            6.0,
+            7.875,
+            6.125
+          ],
+          "texture": "#sheet"
+        },
+        "east": {
+          "uv": [
+            11.25,
+            6.0,
+            11.5,
+            6.125
+          ],
+          "texture": "#sheet"
+        },
+        "west": {
+          "uv": [
+            11.25,
+            6.0,
+            11.5,
+            6.125
+          ],
+          "texture": "#sheet"
+        },
+        "up": {
+          "uv": [
+            8.5,
+            6.0,
+            8.875,
+            6.25
+          ],
+          "texture": "#sheet"
+        },
+        "down": {
+          "uv": [
+            8.5,
+            6.0,
+            8.875,
+            6.25
+          ],
+          "texture": "#sheet"
+        }
+      }
+    },
+    {
+      "name": "nut",
+      "from": [
+        7.5,
+        2.75,
+        15.25
+      ],
+      "to": [
+        8.5,
+        3.5,
+        16.0
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            11.75,
+            6.0,
+            12.0,
+            6.1875
+          ],
+          "texture": "#sheet"
+        },
+        "south": {
+          "uv": [
+            11.75,
+            6.0,
+            12.0,
+            6.1875
+          ],
+          "texture": "#sheet"
+        },
+        "east": {
+          "uv": [
+            10.5,
+            6.0,
+            10.6875,
+            6.1875
+          ],
+          "texture": "#sheet"
+        },
+        "west": {
+          "uv": [
+            10.5,
+            6.0,
+            10.6875,
+            6.1875
+          ],
+          "texture": "#sheet"
+        },
+        "up": {
+          "uv": [
+            11.75,
+            6.0,
+            12.0,
+            6.1875
+          ],
+          "texture": "#sheet"
+        },
+        "down": {
+          "uv": [
+            11.75,
+            6.0,
+            12.0,
+            6.1875
+          ],
+          "texture": "#sheet"
+        }
+      }
+    }
+  ]
+}

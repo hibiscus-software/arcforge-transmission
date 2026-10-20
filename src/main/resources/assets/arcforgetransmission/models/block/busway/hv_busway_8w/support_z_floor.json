@@ -1,0 +1,320 @@
+{
+  "credit": "tools/factory_block_model_gen.py",
+  "parent": "block/block",
+  "ambientocclusion": false,
+  "textures": {
+    "sheet": "arcforgetransmission:block/busway/hv_busway_8w",
+    "particle": "arcforgetransmission:block/busway/hv_busway_8w"
+  },
+  "elements": [
+    {
+      "name": "beam",
+      "from": [
+        0.25,
+        4.5,
+        11.75
+      ],
+      "to": [
+        15.75,
+        6.0,
+        13.25
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            3.0,
+            12.25,
+            6.875,
+            12.625
+          ],
+          "texture": "#sheet"
+        },
+        "south": {
+          "uv": [
+            3.0,
+            12.25,
+            6.875,
+            12.625
+          ],
+          "texture": "#sheet"
+        },
+        "east": {
+          "uv": [
+            5.5,
+            14.5,
+            5.875,
+            14.875
+          ],
+          "texture": "#sheet"
+        },
+        "west": {
+          "uv": [
+            5.5,
+            14.5,
+            5.875,
+            14.875
+          ],
+          "texture": "#sheet"
+        },
+        "up": {
+          "uv": [
+            3.0,
+            12.25,
+            6.875,
+            12.625
+          ],
+          "texture": "#sheet"
+        },
+        "down": {
+          "uv": [
+            3.0,
+            12.25,
+            6.875,
+            12.625
+          ],
+          "texture": "#sheet"
+        }
+      }
+    },
+    {
+      "name": "leg",
+      "from": [
+        12,
+        0.5,
+        11.875
+      ],
+      "to": [
+        13.5,
+        4.5,
+        13.125
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            11.0,
+            10.25,
+            11.375,
+            11.25
+          ],
+          "texture": "#sheet"
+        },
+        "south": {
+          "uv": [
+            11.0,
+            10.25,
+            11.375,
+            11.25
+          ],
+          "texture": "#sheet"
+        },
+        "east": {
+          "uv": [
+            10.5,
+            10.25,
+            10.8125,
+            11.25
+          ],
+          "texture": "#sheet"
+        },
+        "west": {
+          "uv": [
+            10.5,
+            10.25,
+            10.8125,
+            11.25
+          ],
+          "texture": "#sheet"
+        }
+      }
+    },
+    {
+      "name": "foot",
+      "from": [
+        11.5,
+        0,
+        11.25
+      ],
+      "to": [
+        14.0,
+        0.5,
+        13.75
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            9.75,
+            15.5,
+            10.375,
+            15.625
+          ],
+          "texture": "#sheet"
+        },
+        "south": {
+          "uv": [
+            9.75,
+            15.5,
+            10.375,
+            15.625
+          ],
+          "texture": "#sheet"
+        },
+        "east": {
+          "uv": [
+            9.75,
+            15.5,
+            10.375,
+            15.625
+          ],
+          "texture": "#sheet"
+        },
+        "west": {
+          "uv": [
+            9.75,
+            15.5,
+            10.375,
+            15.625
+          ],
+          "texture": "#sheet"
+        },
+        "up": {
+          "uv": [
+            9.75,
+            11.25,
+            10.375,
+            11.875
+          ],
+          "texture": "#sheet"
+        },
+        "down": {
+          "uv": [
+            9.75,
+            11.25,
+            10.375,
+            11.875
+          ],
+          "texture": "#sheet"
+        }
+      }
+    },
+    {
+      "name": "leg",
+      "from": [
+        2.5,
+        0.5,
+        11.875
+      ],
+      "to": [
+        4,
+        4.5,
+        13.125
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            11.0,
+            10.25,
+            11.375,
+            11.25
+          ],
+          "texture": "#sheet"
+        },
+        "south": {
+          "uv": [
+            11.0,
+            10.25,
+            11.375,
+            11.25
+          ],
+          "texture": "#sheet"
+        },
+        "east": {
+          "uv": [
+            10.5,
+            10.25,
+            10.8125,
+            11.25
+          ],
+          "texture": "#sheet"
+        },
+        "west": {
+          "uv": [
+            10.5,
+            10.25,
+            10.8125,
+            11.25
+          ],
+          "texture": "#sheet"
+        }
+      }
+    },
+    {
+      "name": "foot",
+      "from": [
+        2.0,
+        0,
+        11.25
+      ],
+      "to": [
+        4.5,
+        0.5,
+        13.75
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            9.75,
+            15.5,
+            10.375,
+            15.625
+          ],
+          "texture": "#sheet"
+        },
+        "south": {
+          "uv": [
+            9.75,
+            15.5,
+            10.375,
+            15.625
+          ],
+          "texture": "#sheet"
+        },
+        "east": {
+          "uv": [
+            9.75,
+            15.5,
+            10.375,
+            15.625
+          ],
+          "texture": "#sheet"
+        },
+        "west": {
+          "uv": [
+            9.75,
+            15.5,
+            10.375,
+            15.625
+          ],
+          "texture": "#sheet"
+        },
+        "up": {
+          "uv": [
+            9.75,
+            11.25,
+            10.375,
+            11.875
+          ],
+          "texture": "#sheet"
+        },
+        "down": {
+          "uv": [
+            9.75,
+            11.25,
+            10.375,
+            11.875
+          ],
+          "texture": "#sheet"
+        }
+      }
+    }
+  ]
+}

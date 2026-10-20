@@ -1,0 +1,35 @@
+{
+  "credit": "tools/factory_block_model_gen.py",
+  "parent": "block/block",
+  "ambientocclusion": false,
+  "textures": {
+    "sheet": "arcforgetransmission:block/busway/mv_busway_8w_damaged",
+    "particle": "arcforgetransmission:block/busway/mv_busway_8w_damaged"
+  },
+  "elements": [
+    {
+      "name": "junction",
+      "from": [
+        4.0,
+        3.0,
+        4.0
+      ],
+      "to": [
+        12.0,
+        13.0,
+        12.0
+      ],
+      "faces": {
+        "south": {
+          "uv": [
+            0.0,
+            3.25,
+            2.0,
+            5.75
+          ],
+          "texture": "#sheet"
+        }
+      }
+    }
+  ]
+}

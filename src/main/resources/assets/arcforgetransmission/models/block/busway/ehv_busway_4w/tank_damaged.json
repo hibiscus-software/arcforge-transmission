@@ -1,0 +1,80 @@
+{
+  "credit": "tools/factory_block_model_gen.py",
+  "parent": "block/block",
+  "ambientocclusion": false,
+  "textures": {
+    "sheet": "arcforgetransmission:block/busway/ehv_busway_4w_1_damaged",
+    "particle": "arcforgetransmission:block/busway/ehv_busway_4w_1_damaged"
+  },
+  "elements": [
+    {
+      "name": "tank",
+      "from": [
+        0.0,
+        4.25,
+        0.0
+      ],
+      "to": [
+        16.0,
+        11.75,
+        16.0
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            7.0,
+            0.0,
+            11.0,
+            1.875
+          ],
+          "texture": "#sheet"
+        },
+        "south": {
+          "uv": [
+            7.0,
+            0.0,
+            11.0,
+            1.875
+          ],
+          "texture": "#sheet"
+        },
+        "east": {
+          "uv": [
+            7.0,
+            0.0,
+            11.0,
+            1.875
+          ],
+          "texture": "#sheet"
+        },
+        "west": {
+          "uv": [
+            7.0,
+            0.0,
+            11.0,
+            1.875
+          ],
+          "texture": "#sheet"
+        },
+        "up": {
+          "uv": [
+            0.0,
+            0.0,
+            4.0,
+            4.0
+          ],
+          "texture": "#sheet"
+        },
+        "down": {
+          "uv": [
+            0.0,
+            0.0,
+            4.0,
+            4.0
+          ],
+          "texture": "#sheet"
+        }
+      }
+    }
+  ]
+}

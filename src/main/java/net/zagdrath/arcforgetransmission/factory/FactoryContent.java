@@ -27,7 +27,7 @@ import net.zagdrath.arcforgetransmission.grid.VoltageTier;
 import net.zagdrath.arcforgetransmission.tower.model.FactoryMesh.Section;
 
 // Factory distribution's content: per tier a Cable Termination (and the invisible cells the tall ones stand up into)
-// and a switchgear lineup's sections (and their other blocks).
+// and a switchgear lineup's sections (and their other blocks); busway (runs, feed-ins, tap-offs, reducers).
 // Call register(modEventBus) from the mod's constructor.
 public final class FactoryContent {
     private static final String MODID = ArcforgeTransmission.MODID;
@@ -102,6 +102,48 @@ public final class FactoryContent {
                     .toArray(SectionBlock[]::new)));
     public static final Supplier<BlockEntityType<SectionPartBlockEntity>> SECTION_PART_ENTITY = BLOCK_ENTITY_TYPES.register("switchgear_section_part",
             () -> new BlockEntityType<>(SectionPartBlockEntity::new, SECTION_PART.get()));
+
+    // Busway, per tier: runs in three sizes (2W, 4W, 8W), the feed-in, the tap-off and the reducers between sizes.
+    public static final Map<VoltageTier, Map<Integer, DeferredBlock<BuswayBlock>>> BUSWAYS = new EnumMap<>(VoltageTier.class);
+    public static final Map<VoltageTier, DeferredBlock<BuswayFeedInBlock>> FEED_INS = new EnumMap<>(VoltageTier.class);
+    public static final Map<VoltageTier, DeferredBlock<BuswayTapOffBlock>> TAP_OFFS = new EnumMap<>(VoltageTier.class);
+    public static final Map<VoltageTier, List<DeferredBlock<BuswayReducerBlock>>> REDUCERS = new EnumMap<>(VoltageTier.class);
+
+    static {
+        for (VoltageTier tier : VoltageTier.values()) {
+            Map<Integer, DeferredBlock<BuswayBlock>> runs = new java.util.TreeMap<>();
+            runs.put(2, bus(BLOCKS.registerBlock(tier.id() + "_busway_2w", p -> new BuswayBlock(tier, 2, p), p -> busProperties(p, tier))));
+            runs.put(4, bus(BLOCKS.registerBlock(tier.id() + "_busway_4w", p -> new BuswayBlock(tier, 4, p), p -> busProperties(p, tier))));
+            runs.put(8, bus(BLOCKS.registerBlock(tier.id() + "_busway_8w", p -> new BuswayBlock(tier, 8, p), p -> busProperties(p, tier))));
+            BUSWAYS.put(tier, runs);
+            FEED_INS.put(tier, bus(BLOCKS.registerBlock(tier.id() + "_busway_feed_in", p -> new BuswayFeedInBlock(tier, p), p -> busProperties(p, tier))));
+            TAP_OFFS.put(tier, bus(BLOCKS.registerBlock(tier.id() + "_busway_tap_off", p -> new BuswayTapOffBlock(tier, p), p -> busProperties(p, tier))));
+            REDUCERS.put(tier, List.of(
+                    bus(BLOCKS.registerBlock(tier.id() + "_busway_reducer_8w_4w", p -> new BuswayReducerBlock(tier, 8, 4, p), p -> busProperties(p, tier))),
+                    bus(BLOCKS.registerBlock(tier.id() + "_busway_reducer_4w_2w", p -> new BuswayReducerBlock(tier, 4, 2, p), p -> busProperties(p, tier)))));
+        }
+    }
+
+    private static net.minecraft.world.level.block.state.BlockBehaviour.Properties busProperties(
+            net.minecraft.world.level.block.state.BlockBehaviour.Properties p, VoltageTier tier) {
+        return p.mapColor(MapColor.METAL).strength(3.0F, 6.0F).sound(SoundType.METAL).noOcclusion().requiresCorrectToolForDrops();
+    }
+
+    private static <B extends net.minecraft.world.level.block.Block> DeferredBlock<B> bus(DeferredBlock<B> block) {
+        add(Tab.WIRING, ITEMS.registerSimpleBlockItem(block));
+        return block;
+    }
+
+    public static final Supplier<BlockEntityType<BuswayBlockEntity>> BUSWAY_ENTITY = BLOCK_ENTITY_TYPES.register("busway",
+            () -> new BlockEntityType<>(BuswayBlockEntity::new, BUSWAYS.values().stream().flatMap(m -> m.values().stream()).map(DeferredBlock::get)
+                    .toArray(BuswayBlock[]::new)));
+    public static final Supplier<BlockEntityType<BuswayFeedInBlockEntity>> FEED_IN_ENTITY = BLOCK_ENTITY_TYPES.register("busway_feed_in",
+            () -> new BlockEntityType<>(BuswayFeedInBlockEntity::new, FEED_INS.values().stream().map(DeferredBlock::get).toArray(BuswayFeedInBlock[]::new)));
+    public static final Supplier<BlockEntityType<BuswayTapOffBlockEntity>> TAP_OFF_ENTITY = BLOCK_ENTITY_TYPES.register("busway_tap_off",
+            () -> new BlockEntityType<>(BuswayTapOffBlockEntity::new, TAP_OFFS.values().stream().map(DeferredBlock::get).toArray(BuswayTapOffBlock[]::new)));
+    public static final Supplier<BlockEntityType<BuswayReducerBlockEntity>> REDUCER_ENTITY = BLOCK_ENTITY_TYPES.register("busway_reducer",
+            () -> new BlockEntityType<>(BuswayReducerBlockEntity::new, REDUCERS.values().stream().flatMap(List::stream).map(DeferredBlock::get)
+                    .toArray(BuswayReducerBlock[]::new)));
 
     public static final Supplier<BlockEntityType<CableTerminationBlockEntity>> TERMINATION_ENTITY = BLOCK_ENTITY_TYPES.register("cable_termination",
             () -> new BlockEntityType<>(CableTerminationBlockEntity::new,

@@ -1,0 +1,218 @@
+{
+  "credit": "tools/factory_block_model_gen.py",
+  "parent": "block/block",
+  "ambientocclusion": false,
+  "textures": {
+    "sheet": "arcforgetransmission:block/cable_tray/wide_cable_tray",
+    "particle": "arcforgetransmission:block/cable_tray/wide_cable_tray"
+  },
+  "elements": [
+    {
+      "name": "wall_plate",
+      "from": [
+        6.5,
+        0.5,
+        0
+      ],
+      "to": [
+        9.5,
+        5.0,
+        0.75
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            10.0,
+            4.0,
+            10.75,
+            5.125
+          ],
+          "texture": "#sheet"
+        },
+        "south": {
+          "uv": [
+            10.0,
+            4.0,
+            10.75,
+            5.125
+          ],
+          "texture": "#sheet"
+        },
+        "east": {
+          "uv": [
+            11.25,
+            4.0,
+            11.4375,
+            5.125
+          ],
+          "texture": "#sheet"
+        },
+        "west": {
+          "uv": [
+            11.25,
+            4.0,
+            11.4375,
+            5.125
+          ],
+          "texture": "#sheet"
+        },
+        "up": {
+          "uv": [
+            10.0,
+            7.75,
+            10.75,
+            7.9375
+          ],
+          "texture": "#sheet"
+        },
+        "down": {
+          "uv": [
+            10.0,
+            7.75,
+            10.75,
+            7.9375
+          ],
+          "texture": "#sheet"
+        }
+      }
+    },
+    {
+      "name": "bracket_arm",
+      "from": [
+        7.25,
+        3.5,
+        0.75
+      ],
+      "to": [
+        8.75,
+        5.0,
+        15.5
+      ],
+      "faces": {
+        "south": {
+          "uv": [
+            14.25,
+            6.0,
+            14.625,
+            6.375
+          ],
+          "texture": "#sheet"
+        },
+        "east": {
+          "uv": [
+            7.75,
+            6.0,
+            11.4375,
+            6.375
+          ],
+          "texture": "#sheet"
+        },
+        "west": {
+          "uv": [
+            7.75,
+            6.0,
+            11.4375,
+            6.375
+          ],
+          "texture": "#sheet"
+        },
+        "up": {
+          "uv": [
+            3.75,
+            0.0,
+            4.125,
+            3.6875
+          ],
+          "texture": "#sheet"
+        },
+        "down": {
+          "uv": [
+            3.75,
+            0.0,
+            4.125,
+            3.6875
+          ],
+          "texture": "#sheet"
+        }
+      }
+    },
+    {
+      "name": "brace",
+      "from": [
+        7.5,
+        1.85,
+        0.15
+      ],
+      "to": [
+        8.5,
+        2.65,
+        4.35
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            14.5,
+            7.75,
+            14.75,
+            7.95
+          ],
+          "texture": "#sheet"
+        },
+        "south": {
+          "uv": [
+            14.5,
+            7.75,
+            14.75,
+            7.95
+          ],
+          "texture": "#sheet"
+        },
+        "east": {
+          "uv": [
+            0.0,
+            7.75,
+            1.05,
+            7.95
+          ],
+          "texture": "#sheet"
+        },
+        "west": {
+          "uv": [
+            0.0,
+            7.75,
+            1.05,
+            7.95
+          ],
+          "texture": "#sheet"
+        },
+        "up": {
+          "uv": [
+            11.5,
+            4.0,
+            11.75,
+            5.05
+          ],
+          "texture": "#sheet"
+        },
+        "down": {
+          "uv": [
+            11.5,
+            4.0,
+            11.75,
+            5.05
+          ],
+          "texture": "#sheet"
+        }
+      },
+      "rotation": {
+        "origin": [
+          8,
+          2.25,
+          2.25
+        ],
+        "axis": "x",
+        "angle": -45
+      }
+    }
+  ]
+}

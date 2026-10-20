@@ -85,9 +85,17 @@ public final class FactoryGameTests {
 
     // --- Building ---------------------------------------------------------------------------------------------------
 
+    // A stone floor under the test, x from -4 to size and z from -8 to 16, the space above it cleared (these tests build
+    // past their structure's bounds, where an earlier test's blocks may still stand).
     static void floor(GameTestHelper helper, int size) {
         for (int x = -4; x <= size; x++) {
-            for (int z = -8; z <= 12; z++) {
+            for (int z = -8; z <= 16; z++) {
+                for (int y = 8; y >= 1; y--) {
+                    BlockPos pos = helper.absolutePos(new BlockPos(x, y, z));
+                    if (!helper.getLevel().getBlockState(pos).isAir()) {
+                        helper.getLevel().setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS | Block.UPDATE_SUPPRESS_DROPS);
+                    }
+                }
                 helper.getLevel().setBlock(helper.absolutePos(new BlockPos(x, 0, z)), Blocks.STONE.defaultBlockState(), Block.UPDATE_ALL);
             }
         }

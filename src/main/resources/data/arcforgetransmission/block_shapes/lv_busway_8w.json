@@ -1,0 +1,2073 @@
+{
+  "units": "px, block-local (origin the block's minimum corner); boxes are [x0, y0, z0, x1, y1, z1]",
+  "parts": {
+    "straight_x": [
+      [
+        2,
+        4.0,
+        5.0,
+        14,
+        12.0,
+        11.0
+      ],
+      [
+        5.5,
+        4.5,
+        4.5,
+        10.5,
+        10.5,
+        5.0
+      ],
+      [
+        5.5,
+        4.5,
+        11.0,
+        10.5,
+        10.5,
+        11.5
+      ]
+    ],
+    "joint_x_east": [
+      [
+        14,
+        3.5,
+        4.5,
+        16.0,
+        12.5,
+        11.5
+      ]
+    ],
+    "cap_x_east": [
+      [
+        14,
+        3.5,
+        4.5,
+        15.5,
+        12.5,
+        11.5
+      ]
+    ],
+    "joint_x_west": [
+      [
+        0.0,
+        3.5,
+        4.5,
+        2,
+        12.5,
+        11.5
+      ]
+    ],
+    "cap_x_west": [
+      [
+        0.5,
+        3.5,
+        4.5,
+        2,
+        12.5,
+        11.5
+      ]
+    ],
+    "support_x_floor": [
+      [
+        11.5,
+        0.0,
+        3.5,
+        13.5,
+        0.5,
+        4.75
+      ],
+      [
+        11.5,
+        0.0,
+        11.25,
+        13.5,
+        0.5,
+        12.5
+      ],
+      [
+        11.75,
+        3.0,
+        3.75,
+        13.25,
+        4.0,
+        12.25
+      ],
+      [
+        12.125,
+        0.5,
+        3.75,
+        12.875,
+        3.0,
+        4.5
+      ],
+      [
+        12.125,
+        0.5,
+        11.5,
+        12.875,
+        3.0,
+        12.25
+      ]
+    ],
+    "support_x_ceiling": [
+      [
+        11.5,
+        15.5,
+        3.5,
+        13.5,
+        16.0,
+        4.75
+      ],
+      [
+        11.5,
+        15.5,
+        11.25,
+        13.5,
+        16.0,
+        12.5
+      ],
+      [
+        11.75,
+        3.0,
+        3.75,
+        13.25,
+        4.0,
+        12.25
+      ],
+      [
+        12.125,
+        4.0,
+        3.75,
+        12.875,
+        15.5,
+        4.5
+      ],
+      [
+        12.125,
+        4.0,
+        11.5,
+        12.875,
+        15.5,
+        12.25
+      ]
+    ],
+    "straight_z": [
+      [
+        4.5,
+        4.5,
+        5.5,
+        5.0,
+        10.5,
+        10.5
+      ],
+      [
+        5.0,
+        4.0,
+        2,
+        11.0,
+        12.0,
+        14
+      ],
+      [
+        11.0,
+        4.5,
+        5.5,
+        11.5,
+        10.5,
+        10.5
+      ]
+    ],
+    "joint_z_south": [
+      [
+        4.5,
+        3.5,
+        14,
+        11.5,
+        12.5,
+        16.0
+      ]
+    ],
+    "cap_z_south": [
+      [
+        4.5,
+        3.5,
+        14,
+        11.5,
+        12.5,
+        15.5
+      ]
+    ],
+    "joint_z_north": [
+      [
+        4.5,
+        3.5,
+        0.0,
+        11.5,
+        12.5,
+        2
+      ]
+    ],
+    "cap_z_north": [
+      [
+        4.5,
+        3.5,
+        0.5,
+        11.5,
+        12.5,
+        2
+      ]
+    ],
+    "support_z_floor": [
+      [
+        3.5,
+        0.0,
+        11.5,
+        4.75,
+        0.5,
+        13.5
+      ],
+      [
+        3.75,
+        0.5,
+        12.125,
+        4.5,
+        3.0,
+        12.875
+      ],
+      [
+        3.75,
+        3.0,
+        11.75,
+        12.25,
+        4.0,
+        13.25
+      ],
+      [
+        11.25,
+        0.0,
+        11.5,
+        12.5,
+        0.5,
+        13.5
+      ],
+      [
+        11.5,
+        0.5,
+        12.125,
+        12.25,
+        3.0,
+        12.875
+      ]
+    ],
+    "support_z_ceiling": [
+      [
+        3.5,
+        15.5,
+        11.5,
+        4.75,
+        16.0,
+        13.5
+      ],
+      [
+        3.75,
+        3.0,
+        11.75,
+        12.25,
+        4.0,
+        13.25
+      ],
+      [
+        3.75,
+        4.0,
+        12.125,
+        4.5,
+        15.5,
+        12.875
+      ],
+      [
+        11.25,
+        15.5,
+        11.5,
+        12.5,
+        16.0,
+        13.5
+      ],
+      [
+        11.5,
+        4.0,
+        12.125,
+        12.25,
+        15.5,
+        12.875
+      ]
+    ],
+    "straight_yx": [
+      [
+        4.5,
+        5.5,
+        4.5,
+        5.0,
+        10.5,
+        10.5
+      ],
+      [
+        5.0,
+        2,
+        4.0,
+        11.0,
+        14,
+        12.0
+      ],
+      [
+        11.0,
+        5.5,
+        4.5,
+        11.5,
+        10.5,
+        10.5
+      ]
+    ],
+    "joint_yx_up": [
+      [
+        4.5,
+        14,
+        3.5,
+        11.5,
+        16.0,
+        12.5
+      ]
+    ],
+    "cap_yx_up": [
+      [
+        4.5,
+        14,
+        3.5,
+        11.5,
+        15.5,
+        12.5
+      ]
+    ],
+    "joint_yx_down": [
+      [
+        4.5,
+        0.0,
+        3.5,
+        11.5,
+        2,
+        12.5
+      ]
+    ],
+    "cap_yx_down": [
+      [
+        4.5,
+        0.5,
+        3.5,
+        11.5,
+        2,
+        12.5
+      ]
+    ],
+    "straight_yz": [
+      [
+        4.0,
+        2,
+        5.0,
+        12.0,
+        14,
+        11.0
+      ],
+      [
+        5.5,
+        5.5,
+        4.5,
+        11.5,
+        10.5,
+        5.0
+      ],
+      [
+        5.5,
+        5.5,
+        11.0,
+        11.5,
+        10.5,
+        11.5
+      ]
+    ],
+    "joint_yz_up": [
+      [
+        3.5,
+        14,
+        4.5,
+        12.5,
+        16.0,
+        11.5
+      ]
+    ],
+    "cap_yz_up": [
+      [
+        3.5,
+        14,
+        4.5,
+        12.5,
+        15.5,
+        11.5
+      ]
+    ],
+    "joint_yz_down": [
+      [
+        3.5,
+        0.0,
+        4.5,
+        12.5,
+        2,
+        11.5
+      ]
+    ],
+    "cap_yz_down": [
+      [
+        3.5,
+        0.5,
+        4.5,
+        12.5,
+        2,
+        11.5
+      ]
+    ],
+    "centre_3_4_3_north": [
+      [
+        5.0,
+        4.0,
+        5.0,
+        11.0,
+        12.0,
+        11.0
+      ]
+    ],
+    "centre_3_4_3_east": [
+      [
+        5.0,
+        4.0,
+        5.0,
+        11.0,
+        12.0,
+        11.0
+      ]
+    ],
+    "centre_3_4_3_south": [
+      [
+        5.0,
+        4.0,
+        5.0,
+        11.0,
+        12.0,
+        11.0
+      ]
+    ],
+    "centre_3_4_3_west": [
+      [
+        5.0,
+        4.0,
+        5.0,
+        11.0,
+        12.0,
+        11.0
+      ]
+    ],
+    "centre_3_4_3_up": [
+      [
+        5.0,
+        4.0,
+        5.0,
+        11.0,
+        12.0,
+        11.0
+      ]
+    ],
+    "centre_3_4_3_down": [
+      [
+        5.0,
+        4.0,
+        5.0,
+        11.0,
+        12.0,
+        11.0
+      ]
+    ],
+    "centre_3_4_4_north": [
+      [
+        5.0,
+        4.0,
+        4.0,
+        11.0,
+        12.0,
+        12.0
+      ]
+    ],
+    "centre_3_4_4_east": [
+      [
+        5.0,
+        4.0,
+        4.0,
+        11.0,
+        12.0,
+        12.0
+      ]
+    ],
+    "centre_3_4_4_south": [
+      [
+        5.0,
+        4.0,
+        4.0,
+        11.0,
+        12.0,
+        12.0
+      ]
+    ],
+    "centre_3_4_4_west": [
+      [
+        5.0,
+        4.0,
+        4.0,
+        11.0,
+        12.0,
+        12.0
+      ]
+    ],
+    "centre_3_4_4_up": [
+      [
+        5.0,
+        4.0,
+        4.0,
+        11.0,
+        12.0,
+        12.0
+      ]
+    ],
+    "centre_3_4_4_down": [
+      [
+        5.0,
+        4.0,
+        4.0,
+        11.0,
+        12.0,
+        12.0
+      ]
+    ],
+    "centre_4_4_3_north": [
+      [
+        4.0,
+        4.0,
+        5.0,
+        12.0,
+        12.0,
+        11.0
+      ]
+    ],
+    "centre_4_4_3_east": [
+      [
+        4.0,
+        4.0,
+        5.0,
+        12.0,
+        12.0,
+        11.0
+      ]
+    ],
+    "centre_4_4_3_south": [
+      [
+        4.0,
+        4.0,
+        5.0,
+        12.0,
+        12.0,
+        11.0
+      ]
+    ],
+    "centre_4_4_3_west": [
+      [
+        4.0,
+        4.0,
+        5.0,
+        12.0,
+        12.0,
+        11.0
+      ]
+    ],
+    "centre_4_4_3_up": [
+      [
+        4.0,
+        4.0,
+        5.0,
+        12.0,
+        12.0,
+        11.0
+      ]
+    ],
+    "centre_4_4_3_down": [
+      [
+        4.0,
+        4.0,
+        5.0,
+        12.0,
+        12.0,
+        11.0
+      ]
+    ],
+    "arm_north_3": [
+      [
+        4.5,
+        3.5,
+        0.0,
+        11.5,
+        12.5,
+        2
+      ],
+      [
+        5.0,
+        4.0,
+        2,
+        11.0,
+        12.0,
+        5.0
+      ]
+    ],
+    "arm_north_4": [
+      [
+        4.5,
+        3.5,
+        0.0,
+        11.5,
+        12.5,
+        2
+      ],
+      [
+        5.0,
+        4.0,
+        2,
+        11.0,
+        12.0,
+        4.0
+      ]
+    ],
+    "arm_east_3": [
+      [
+        11.0,
+        4.0,
+        5.0,
+        14,
+        12.0,
+        11.0
+      ],
+      [
+        14,
+        3.5,
+        4.5,
+        16.0,
+        12.5,
+        11.5
+      ]
+    ],
+    "arm_east_4": [
+      [
+        12.0,
+        4.0,
+        5.0,
+        14,
+        12.0,
+        11.0
+      ],
+      [
+        14,
+        3.5,
+        4.5,
+        16.0,
+        12.5,
+        11.5
+      ]
+    ],
+    "arm_south_3": [
+      [
+        4.5,
+        3.5,
+        14,
+        11.5,
+        12.5,
+        16.0
+      ],
+      [
+        5.0,
+        4.0,
+        11.0,
+        11.0,
+        12.0,
+        14
+      ]
+    ],
+    "arm_south_4": [
+      [
+        4.5,
+        3.5,
+        14,
+        11.5,
+        12.5,
+        16.0
+      ],
+      [
+        5.0,
+        4.0,
+        12.0,
+        11.0,
+        12.0,
+        14
+      ]
+    ],
+    "arm_west_3": [
+      [
+        0.0,
+        3.5,
+        4.5,
+        2,
+        12.5,
+        11.5
+      ],
+      [
+        2,
+        4.0,
+        5.0,
+        5.0,
+        12.0,
+        11.0
+      ]
+    ],
+    "arm_west_4": [
+      [
+        0.0,
+        3.5,
+        4.5,
+        2,
+        12.5,
+        11.5
+      ],
+      [
+        2,
+        4.0,
+        5.0,
+        4.0,
+        12.0,
+        11.0
+      ]
+    ],
+    "arm_up_x_4": [
+      [
+        4.5,
+        14,
+        3.5,
+        11.5,
+        16.0,
+        12.5
+      ],
+      [
+        5.0,
+        12.0,
+        4.0,
+        11.0,
+        14,
+        12.0
+      ]
+    ],
+    "arm_up_z_4": [
+      [
+        3.5,
+        14,
+        4.5,
+        12.5,
+        16.0,
+        11.5
+      ],
+      [
+        4.0,
+        12.0,
+        5.0,
+        12.0,
+        14,
+        11.0
+      ]
+    ],
+    "arm_down_x_4": [
+      [
+        4.5,
+        0.0,
+        3.5,
+        11.5,
+        2,
+        12.5
+      ],
+      [
+        5.0,
+        2,
+        4.0,
+        11.0,
+        4.0,
+        12.0
+      ]
+    ],
+    "arm_down_z_4": [
+      [
+        3.5,
+        0.0,
+        4.5,
+        12.5,
+        2,
+        11.5
+      ],
+      [
+        4.0,
+        2,
+        5.0,
+        12.0,
+        4.0,
+        11.0
+      ]
+    ]
+  },
+  "multipart": [
+    {
+      "when": {
+        "north": "false",
+        "south": "false",
+        "up": "false",
+        "down": "false"
+      },
+      "part": "straight_x"
+    },
+    {
+      "when": {
+        "north": "false",
+        "east": "true",
+        "south": "false",
+        "up": "false",
+        "down": "false"
+      },
+      "part": "joint_x_east"
+    },
+    {
+      "when": {
+        "north": "false",
+        "east": "false",
+        "south": "false",
+        "up": "false",
+        "down": "false"
+      },
+      "part": "cap_x_east"
+    },
+    {
+      "when": {
+        "north": "false",
+        "south": "false",
+        "west": "true",
+        "up": "false",
+        "down": "false"
+      },
+      "part": "joint_x_west"
+    },
+    {
+      "when": {
+        "north": "false",
+        "south": "false",
+        "west": "false",
+        "up": "false",
+        "down": "false"
+      },
+      "part": "cap_x_west"
+    },
+    {
+      "when": {
+        "north": "false",
+        "south": "false",
+        "up": "false",
+        "down": "false",
+        "support": "floor"
+      },
+      "part": "support_x_floor"
+    },
+    {
+      "when": {
+        "north": "false",
+        "south": "false",
+        "up": "false",
+        "down": "false",
+        "support": "ceiling"
+      },
+      "part": "support_x_ceiling"
+    },
+    {
+      "when": {
+        "OR": [
+          {
+            "east": "false",
+            "south": "true",
+            "west": "false",
+            "up": "false",
+            "down": "false"
+          },
+          {
+            "north": "true",
+            "east": "false",
+            "west": "false",
+            "up": "false",
+            "down": "false"
+          }
+        ]
+      },
+      "part": "straight_z"
+    },
+    {
+      "when": {
+        "east": "false",
+        "south": "true",
+        "west": "false",
+        "up": "false",
+        "down": "false"
+      },
+      "part": "joint_z_south"
+    },
+    {
+      "when": {
+        "north": "true",
+        "east": "false",
+        "south": "false",
+        "west": "false",
+        "up": "false",
+        "down": "false"
+      },
+      "part": "cap_z_south"
+    },
+    {
+      "when": {
+        "north": "true",
+        "east": "false",
+        "west": "false",
+        "up": "false",
+        "down": "false"
+      },
+      "part": "joint_z_north"
+    },
+    {
+      "when": {
+        "north": "false",
+        "east": "false",
+        "south": "true",
+        "west": "false",
+        "up": "false",
+        "down": "false"
+      },
+      "part": "cap_z_north"
+    },
+    {
+      "when": {
+        "OR": [
+          {
+            "east": "false",
+            "south": "true",
+            "west": "false",
+            "up": "false",
+            "down": "false",
+            "support": "floor"
+          },
+          {
+            "north": "true",
+            "east": "false",
+            "west": "false",
+            "up": "false",
+            "down": "false",
+            "support": "floor"
+          }
+        ]
+      },
+      "part": "support_z_floor"
+    },
+    {
+      "when": {
+        "OR": [
+          {
+            "east": "false",
+            "south": "true",
+            "west": "false",
+            "up": "false",
+            "down": "false",
+            "support": "ceiling"
+          },
+          {
+            "north": "true",
+            "east": "false",
+            "west": "false",
+            "up": "false",
+            "down": "false",
+            "support": "ceiling"
+          }
+        ]
+      },
+      "part": "support_z_ceiling"
+    },
+    {
+      "when": {
+        "OR": [
+          {
+            "north": "false",
+            "east": "false",
+            "south": "false",
+            "west": "false",
+            "down": "true",
+            "vaxis": "x"
+          },
+          {
+            "north": "false",
+            "east": "false",
+            "south": "false",
+            "west": "false",
+            "up": "true",
+            "vaxis": "x"
+          }
+        ]
+      },
+      "part": "straight_yx"
+    },
+    {
+      "when": {
+        "north": "false",
+        "east": "false",
+        "south": "false",
+        "west": "false",
+        "up": "true",
+        "vaxis": "x"
+      },
+      "part": "joint_yx_up"
+    },
+    {
+      "when": {
+        "north": "false",
+        "east": "false",
+        "south": "false",
+        "west": "false",
+        "up": "false",
+        "down": "true",
+        "vaxis": "x"
+      },
+      "part": "cap_yx_up"
+    },
+    {
+      "when": {
+        "north": "false",
+        "east": "false",
+        "south": "false",
+        "west": "false",
+        "down": "true",
+        "vaxis": "x"
+      },
+      "part": "joint_yx_down"
+    },
+    {
+      "when": {
+        "north": "false",
+        "east": "false",
+        "south": "false",
+        "west": "false",
+        "up": "true",
+        "down": "false",
+        "vaxis": "x"
+      },
+      "part": "cap_yx_down"
+    },
+    {
+      "when": {
+        "OR": [
+          {
+            "north": "false",
+            "east": "false",
+            "south": "false",
+            "west": "false",
+            "down": "true",
+            "vaxis": "z"
+          },
+          {
+            "north": "false",
+            "east": "false",
+            "south": "false",
+            "west": "false",
+            "up": "true",
+            "vaxis": "z"
+          }
+        ]
+      },
+      "part": "straight_yz"
+    },
+    {
+      "when": {
+        "north": "false",
+        "east": "false",
+        "south": "false",
+        "west": "false",
+        "up": "true",
+        "vaxis": "z"
+      },
+      "part": "joint_yz_up"
+    },
+    {
+      "when": {
+        "north": "false",
+        "east": "false",
+        "south": "false",
+        "west": "false",
+        "up": "false",
+        "down": "true",
+        "vaxis": "z"
+      },
+      "part": "cap_yz_up"
+    },
+    {
+      "when": {
+        "north": "false",
+        "east": "false",
+        "south": "false",
+        "west": "false",
+        "down": "true",
+        "vaxis": "z"
+      },
+      "part": "joint_yz_down"
+    },
+    {
+      "when": {
+        "north": "false",
+        "east": "false",
+        "south": "false",
+        "west": "false",
+        "up": "true",
+        "down": "false",
+        "vaxis": "z"
+      },
+      "part": "cap_yz_down"
+    },
+    {
+      "when": {
+        "OR": [
+          {
+            "north": "false",
+            "south": "true",
+            "west": "true",
+            "up": "false",
+            "down": "false"
+          },
+          {
+            "north": "false",
+            "east": "true",
+            "south": "true",
+            "up": "false",
+            "down": "false"
+          }
+        ]
+      },
+      "part": "centre_3_4_3_north"
+    },
+    {
+      "when": {
+        "OR": [
+          {
+            "east": "false",
+            "south": "true",
+            "west": "true",
+            "up": "false",
+            "down": "false"
+          },
+          {
+            "north": "true",
+            "east": "false",
+            "west": "true",
+            "up": "false",
+            "down": "false"
+          }
+        ]
+      },
+      "part": "centre_3_4_3_east"
+    },
+    {
+      "when": {
+        "OR": [
+          {
+            "north": "true",
+            "south": "false",
+            "west": "true",
+            "up": "false",
+            "down": "false"
+          },
+          {
+            "north": "true",
+            "east": "true",
+            "south": "false",
+            "up": "false",
+            "down": "false"
+          }
+        ]
+      },
+      "part": "centre_3_4_3_south"
+    },
+    {
+      "when": {
+        "OR": [
+          {
+            "east": "true",
+            "south": "true",
+            "west": "false",
+            "up": "false",
+            "down": "false"
+          },
+          {
+            "north": "true",
+            "east": "true",
+            "west": "false",
+            "up": "false",
+            "down": "false"
+          }
+        ]
+      },
+      "part": "centre_3_4_3_west"
+    },
+    {
+      "when": {
+        "OR": [
+          {
+            "south": "true",
+            "west": "true",
+            "up": "false",
+            "down": "false"
+          },
+          {
+            "east": "true",
+            "south": "true",
+            "up": "false",
+            "down": "false"
+          },
+          {
+            "north": "true",
+            "west": "true",
+            "up": "false",
+            "down": "false"
+          },
+          {
+            "north": "true",
+            "east": "true",
+            "up": "false",
+            "down": "false"
+          }
+        ]
+      },
+      "part": "centre_3_4_3_up"
+    },
+    {
+      "when": {
+        "OR": [
+          {
+            "south": "true",
+            "west": "true",
+            "up": "false",
+            "down": "false"
+          },
+          {
+            "east": "true",
+            "south": "true",
+            "up": "false",
+            "down": "false"
+          },
+          {
+            "north": "true",
+            "west": "true",
+            "up": "false",
+            "down": "false"
+          },
+          {
+            "north": "true",
+            "east": "true",
+            "up": "false",
+            "down": "false"
+          }
+        ]
+      },
+      "part": "centre_3_4_3_down"
+    },
+    {
+      "when": {
+        "OR": [
+          {
+            "north": "false",
+            "west": "true",
+            "down": "true",
+            "vaxis": "x"
+          },
+          {
+            "north": "false",
+            "west": "true",
+            "up": "true",
+            "vaxis": "x"
+          },
+          {
+            "north": "false",
+            "south": "true",
+            "down": "true",
+            "vaxis": "x"
+          },
+          {
+            "north": "false",
+            "south": "true",
+            "up": "true",
+            "vaxis": "x"
+          },
+          {
+            "north": "false",
+            "east": "true",
+            "down": "true",
+            "vaxis": "x"
+          },
+          {
+            "north": "false",
+            "east": "true",
+            "up": "true",
+            "vaxis": "x"
+          }
+        ]
+      },
+      "part": "centre_3_4_4_north"
+    },
+    {
+      "when": {
+        "OR": [
+          {
+            "west": "true",
+            "down": "true",
+            "vaxis": "x"
+          },
+          {
+            "west": "true",
+            "up": "true",
+            "vaxis": "x"
+          },
+          {
+            "south": "true",
+            "down": "true",
+            "vaxis": "x"
+          },
+          {
+            "south": "true",
+            "up": "true",
+            "vaxis": "x"
+          },
+          {
+            "east": "true",
+            "down": "true",
+            "vaxis": "x"
+          },
+          {
+            "east": "true",
+            "up": "true",
+            "vaxis": "x"
+          },
+          {
+            "north": "true",
+            "down": "true",
+            "vaxis": "x"
+          },
+          {
+            "north": "true",
+            "up": "true",
+            "vaxis": "x"
+          }
+        ]
+      },
+      "part": "centre_3_4_4_east"
+    },
+    {
+      "when": {
+        "OR": [
+          {
+            "south": "false",
+            "west": "true",
+            "down": "true",
+            "vaxis": "x"
+          },
+          {
+            "south": "false",
+            "west": "true",
+            "up": "true",
+            "vaxis": "x"
+          },
+          {
+            "east": "true",
+            "south": "false",
+            "down": "true",
+            "vaxis": "x"
+          },
+          {
+            "east": "true",
+            "south": "false",
+            "up": "true",
+            "vaxis": "x"
+          },
+          {
+            "north": "true",
+            "south": "false",
+            "down": "true",
+            "vaxis": "x"
+          },
+          {
+            "north": "true",
+            "south": "false",
+            "up": "true",
+            "vaxis": "x"
+          }
+        ]
+      },
+      "part": "centre_3_4_4_south"
+    },
+    {
+      "when": {
+        "OR": [
+          {
+            "west": "true",
+            "down": "true",
+            "vaxis": "x"
+          },
+          {
+            "west": "true",
+            "up": "true",
+            "vaxis": "x"
+          },
+          {
+            "south": "true",
+            "down": "true",
+            "vaxis": "x"
+          },
+          {
+            "south": "true",
+            "up": "true",
+            "vaxis": "x"
+          },
+          {
+            "east": "true",
+            "down": "true",
+            "vaxis": "x"
+          },
+          {
+            "east": "true",
+            "up": "true",
+            "vaxis": "x"
+          },
+          {
+            "north": "true",
+            "down": "true",
+            "vaxis": "x"
+          },
+          {
+            "north": "true",
+            "up": "true",
+            "vaxis": "x"
+          }
+        ]
+      },
+      "part": "centre_3_4_4_west"
+    },
+    {
+      "when": {
+        "OR": [
+          {
+            "west": "true",
+            "up": "false",
+            "down": "true",
+            "vaxis": "x"
+          },
+          {
+            "south": "true",
+            "up": "false",
+            "down": "true",
+            "vaxis": "x"
+          },
+          {
+            "east": "true",
+            "up": "false",
+            "down": "true",
+            "vaxis": "x"
+          },
+          {
+            "north": "true",
+            "up": "false",
+            "down": "true",
+            "vaxis": "x"
+          }
+        ]
+      },
+      "part": "centre_3_4_4_up"
+    },
+    {
+      "when": {
+        "OR": [
+          {
+            "west": "true",
+            "up": "true",
+            "down": "false",
+            "vaxis": "x"
+          },
+          {
+            "south": "true",
+            "up": "true",
+            "down": "false",
+            "vaxis": "x"
+          },
+          {
+            "east": "true",
+            "up": "true",
+            "down": "false",
+            "vaxis": "x"
+          },
+          {
+            "north": "true",
+            "up": "true",
+            "down": "false",
+            "vaxis": "x"
+          }
+        ]
+      },
+      "part": "centre_3_4_4_down"
+    },
+    {
+      "when": {
+        "OR": [
+          {
+            "west": "true",
+            "down": "true",
+            "vaxis": "z"
+          },
+          {
+            "west": "true",
+            "up": "true",
+            "vaxis": "z"
+          },
+          {
+            "south": "true",
+            "down": "true",
+            "vaxis": "z"
+          },
+          {
+            "south": "true",
+            "up": "true",
+            "vaxis": "z"
+          },
+          {
+            "east": "true",
+            "down": "true",
+            "vaxis": "z"
+          },
+          {
+            "east": "true",
+            "up": "true",
+            "vaxis": "z"
+          },
+          {
+            "north": "true",
+            "down": "true",
+            "vaxis": "z"
+          },
+          {
+            "north": "true",
+            "up": "true",
+            "vaxis": "z"
+          }
+        ]
+      },
+      "part": "centre_4_4_3_north"
+    },
+    {
+      "when": {
+        "OR": [
+          {
+            "east": "false",
+            "west": "true",
+            "down": "true",
+            "vaxis": "z"
+          },
+          {
+            "east": "false",
+            "west": "true",
+            "up": "true",
+            "vaxis": "z"
+          },
+          {
+            "east": "false",
+            "south": "true",
+            "down": "true",
+            "vaxis": "z"
+          },
+          {
+            "east": "false",
+            "south": "true",
+            "up": "true",
+            "vaxis": "z"
+          },
+          {
+            "north": "true",
+            "east": "false",
+            "down": "true",
+            "vaxis": "z"
+          },
+          {
+            "north": "true",
+            "east": "false",
+            "up": "true",
+            "vaxis": "z"
+          }
+        ]
+      },
+      "part": "centre_4_4_3_east"
+    },
+    {
+      "when": {
+        "OR": [
+          {
+            "west": "true",
+            "down": "true",
+            "vaxis": "z"
+          },
+          {
+            "west": "true",
+            "up": "true",
+            "vaxis": "z"
+          },
+          {
+            "south": "true",
+            "down": "true",
+            "vaxis": "z"
+          },
+          {
+            "south": "true",
+            "up": "true",
+            "vaxis": "z"
+          },
+          {
+            "east": "true",
+            "down": "true",
+            "vaxis": "z"
+          },
+          {
+            "east": "true",
+            "up": "true",
+            "vaxis": "z"
+          },
+          {
+            "north": "true",
+            "down": "true",
+            "vaxis": "z"
+          },
+          {
+            "north": "true",
+            "up": "true",
+            "vaxis": "z"
+          }
+        ]
+      },
+      "part": "centre_4_4_3_south"
+    },
+    {
+      "when": {
+        "OR": [
+          {
+            "south": "true",
+            "west": "false",
+            "down": "true",
+            "vaxis": "z"
+          },
+          {
+            "south": "true",
+            "west": "false",
+            "up": "true",
+            "vaxis": "z"
+          },
+          {
+            "east": "true",
+            "west": "false",
+            "down": "true",
+            "vaxis": "z"
+          },
+          {
+            "east": "true",
+            "west": "false",
+            "up": "true",
+            "vaxis": "z"
+          },
+          {
+            "north": "true",
+            "west": "false",
+            "down": "true",
+            "vaxis": "z"
+          },
+          {
+            "north": "true",
+            "west": "false",
+            "up": "true",
+            "vaxis": "z"
+          }
+        ]
+      },
+      "part": "centre_4_4_3_west"
+    },
+    {
+      "when": {
+        "OR": [
+          {
+            "west": "true",
+            "up": "false",
+            "down": "true",
+            "vaxis": "z"
+          },
+          {
+            "south": "true",
+            "up": "false",
+            "down": "true",
+            "vaxis": "z"
+          },
+          {
+            "east": "true",
+            "up": "false",
+            "down": "true",
+            "vaxis": "z"
+          },
+          {
+            "north": "true",
+            "up": "false",
+            "down": "true",
+            "vaxis": "z"
+          }
+        ]
+      },
+      "part": "centre_4_4_3_up"
+    },
+    {
+      "when": {
+        "OR": [
+          {
+            "west": "true",
+            "up": "true",
+            "down": "false",
+            "vaxis": "z"
+          },
+          {
+            "south": "true",
+            "up": "true",
+            "down": "false",
+            "vaxis": "z"
+          },
+          {
+            "east": "true",
+            "up": "true",
+            "down": "false",
+            "vaxis": "z"
+          },
+          {
+            "north": "true",
+            "up": "true",
+            "down": "false",
+            "vaxis": "z"
+          }
+        ]
+      },
+      "part": "centre_4_4_3_down"
+    },
+    {
+      "when": {
+        "OR": [
+          {
+            "north": "true",
+            "down": "true",
+            "vaxis": "z"
+          },
+          {
+            "north": "true",
+            "up": "true",
+            "vaxis": "z"
+          },
+          {
+            "north": "true",
+            "west": "true",
+            "up": "false",
+            "down": "false"
+          },
+          {
+            "north": "true",
+            "east": "true",
+            "up": "false",
+            "down": "false"
+          }
+        ]
+      },
+      "part": "arm_north_3"
+    },
+    {
+      "when": {
+        "OR": [
+          {
+            "north": "true",
+            "down": "true",
+            "vaxis": "x"
+          },
+          {
+            "north": "true",
+            "up": "true",
+            "vaxis": "x"
+          }
+        ]
+      },
+      "part": "arm_north_4"
+    },
+    {
+      "when": {
+        "OR": [
+          {
+            "east": "true",
+            "down": "true",
+            "vaxis": "x"
+          },
+          {
+            "east": "true",
+            "up": "true",
+            "vaxis": "x"
+          },
+          {
+            "east": "true",
+            "south": "true",
+            "up": "false",
+            "down": "false"
+          },
+          {
+            "north": "true",
+            "east": "true",
+            "up": "false",
+            "down": "false"
+          }
+        ]
+      },
+      "part": "arm_east_3"
+    },
+    {
+      "when": {
+        "OR": [
+          {
+            "east": "true",
+            "down": "true",
+            "vaxis": "z"
+          },
+          {
+            "east": "true",
+            "up": "true",
+            "vaxis": "z"
+          }
+        ]
+      },
+      "part": "arm_east_4"
+    },
+    {
+      "when": {
+        "OR": [
+          {
+            "south": "true",
+            "down": "true",
+            "vaxis": "z"
+          },
+          {
+            "south": "true",
+            "up": "true",
+            "vaxis": "z"
+          },
+          {
+            "south": "true",
+            "west": "true",
+            "up": "false",
+            "down": "false"
+          },
+          {
+            "east": "true",
+            "south": "true",
+            "up": "false",
+            "down": "false"
+          }
+        ]
+      },
+      "part": "arm_south_3"
+    },
+    {
+      "when": {
+        "OR": [
+          {
+            "south": "true",
+            "down": "true",
+            "vaxis": "x"
+          },
+          {
+            "south": "true",
+            "up": "true",
+            "vaxis": "x"
+          }
+        ]
+      },
+      "part": "arm_south_4"
+    },
+    {
+      "when": {
+        "OR": [
+          {
+            "west": "true",
+            "down": "true",
+            "vaxis": "x"
+          },
+          {
+            "west": "true",
+            "up": "true",
+            "vaxis": "x"
+          },
+          {
+            "south": "true",
+            "west": "true",
+            "up": "false",
+            "down": "false"
+          },
+          {
+            "north": "true",
+            "west": "true",
+            "up": "false",
+            "down": "false"
+          }
+        ]
+      },
+      "part": "arm_west_3"
+    },
+    {
+      "when": {
+        "OR": [
+          {
+            "west": "true",
+            "down": "true",
+            "vaxis": "z"
+          },
+          {
+            "west": "true",
+            "up": "true",
+            "vaxis": "z"
+          }
+        ]
+      },
+      "part": "arm_west_4"
+    },
+    {
+      "when": {
+        "OR": [
+          {
+            "west": "true",
+            "up": "true",
+            "vaxis": "x"
+          },
+          {
+            "south": "true",
+            "up": "true",
+            "vaxis": "x"
+          },
+          {
+            "east": "true",
+            "up": "true",
+            "vaxis": "x"
+          },
+          {
+            "north": "true",
+            "up": "true",
+            "vaxis": "x"
+          }
+        ]
+      },
+      "part": "arm_up_x_4"
+    },
+    {
+      "when": {
+        "OR": [
+          {
+            "west": "true",
+            "up": "true",
+            "vaxis": "z"
+          },
+          {
+            "south": "true",
+            "up": "true",
+            "vaxis": "z"
+          },
+          {
+            "east": "true",
+            "up": "true",
+            "vaxis": "z"
+          },
+          {
+            "north": "true",
+            "up": "true",
+            "vaxis": "z"
+          }
+        ]
+      },
+      "part": "arm_up_z_4"
+    },
+    {
+      "when": {
+        "OR": [
+          {
+            "west": "true",
+            "down": "true",
+            "vaxis": "x"
+          },
+          {
+            "south": "true",
+            "down": "true",
+            "vaxis": "x"
+          },
+          {
+            "east": "true",
+            "down": "true",
+            "vaxis": "x"
+          },
+          {
+            "north": "true",
+            "down": "true",
+            "vaxis": "x"
+          }
+        ]
+      },
+      "part": "arm_down_x_4"
+    },
+    {
+      "when": {
+        "OR": [
+          {
+            "west": "true",
+            "down": "true",
+            "vaxis": "z"
+          },
+          {
+            "south": "true",
+            "down": "true",
+            "vaxis": "z"
+          },
+          {
+            "east": "true",
+            "down": "true",
+            "vaxis": "z"
+          },
+          {
+            "north": "true",
+            "down": "true",
+            "vaxis": "z"
+          }
+        ]
+      },
+      "part": "arm_down_z_4"
+    }
+  ]
+}

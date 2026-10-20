@@ -1,0 +1,52 @@
+{
+  "multipart": [
+    {
+      "when": {
+        "facing": "north"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/ehv_busway_reducer_8w_4w/reducer_north"
+      }
+    },
+    {
+      "when": {
+        "facing": "east"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/ehv_busway_reducer_8w_4w/reducer_east"
+      }
+    },
+    {
+      "when": {
+        "facing": "south"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/ehv_busway_reducer_8w_4w/reducer_south"
+      }
+    },
+    {
+      "when": {
+        "facing": "west"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/ehv_busway_reducer_8w_4w/reducer_west"
+      }
+    },
+    {
+      "when": {
+        "facing": "up"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/ehv_busway_reducer_8w_4w/reducer_up"
+      }
+    },
+    {
+      "when": {
+        "facing": "down"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/ehv_busway_reducer_8w_4w/reducer_down"
+      }
+    }
+  ]
+}

@@ -1,0 +1,287 @@
+{
+  "credit": "tools/factory_block_model_gen.py",
+  "parent": "block/block",
+  "ambientocclusion": false,
+  "textures": {
+    "sheet": "arcforgetransmission:block/cable_tray/cable_tray",
+    "particle": "arcforgetransmission:block/cable_tray/cable_tray"
+  },
+  "elements": [
+    {
+      "name": "rung",
+      "from": [
+        1.5,
+        5.0,
+        2.0
+      ],
+      "to": [
+        2.5,
+        6.0,
+        14.0
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            12.25,
+            6.0,
+            12.5,
+            6.25
+          ],
+          "texture": "#sheet"
+        },
+        "south": {
+          "uv": [
+            12.25,
+            6.0,
+            12.5,
+            6.25
+          ],
+          "texture": "#sheet"
+        },
+        "east": {
+          "uv": [
+            11.0,
+            5.25,
+            14.0,
+            5.5
+          ],
+          "texture": "#sheet"
+        },
+        "west": {
+          "uv": [
+            11.0,
+            5.25,
+            14.0,
+            5.5
+          ],
+          "texture": "#sheet"
+        },
+        "up": {
+          "uv": [
+            3.5,
+            0.0,
+            3.75,
+            3.0
+          ],
+          "texture": "#sheet"
+        },
+        "down": {
+          "uv": [
+            3.5,
+            0.0,
+            3.75,
+            3.0
+          ],
+          "texture": "#sheet"
+        }
+      }
+    },
+    {
+      "name": "rung",
+      "from": [
+        5.5,
+        5.0,
+        2.0
+      ],
+      "to": [
+        6.5,
+        6.0,
+        14.0
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            12.25,
+            6.0,
+            12.5,
+            6.25
+          ],
+          "texture": "#sheet"
+        },
+        "south": {
+          "uv": [
+            12.25,
+            6.0,
+            12.5,
+            6.25
+          ],
+          "texture": "#sheet"
+        },
+        "east": {
+          "uv": [
+            11.0,
+            5.25,
+            14.0,
+            5.5
+          ],
+          "texture": "#sheet"
+        },
+        "west": {
+          "uv": [
+            11.0,
+            5.25,
+            14.0,
+            5.5
+          ],
+          "texture": "#sheet"
+        },
+        "up": {
+          "uv": [
+            3.5,
+            0.0,
+            3.75,
+            3.0
+          ],
+          "texture": "#sheet"
+        },
+        "down": {
+          "uv": [
+            3.5,
+            0.0,
+            3.75,
+            3.0
+          ],
+          "texture": "#sheet"
+        }
+      }
+    },
+    {
+      "name": "rung",
+      "from": [
+        9.5,
+        5.0,
+        2.0
+      ],
+      "to": [
+        10.5,
+        6.0,
+        14.0
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            12.25,
+            6.0,
+            12.5,
+            6.25
+          ],
+          "texture": "#sheet"
+        },
+        "south": {
+          "uv": [
+            12.25,
+            6.0,
+            12.5,
+            6.25
+          ],
+          "texture": "#sheet"
+        },
+        "east": {
+          "uv": [
+            11.0,
+            5.25,
+            14.0,
+            5.5
+          ],
+          "texture": "#sheet"
+        },
+        "west": {
+          "uv": [
+            11.0,
+            5.25,
+            14.0,
+            5.5
+          ],
+          "texture": "#sheet"
+        },
+        "up": {
+          "uv": [
+            3.5,
+            0.0,
+            3.75,
+            3.0
+          ],
+          "texture": "#sheet"
+        },
+        "down": {
+          "uv": [
+            3.5,
+            0.0,
+            3.75,
+            3.0
+          ],
+          "texture": "#sheet"
+        }
+      }
+    },
+    {
+      "name": "rung",
+      "from": [
+        13.5,
+        5.0,
+        2.0
+      ],
+      "to": [
+        14.5,
+        6.0,
+        14.0
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            12.25,
+            6.0,
+            12.5,
+            6.25
+          ],
+          "texture": "#sheet"
+        },
+        "south": {
+          "uv": [
+            12.25,
+            6.0,
+            12.5,
+            6.25
+          ],
+          "texture": "#sheet"
+        },
+        "east": {
+          "uv": [
+            11.0,
+            5.25,
+            14.0,
+            5.5
+          ],
+          "texture": "#sheet"
+        },
+        "west": {
+          "uv": [
+            11.0,
+            5.25,
+            14.0,
+            5.5
+          ],
+          "texture": "#sheet"
+        },
+        "up": {
+          "uv": [
+            3.5,
+            0.0,
+            3.75,
+            3.0
+          ],
+          "texture": "#sheet"
+        },
+        "down": {
+          "uv": [
+            3.5,
+            0.0,
+            3.75,
+            3.0
+          ],
+          "texture": "#sheet"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "P": "#c:plates/steel",
+    "B": "arcforgetransmission:mv_busway_2w",
+    "I": "arcforgetransmission:mv_pin_insulator"
+  },
+  "pattern": [
+    "PBP",
+    "PIP",
+    "PIP"
+  ],
+  "result": {
+    "id": "arcforgetransmission:mv_busway_feed_in"
+  }
+}

@@ -1,0 +1,149 @@
+{
+  "credit": "tools/factory_block_model_gen.py",
+  "parent": "block/block",
+  "ambientocclusion": false,
+  "textures": {
+    "sheet": "arcforgetransmission:block/busway/lv_busway_tap_off",
+    "particle": "arcforgetransmission:block/busway/lv_busway_tap_off"
+  },
+  "elements": [
+    {
+      "name": "flag_window",
+      "from": [
+        2.75,
+        9,
+        13
+      ],
+      "to": [
+        3,
+        10.75,
+        14.75
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            14.0,
+            2.75,
+            14.0625,
+            3.1875
+          ],
+          "texture": "#sheet"
+        },
+        "south": {
+          "uv": [
+            14.0,
+            2.75,
+            14.0625,
+            3.1875
+          ],
+          "texture": "#sheet"
+        },
+        "east": {
+          "uv": [
+            12.5,
+            2.75,
+            12.9375,
+            3.1875
+          ],
+          "texture": "#sheet"
+        },
+        "west": {
+          "uv": [
+            12.5,
+            2.75,
+            12.9375,
+            3.1875
+          ],
+          "texture": "#sheet"
+        },
+        "up": {
+          "uv": [
+            14.0,
+            2.75,
+            14.0625,
+            3.1875
+          ],
+          "texture": "#sheet"
+        },
+        "down": {
+          "uv": [
+            14.0,
+            2.75,
+            14.0625,
+            3.1875
+          ],
+          "texture": "#sheet"
+        }
+      }
+    },
+    {
+      "name": "handle",
+      "from": [
+        1.75,
+        9.75,
+        11.25
+      ],
+      "to": [
+        2.25,
+        12.5,
+        11.75
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            3.75,
+            2.75,
+            3.875,
+            3.4375
+          ],
+          "texture": "#sheet"
+        },
+        "south": {
+          "uv": [
+            3.75,
+            2.75,
+            3.875,
+            3.4375
+          ],
+          "texture": "#sheet"
+        },
+        "east": {
+          "uv": [
+            3.75,
+            2.75,
+            3.875,
+            3.4375
+          ],
+          "texture": "#sheet"
+        },
+        "west": {
+          "uv": [
+            3.75,
+            2.75,
+            3.875,
+            3.4375
+          ],
+          "texture": "#sheet"
+        },
+        "up": {
+          "uv": [
+            9.5,
+            3.5,
+            9.625,
+            3.625
+          ],
+          "texture": "#sheet"
+        },
+        "down": {
+          "uv": [
+            9.5,
+            3.5,
+            9.625,
+            3.625
+          ],
+          "texture": "#sheet"
+        }
+      }
+    }
+  ]
+}

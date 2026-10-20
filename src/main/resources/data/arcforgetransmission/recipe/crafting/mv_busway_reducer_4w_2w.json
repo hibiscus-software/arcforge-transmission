@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "P": "#c:plates/steel",
+    "B": "arcforgetransmission:mv_recloser",
+    "L": "arcforgetransmission:mv_busway_4w",
+    "S": "arcforgetransmission:mv_busway_2w"
+  },
+  "pattern": [
+    "PBP",
+    "LPS",
+    "PPP"
+  ],
+  "result": {
+    "id": "arcforgetransmission:mv_busway_reducer_4w_2w"
+  }
+}

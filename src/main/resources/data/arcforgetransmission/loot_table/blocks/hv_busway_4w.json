@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:block",
+  "pools": [
+    {
+      "condition": {
+        "type": "minecraft:survives_explosion"
+      },
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "arcforgetransmission:hv_busway_4w"
+        }
+      ],
+      "rolls": 1
+    }
+  ],
+  "random_sequence": "arcforgetransmission:blocks/hv_busway_4w"
+}

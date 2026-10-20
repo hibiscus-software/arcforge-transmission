@@ -1023,7 +1023,8 @@ public final class GridManager {
         return root;
     }
 
-    // Burnt-out wires: already off the graph; each drops Burnt Wire under its middle and may set a fire there.
+    // Burnt-out wires: already off the graph; each drops Burnt Wire under its middle and may set a fire there. Busway
+    // isn't dropped: the blocks at its ends are damaged (dull, smoking, joined to nothing until replaced).
     private static void burn(ServerLevel level, GridData.Dimension dimension, List<GridEdge> burnt) {
         Set<BlockPos> ends = new LinkedHashSet<>();
         for (GridEdge edge : burnt) {
@@ -1033,6 +1034,14 @@ public final class GridManager {
             }
             ends.add(a.pos());
             ends.add(b.pos());
+            if (edge.kind() == GridEdge.Kind.BUS) {
+                for (BlockPos end : new BlockPos[] { a.pos(), b.pos() }) {
+                    if (level.isLoaded(end) && level.getBlockEntity(end) instanceof net.zagdrath.arcforgetransmission.factory.BuswayBlockEntity run) {
+                        run.damage(level);
+                    }
+                }
+                continue;
+            }
             double[] mid = Catenary.point(array(a.at()), array(b.at()), 0.5);
             BlockPos at = BlockPos.containing(mid[0], mid[1], mid[2]);
             Block.popResource(level, at, new ItemStack(GridContent.BURNT_WIRE.get()));

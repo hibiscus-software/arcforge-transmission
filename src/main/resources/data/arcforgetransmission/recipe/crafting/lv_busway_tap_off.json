@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "P": "#c:plates/steel",
+    "B": "arcforgetransmission:lv_recloser",
+    "C": "#c:ingots/copper"
+  },
+  "pattern": [
+    "PCP",
+    "PBP",
+    "PCP"
+  ],
+  "result": {
+    "count": 2,
+    "id": "arcforgetransmission:lv_busway_tap_off"
+  }
+}

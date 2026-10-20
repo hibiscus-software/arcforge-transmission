@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "P": "#c:plates/steel",
+    "C": "#c:ingots/aluminum",
+    "A": "#c:ingots/hardened_alloy"
+  },
+  "pattern": [
+    "CAC",
+    "CPC",
+    "CAC"
+  ],
+  "result": {
+    "count": 8,
+    "id": "arcforgetransmission:hv_busway_8w"
+  }
+}

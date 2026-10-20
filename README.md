@@ -198,6 +198,19 @@ breaker's block works it, and a comparator on it reads its load. Look at any sec
 incomer's voltage, current and power, each transformer's load and temperature, the mains and the tie, each feeder's
 current against its setting.
 
+**Busway** (Wiring & Tools tab) carries a feeder to its machines at every tier: LV bus duct (a slim ribbed housing with
+plug-in openings every block), MV metal-enclosed bus (access covers every few blocks), HV gas-insulated bus and EHV
+gas-insulated line (three aluminium tubes, flanged, an SF6 gauge every few blocks, on floor stands or ceiling hangers).
+Each comes in three sizes, 2W, 4W and 8W (1, 2 or 3 bars on its joints): see the table above. Place it like pipe: it
+joins busway of its tier and size into straights, elbows, tees and crosses; a size change needs a **Reducer** (which
+carries its own breaker at the smaller size), and tiers never join. A **Feed-In** brings a feeder's circuit in, set on a
+lineup feeder's roof or on a Cable Termination. A **Tap-Off** (LV a plug-in tap box, MV a bolted one at an access cover,
+HV and EHV a small GIS tee module) clips onto a straight with its own breaker (frames 1W to 8W, Wrench on Configure),
+graded with the feeder upstream; mount a Cable Termination on it and run a drop cable to the machine. Busway loses about
+half what wire of its rating would (`factory.conductors.<tier>.busResistance`), heats four times more slowly
+(`busHeat`), and is enclosed: no shocks, no lightning, no sag. Burnt out, a block is damaged (dull and smoking) and
+breaks the circuit until it's replaced.
+
 Inside the grid a cable, a busway joint or a lineup's bus is three conductors, A to A, B to B and C to C: the solver,
 loss, burnout, the Clamp Meter and protection treat it as three wires.
 
@@ -222,7 +235,7 @@ game or the server console, as with Arcforge's `/arcforge config reset`:
 ./gradlew runGameTestServer   # the game tests (src/gametest, never in the jar): real blocks in a running world, with Arcforge's own
 ./gradlew renderPreviews      # renders every structure's model to build/previews (-Pdesigns=NAME,NAME~ALT,NAME@lo:hi,NAME#3)
 python tools/audit.py    # the art: rebuilds every generator and checks the output
-python tools/block_model_preview.py . build/previews fence_run   # renders block models (front, side, 45 degrees) for review
+python tools/block_model_preview.py . build/previews fence_run   # renders block models (front, side, 45 degrees) for review (`factory`: every busway and tray scene)
 ```
 
 Generated files come from the generators in `tools/`. Change a generator, run it, then run the audit. Don't edit them
@@ -237,6 +250,7 @@ by hand:
 | `material_texture_gen.py` | the bauxite and aluminium textures (recoloured from Arcforge's nickel) |
 | `transmission_sound_gen.py` | `sounds/` (the transformer hum, corona buzz, arc crack, fuse pop, breaker clunk; seeded, numpy and soundfile) and `sounds.json` |
 | `transmission_particle_gen.py` | `textures/particle/` (corona, arc flash, spark) and `particles/` |
+| `factory_block_model_gen.py` | busway (runs in three sizes, feed-ins, tap-offs, reducers; dull damaged copies) and cable tray models, textures, blockstates, item definitions and `data/.../block_shapes/` (their hitboxes); the tray cables' jacket textures |
 
 Everything else (blockstates, item definitions, other models, recipes, loot tables, tags, lang) is written by hand, and
 the audit checks it: every registered block and item has its files and name, every model and texture named exists,

@@ -1,0 +1,62 @@
+{
+  "credit": "tools/factory_block_model_gen.py",
+  "parent": "block/block",
+  "ambientocclusion": false,
+  "textures": {
+    "sheet": "arcforgetransmission:block/busway/mv_busway_2w",
+    "particle": "arcforgetransmission:block/busway/mv_busway_2w"
+  },
+  "elements": [
+    {
+      "name": "housing",
+      "from": [
+        2,
+        3.0,
+        4.0
+      ],
+      "to": [
+        14,
+        13.0,
+        12.0
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            8.75,
+            0.0,
+            11.75,
+            2.5
+          ],
+          "texture": "#sheet"
+        },
+        "south": {
+          "uv": [
+            8.75,
+            0.0,
+            11.75,
+            2.5
+          ],
+          "texture": "#sheet"
+        },
+        "up": {
+          "uv": [
+            6.5,
+            3.25,
+            9.5,
+            5.25
+          ],
+          "texture": "#sheet"
+        },
+        "down": {
+          "uv": [
+            6.5,
+            3.25,
+            9.5,
+            5.25
+          ],
+          "texture": "#sheet"
+        }
+      }
+    }
+  ]
+}

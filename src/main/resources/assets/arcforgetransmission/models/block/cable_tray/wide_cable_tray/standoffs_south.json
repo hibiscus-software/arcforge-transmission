@@ -1,0 +1,389 @@
+{
+  "credit": "tools/factory_block_model_gen.py",
+  "parent": "block/block",
+  "ambientocclusion": false,
+  "textures": {
+    "sheet": "arcforgetransmission:block/cable_tray/wide_cable_tray",
+    "particle": "arcforgetransmission:block/cable_tray/wide_cable_tray"
+  },
+  "elements": [
+    {
+      "name": "wall_channel",
+      "from": [
+        0.75,
+        0,
+        15.5
+      ],
+      "to": [
+        2.25,
+        16,
+        16
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            2.5,
+            0.0,
+            2.875,
+            4.0
+          ],
+          "texture": "#sheet"
+        },
+        "south": {
+          "uv": [
+            2.5,
+            0.0,
+            2.875,
+            4.0
+          ],
+          "texture": "#sheet"
+        },
+        "east": {
+          "uv": [
+            3.25,
+            0.0,
+            3.375,
+            4.0
+          ],
+          "texture": "#sheet"
+        },
+        "west": {
+          "uv": [
+            3.25,
+            0.0,
+            3.375,
+            4.0
+          ],
+          "texture": "#sheet"
+        },
+        "up": {
+          "uv": [
+            11.25,
+            7.75,
+            11.625,
+            7.875
+          ],
+          "texture": "#sheet"
+        },
+        "down": {
+          "uv": [
+            11.25,
+            7.75,
+            11.625,
+            7.875
+          ],
+          "texture": "#sheet"
+        }
+      }
+    },
+    {
+      "name": "standoff",
+      "from": [
+        1.25,
+        3.0,
+        11.0
+      ],
+      "to": [
+        1.75,
+        4.5,
+        15.5
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            14.75,
+            6.0,
+            14.875,
+            6.375
+          ],
+          "texture": "#sheet"
+        },
+        "east": {
+          "uv": [
+            13.0,
+            6.0,
+            14.125,
+            6.375
+          ],
+          "texture": "#sheet"
+        },
+        "west": {
+          "uv": [
+            13.0,
+            6.0,
+            14.125,
+            6.375
+          ],
+          "texture": "#sheet"
+        },
+        "up": {
+          "uv": [
+            10.75,
+            4.0,
+            10.875,
+            5.125
+          ],
+          "texture": "#sheet"
+        },
+        "down": {
+          "uv": [
+            10.75,
+            4.0,
+            10.875,
+            5.125
+          ],
+          "texture": "#sheet"
+        }
+      }
+    },
+    {
+      "name": "standoff",
+      "from": [
+        1.25,
+        11.0,
+        11.0
+      ],
+      "to": [
+        1.75,
+        12.5,
+        15.5
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            14.75,
+            6.0,
+            14.875,
+            6.375
+          ],
+          "texture": "#sheet"
+        },
+        "east": {
+          "uv": [
+            13.0,
+            6.0,
+            14.125,
+            6.375
+          ],
+          "texture": "#sheet"
+        },
+        "west": {
+          "uv": [
+            13.0,
+            6.0,
+            14.125,
+            6.375
+          ],
+          "texture": "#sheet"
+        },
+        "up": {
+          "uv": [
+            10.75,
+            4.0,
+            10.875,
+            5.125
+          ],
+          "texture": "#sheet"
+        },
+        "down": {
+          "uv": [
+            10.75,
+            4.0,
+            10.875,
+            5.125
+          ],
+          "texture": "#sheet"
+        }
+      }
+    },
+    {
+      "name": "wall_channel",
+      "from": [
+        13.75,
+        0,
+        15.5
+      ],
+      "to": [
+        15.25,
+        16,
+        16
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            2.5,
+            0.0,
+            2.875,
+            4.0
+          ],
+          "texture": "#sheet"
+        },
+        "south": {
+          "uv": [
+            2.5,
+            0.0,
+            2.875,
+            4.0
+          ],
+          "texture": "#sheet"
+        },
+        "east": {
+          "uv": [
+            3.25,
+            0.0,
+            3.375,
+            4.0
+          ],
+          "texture": "#sheet"
+        },
+        "west": {
+          "uv": [
+            3.25,
+            0.0,
+            3.375,
+            4.0
+          ],
+          "texture": "#sheet"
+        },
+        "up": {
+          "uv": [
+            11.25,
+            7.75,
+            11.625,
+            7.875
+          ],
+          "texture": "#sheet"
+        },
+        "down": {
+          "uv": [
+            11.25,
+            7.75,
+            11.625,
+            7.875
+          ],
+          "texture": "#sheet"
+        }
+      }
+    },
+    {
+      "name": "standoff",
+      "from": [
+        14.25,
+        3.0,
+        11.0
+      ],
+      "to": [
+        14.75,
+        4.5,
+        15.5
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            14.75,
+            6.0,
+            14.875,
+            6.375
+          ],
+          "texture": "#sheet"
+        },
+        "east": {
+          "uv": [
+            13.0,
+            6.0,
+            14.125,
+            6.375
+          ],
+          "texture": "#sheet"
+        },
+        "west": {
+          "uv": [
+            13.0,
+            6.0,
+            14.125,
+            6.375
+          ],
+          "texture": "#sheet"
+        },
+        "up": {
+          "uv": [
+            10.75,
+            4.0,
+            10.875,
+            5.125
+          ],
+          "texture": "#sheet"
+        },
+        "down": {
+          "uv": [
+            10.75,
+            4.0,
+            10.875,
+            5.125
+          ],
+          "texture": "#sheet"
+        }
+      }
+    },
+    {
+      "name": "standoff",
+      "from": [
+        14.25,
+        11.0,
+        11.0
+      ],
+      "to": [
+        14.75,
+        12.5,
+        15.5
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            14.75,
+            6.0,
+            14.875,
+            6.375
+          ],
+          "texture": "#sheet"
+        },
+        "east": {
+          "uv": [
+            13.0,
+            6.0,
+            14.125,
+            6.375
+          ],
+          "texture": "#sheet"
+        },
+        "west": {
+          "uv": [
+            13.0,
+            6.0,
+            14.125,
+            6.375
+          ],
+          "texture": "#sheet"
+        },
+        "up": {
+          "uv": [
+            10.75,
+            4.0,
+            10.875,
+            5.125
+          ],
+          "texture": "#sheet"
+        },
+        "down": {
+          "uv": [
+            10.75,
+            4.0,
+            10.875,
+            5.125
+          ],
+          "texture": "#sheet"
+        }
+      }
+    }
+  ]
+}

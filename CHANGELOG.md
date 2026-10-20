@@ -32,6 +32,15 @@
   its %R loss, a feeder fault tripping only its feeder, over-temperature, EHV straight through at 2,097,152 FE/t, a
   double-ended lineup tying a lost half, mixed tiers, and saved state.
 - Links may carry an impedance of their own (a transformer section's winding), set each tick before the solve.
+- **Busway** (Wiring & Tools tab), at every tier and in three sizes (2W, 4W, 8W): LV bus duct, MV metal-enclosed bus,
+  HV gas-insulated bus and EHV gas-insulated line, placed like pipe (straights, elbows, tees, crosses, end caps), with
+  feed-ins (on a lineup feeder's roof or a Cable Termination), tap-offs (a breaker into a Cable Termination face, graded
+  with the feeder upstream) and reducers (a breaker at the smaller size). Joints are 3-conductor connections at the run's
+  size; it loses about half a same-rated wire's, heats more slowly, never shocks, sags or draws lightning, and burns out
+  as damaged (dull, smoking, open) rather than dropping. Its models, textures (damaged copies too) and hitboxes come from
+  the new `tools/factory_block_model_gen.py`; `tools/block_model_preview.py` renders its scenes. Game tests: an LV 128 A
+  run to four 32 A tap boxes, an EHV 1,024 A line at 16,777,216 FE/t, a tap tripping before its feeder, sizes and tiers
+  joining only through the right reducer, a damaged block opening the circuit.
 
 ### Changed
 - The Pin Insulator's port is now shared with the Cable Termination (`MountedPort`, `MountedPortBlockEntity`): one set of

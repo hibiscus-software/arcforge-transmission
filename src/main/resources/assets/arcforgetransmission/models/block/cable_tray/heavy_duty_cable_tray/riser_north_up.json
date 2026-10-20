@@ -1,0 +1,440 @@
+{
+  "credit": "tools/factory_block_model_gen.py",
+  "parent": "block/block",
+  "ambientocclusion": false,
+  "textures": {
+    "sheet": "arcforgetransmission:block/cable_tray/heavy_duty_cable_tray",
+    "particle": "arcforgetransmission:block/cable_tray/heavy_duty_cable_tray"
+  },
+  "elements": [
+    {
+      "name": "rail_web",
+      "from": [
+        14.0,
+        10.0,
+        5.0
+      ],
+      "to": [
+        14.5,
+        16,
+        10.0
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            10.75,
+            0.0,
+            10.875,
+            1.5
+          ],
+          "texture": "#sheet"
+        },
+        "south": {
+          "uv": [
+            10.75,
+            0.0,
+            10.875,
+            1.5
+          ],
+          "texture": "#sheet"
+        },
+        "east": {
+          "uv": [
+            9.0,
+            0.0,
+            10.25,
+            1.5
+          ],
+          "texture": "#sheet"
+        },
+        "west": {
+          "uv": [
+            9.0,
+            0.0,
+            10.25,
+            1.5
+          ],
+          "texture": "#sheet"
+        },
+        "up": {
+          "uv": [
+            10.0,
+            4.0,
+            10.125,
+            5.25
+          ],
+          "texture": "#sheet"
+        },
+        "down": {
+          "uv": [
+            10.0,
+            4.0,
+            10.125,
+            5.25
+          ],
+          "texture": "#sheet"
+        }
+      }
+    },
+    {
+      "name": "rail_lip",
+      "from": [
+        14.5,
+        10.0,
+        5.0
+      ],
+      "to": [
+        15.5,
+        16,
+        5.5
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            11.25,
+            0.0,
+            11.5,
+            1.5
+          ],
+          "texture": "#sheet"
+        },
+        "south": {
+          "uv": [
+            11.25,
+            0.0,
+            11.5,
+            1.5
+          ],
+          "texture": "#sheet"
+        },
+        "east": {
+          "uv": [
+            10.75,
+            0.0,
+            10.875,
+            1.5
+          ],
+          "texture": "#sheet"
+        },
+        "up": {
+          "uv": [
+            6.25,
+            6.75,
+            6.5,
+            6.875
+          ],
+          "texture": "#sheet"
+        },
+        "down": {
+          "uv": [
+            6.25,
+            6.75,
+            6.5,
+            6.875
+          ],
+          "texture": "#sheet"
+        }
+      }
+    },
+    {
+      "name": "rail_lip",
+      "from": [
+        14.5,
+        10.0,
+        9.5
+      ],
+      "to": [
+        15.5,
+        16,
+        10.0
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            11.25,
+            0.0,
+            11.5,
+            1.5
+          ],
+          "texture": "#sheet"
+        },
+        "south": {
+          "uv": [
+            11.25,
+            0.0,
+            11.5,
+            1.5
+          ],
+          "texture": "#sheet"
+        },
+        "east": {
+          "uv": [
+            10.75,
+            0.0,
+            10.875,
+            1.5
+          ],
+          "texture": "#sheet"
+        },
+        "up": {
+          "uv": [
+            6.25,
+            6.75,
+            6.5,
+            6.875
+          ],
+          "texture": "#sheet"
+        },
+        "down": {
+          "uv": [
+            6.25,
+            6.75,
+            6.5,
+            6.875
+          ],
+          "texture": "#sheet"
+        }
+      }
+    },
+    {
+      "name": "rail_web",
+      "from": [
+        1.5,
+        10.0,
+        5.0
+      ],
+      "to": [
+        2.0,
+        16,
+        10.0
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            10.75,
+            0.0,
+            10.875,
+            1.5
+          ],
+          "texture": "#sheet"
+        },
+        "south": {
+          "uv": [
+            10.75,
+            0.0,
+            10.875,
+            1.5
+          ],
+          "texture": "#sheet"
+        },
+        "east": {
+          "uv": [
+            9.0,
+            0.0,
+            10.25,
+            1.5
+          ],
+          "texture": "#sheet"
+        },
+        "west": {
+          "uv": [
+            9.0,
+            0.0,
+            10.25,
+            1.5
+          ],
+          "texture": "#sheet"
+        },
+        "up": {
+          "uv": [
+            10.0,
+            4.0,
+            10.125,
+            5.25
+          ],
+          "texture": "#sheet"
+        },
+        "down": {
+          "uv": [
+            10.0,
+            4.0,
+            10.125,
+            5.25
+          ],
+          "texture": "#sheet"
+        }
+      }
+    },
+    {
+      "name": "rail_lip",
+      "from": [
+        0.5,
+        10.0,
+        5.0
+      ],
+      "to": [
+        1.5,
+        16,
+        5.5
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            11.25,
+            0.0,
+            11.5,
+            1.5
+          ],
+          "texture": "#sheet"
+        },
+        "south": {
+          "uv": [
+            11.25,
+            0.0,
+            11.5,
+            1.5
+          ],
+          "texture": "#sheet"
+        },
+        "west": {
+          "uv": [
+            10.75,
+            0.0,
+            10.875,
+            1.5
+          ],
+          "texture": "#sheet"
+        },
+        "up": {
+          "uv": [
+            6.25,
+            6.75,
+            6.5,
+            6.875
+          ],
+          "texture": "#sheet"
+        },
+        "down": {
+          "uv": [
+            6.25,
+            6.75,
+            6.5,
+            6.875
+          ],
+          "texture": "#sheet"
+        }
+      }
+    },
+    {
+      "name": "rail_lip",
+      "from": [
+        0.5,
+        10.0,
+        9.5
+      ],
+      "to": [
+        1.5,
+        16,
+        10.0
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            11.25,
+            0.0,
+            11.5,
+            1.5
+          ],
+          "texture": "#sheet"
+        },
+        "south": {
+          "uv": [
+            11.25,
+            0.0,
+            11.5,
+            1.5
+          ],
+          "texture": "#sheet"
+        },
+        "west": {
+          "uv": [
+            10.75,
+            0.0,
+            10.875,
+            1.5
+          ],
+          "texture": "#sheet"
+        },
+        "up": {
+          "uv": [
+            6.25,
+            6.75,
+            6.5,
+            6.875
+          ],
+          "texture": "#sheet"
+        },
+        "down": {
+          "uv": [
+            6.25,
+            6.75,
+            6.5,
+            6.875
+          ],
+          "texture": "#sheet"
+        }
+      }
+    },
+    {
+      "name": "rung",
+      "from": [
+        2.0,
+        13.25,
+        5.0
+      ],
+      "to": [
+        14.0,
+        14.75,
+        6.5
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            10.5,
+            5.25,
+            13.5,
+            5.625
+          ],
+          "texture": "#sheet"
+        },
+        "south": {
+          "uv": [
+            10.5,
+            5.25,
+            13.5,
+            5.625
+          ],
+          "texture": "#sheet"
+        },
+        "up": {
+          "uv": [
+            10.5,
+            5.25,
+            13.5,
+            5.625
+          ],
+          "texture": "#sheet"
+        },
+        "down": {
+          "uv": [
+            10.5,
+            5.25,
+            13.5,
+            5.625
+          ],
+          "texture": "#sheet"
+        }
+      }
+    }
+  ]
+}

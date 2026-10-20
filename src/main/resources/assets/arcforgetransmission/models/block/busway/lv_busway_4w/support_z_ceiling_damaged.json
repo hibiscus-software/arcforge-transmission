@@ -1,0 +1,320 @@
+{
+  "credit": "tools/factory_block_model_gen.py",
+  "parent": "block/block",
+  "ambientocclusion": false,
+  "textures": {
+    "sheet": "arcforgetransmission:block/busway/lv_busway_4w_damaged",
+    "particle": "arcforgetransmission:block/busway/lv_busway_4w_damaged"
+  },
+  "elements": [
+    {
+      "name": "strap",
+      "from": [
+        3.75,
+        3.0,
+        11.75
+      ],
+      "to": [
+        12.25,
+        4.0,
+        13.25
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            2.5,
+            5.75,
+            4.625,
+            6.0
+          ],
+          "texture": "#sheet"
+        },
+        "south": {
+          "uv": [
+            2.5,
+            5.75,
+            4.625,
+            6.0
+          ],
+          "texture": "#sheet"
+        },
+        "east": {
+          "uv": [
+            14.0,
+            5.75,
+            14.375,
+            6.0
+          ],
+          "texture": "#sheet"
+        },
+        "west": {
+          "uv": [
+            14.0,
+            5.75,
+            14.375,
+            6.0
+          ],
+          "texture": "#sheet"
+        },
+        "up": {
+          "uv": [
+            3.5,
+            4.75,
+            5.625,
+            5.125
+          ],
+          "texture": "#sheet"
+        },
+        "down": {
+          "uv": [
+            3.5,
+            4.75,
+            5.625,
+            5.125
+          ],
+          "texture": "#sheet"
+        }
+      }
+    },
+    {
+      "name": "rod",
+      "from": [
+        3.75,
+        4.0,
+        12.125
+      ],
+      "to": [
+        4.5,
+        15.5,
+        12.875
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            3.75,
+            0.0,
+            3.9375,
+            2.875
+          ],
+          "texture": "#sheet"
+        },
+        "south": {
+          "uv": [
+            3.5,
+            0.0,
+            3.6875,
+            2.875
+          ],
+          "texture": "#sheet"
+        },
+        "east": {
+          "uv": [
+            3.5,
+            0.0,
+            3.6875,
+            2.875
+          ],
+          "texture": "#sheet"
+        },
+        "west": {
+          "uv": [
+            3.75,
+            0.0,
+            3.9375,
+            2.875
+          ],
+          "texture": "#sheet"
+        }
+      }
+    },
+    {
+      "name": "anchor",
+      "from": [
+        3.5,
+        15.5,
+        11.5
+      ],
+      "to": [
+        4.75,
+        16,
+        13.5
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            13.5,
+            5.75,
+            13.8125,
+            5.875
+          ],
+          "texture": "#sheet"
+        },
+        "south": {
+          "uv": [
+            13.5,
+            5.75,
+            13.8125,
+            5.875
+          ],
+          "texture": "#sheet"
+        },
+        "east": {
+          "uv": [
+            14.5,
+            5.75,
+            15.0,
+            5.875
+          ],
+          "texture": "#sheet"
+        },
+        "west": {
+          "uv": [
+            14.5,
+            5.75,
+            15.0,
+            5.875
+          ],
+          "texture": "#sheet"
+        },
+        "up": {
+          "uv": [
+            1.5,
+            5.75,
+            1.8125,
+            6.25
+          ],
+          "texture": "#sheet"
+        },
+        "down": {
+          "uv": [
+            1.5,
+            5.75,
+            1.8125,
+            6.25
+          ],
+          "texture": "#sheet"
+        }
+      }
+    },
+    {
+      "name": "rod",
+      "from": [
+        11.5,
+        4.0,
+        12.125
+      ],
+      "to": [
+        12.25,
+        15.5,
+        12.875
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            3.75,
+            0.0,
+            3.9375,
+            2.875
+          ],
+          "texture": "#sheet"
+        },
+        "south": {
+          "uv": [
+            3.5,
+            0.0,
+            3.6875,
+            2.875
+          ],
+          "texture": "#sheet"
+        },
+        "east": {
+          "uv": [
+            3.5,
+            0.0,
+            3.6875,
+            2.875
+          ],
+          "texture": "#sheet"
+        },
+        "west": {
+          "uv": [
+            3.75,
+            0.0,
+            3.9375,
+            2.875
+          ],
+          "texture": "#sheet"
+        }
+      }
+    },
+    {
+      "name": "anchor",
+      "from": [
+        11.25,
+        15.5,
+        11.5
+      ],
+      "to": [
+        12.5,
+        16,
+        13.5
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            13.5,
+            5.75,
+            13.8125,
+            5.875
+          ],
+          "texture": "#sheet"
+        },
+        "south": {
+          "uv": [
+            13.5,
+            5.75,
+            13.8125,
+            5.875
+          ],
+          "texture": "#sheet"
+        },
+        "east": {
+          "uv": [
+            14.5,
+            5.75,
+            15.0,
+            5.875
+          ],
+          "texture": "#sheet"
+        },
+        "west": {
+          "uv": [
+            14.5,
+            5.75,
+            15.0,
+            5.875
+          ],
+          "texture": "#sheet"
+        },
+        "up": {
+          "uv": [
+            1.5,
+            5.75,
+            1.8125,
+            6.25
+          ],
+          "texture": "#sheet"
+        },
+        "down": {
+          "uv": [
+            1.5,
+            5.75,
+            1.8125,
+            6.25
+          ],
+          "texture": "#sheet"
+        }
+      }
+    }
+  ]
+}

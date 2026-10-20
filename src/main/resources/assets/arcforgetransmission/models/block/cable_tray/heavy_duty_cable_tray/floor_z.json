@@ -1,0 +1,320 @@
+{
+  "credit": "tools/factory_block_model_gen.py",
+  "parent": "block/block",
+  "ambientocclusion": false,
+  "textures": {
+    "sheet": "arcforgetransmission:block/cable_tray/heavy_duty_cable_tray",
+    "particle": "arcforgetransmission:block/cable_tray/heavy_duty_cable_tray"
+  },
+  "elements": [
+    {
+      "name": "strut",
+      "from": [
+        0.5,
+        3.5,
+        7.25
+      ],
+      "to": [
+        15.5,
+        5.0,
+        8.75
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            3.75,
+            5.25,
+            7.5,
+            5.625
+          ],
+          "texture": "#sheet"
+        },
+        "south": {
+          "uv": [
+            3.75,
+            5.25,
+            7.5,
+            5.625
+          ],
+          "texture": "#sheet"
+        },
+        "east": {
+          "uv": [
+            5.75,
+            5.75,
+            6.125,
+            6.125
+          ],
+          "texture": "#sheet"
+        },
+        "west": {
+          "uv": [
+            5.75,
+            5.75,
+            6.125,
+            6.125
+          ],
+          "texture": "#sheet"
+        },
+        "up": {
+          "uv": [
+            3.75,
+            5.25,
+            7.5,
+            5.625
+          ],
+          "texture": "#sheet"
+        },
+        "down": {
+          "uv": [
+            3.75,
+            5.25,
+            7.5,
+            5.625
+          ],
+          "texture": "#sheet"
+        }
+      }
+    },
+    {
+      "name": "leg",
+      "from": [
+        13.75,
+        0.5,
+        7.5
+      ],
+      "to": [
+        15.25,
+        3.5,
+        8.5
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            13.75,
+            4.0,
+            14.125,
+            4.75
+          ],
+          "texture": "#sheet"
+        },
+        "south": {
+          "uv": [
+            13.75,
+            4.0,
+            14.125,
+            4.75
+          ],
+          "texture": "#sheet"
+        },
+        "east": {
+          "uv": [
+            15.0,
+            4.0,
+            15.25,
+            4.75
+          ],
+          "texture": "#sheet"
+        },
+        "west": {
+          "uv": [
+            15.0,
+            4.0,
+            15.25,
+            4.75
+          ],
+          "texture": "#sheet"
+        }
+      }
+    },
+    {
+      "name": "foot",
+      "from": [
+        13.25,
+        0,
+        6.75
+      ],
+      "to": [
+        15.75,
+        0.5,
+        9.25
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0.0,
+            6.75,
+            0.625,
+            6.875
+          ],
+          "texture": "#sheet"
+        },
+        "south": {
+          "uv": [
+            0.0,
+            6.75,
+            0.625,
+            6.875
+          ],
+          "texture": "#sheet"
+        },
+        "east": {
+          "uv": [
+            0.0,
+            6.75,
+            0.625,
+            6.875
+          ],
+          "texture": "#sheet"
+        },
+        "west": {
+          "uv": [
+            0.0,
+            6.75,
+            0.625,
+            6.875
+          ],
+          "texture": "#sheet"
+        },
+        "up": {
+          "uv": [
+            13.0,
+            4.0,
+            13.625,
+            4.625
+          ],
+          "texture": "#sheet"
+        },
+        "down": {
+          "uv": [
+            13.0,
+            4.0,
+            13.625,
+            4.625
+          ],
+          "texture": "#sheet"
+        }
+      }
+    },
+    {
+      "name": "leg",
+      "from": [
+        0.75,
+        0.5,
+        7.5
+      ],
+      "to": [
+        2.25,
+        3.5,
+        8.5
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            13.75,
+            4.0,
+            14.125,
+            4.75
+          ],
+          "texture": "#sheet"
+        },
+        "south": {
+          "uv": [
+            13.75,
+            4.0,
+            14.125,
+            4.75
+          ],
+          "texture": "#sheet"
+        },
+        "east": {
+          "uv": [
+            15.0,
+            4.0,
+            15.25,
+            4.75
+          ],
+          "texture": "#sheet"
+        },
+        "west": {
+          "uv": [
+            15.0,
+            4.0,
+            15.25,
+            4.75
+          ],
+          "texture": "#sheet"
+        }
+      }
+    },
+    {
+      "name": "foot",
+      "from": [
+        0.25,
+        0,
+        6.75
+      ],
+      "to": [
+        2.75,
+        0.5,
+        9.25
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0.0,
+            6.75,
+            0.625,
+            6.875
+          ],
+          "texture": "#sheet"
+        },
+        "south": {
+          "uv": [
+            0.0,
+            6.75,
+            0.625,
+            6.875
+          ],
+          "texture": "#sheet"
+        },
+        "east": {
+          "uv": [
+            0.0,
+            6.75,
+            0.625,
+            6.875
+          ],
+          "texture": "#sheet"
+        },
+        "west": {
+          "uv": [
+            0.0,
+            6.75,
+            0.625,
+            6.875
+          ],
+          "texture": "#sheet"
+        },
+        "up": {
+          "uv": [
+            13.0,
+            4.0,
+            13.625,
+            4.625
+          ],
+          "texture": "#sheet"
+        },
+        "down": {
+          "uv": [
+            13.0,
+            4.0,
+            13.625,
+            4.625
+          ],
+          "texture": "#sheet"
+        }
+      }
+    }
+  ]
+}

@@ -395,7 +395,7 @@ public class SectionBlockEntity extends GridEndpointBlockEntity implements GridM
                 want.add(a.get(k) + ":" + b.get(k));
             }
         }
-        for (Map.Entry<CableTerminationBlockEntity, Integer> entry : terminations(level).entrySet()) {
+        for (Map.Entry<Hosted, Integer> entry : terminations(level).entrySet()) {
             List<Long> a = nodes(dimension, entry.getValue()), b = entry.getKey().nodes(dimension);
             for (int k = 0; k < Math.min(a.size(), b.size()); k++) {
                 want.add(a.get(k) + ":" + b.get(k));
@@ -437,10 +437,11 @@ public class SectionBlockEntity extends GridEndpointBlockEntity implements GridM
         }
     }
 
-    // The Cable Terminations mounted on its blocks (not its front), each with the group it joins: an incomer's line, a
-    // feeder's outlet (at LV and MV the lower breaker's on its lower block, the upper's on its upper).
-    private Map<CableTerminationBlockEntity, Integer> terminations(Level level) {
-        Map<CableTerminationBlockEntity, Integer> out = new java.util.LinkedHashMap<>();
+    // The Cable Terminations mounted on its blocks (not its front) and a busway feed-in on its roof, each with the group it
+    // joins: an incomer's line, a feeder's outlet (at LV and MV the lower breaker's on its lower block, the upper's on its
+    // upper: the roof's).
+    private Map<Hosted, Integer> terminations(Level level) {
+        Map<Hosted, Integer> out = new java.util.LinkedHashMap<>();
         if (section() != Section.INCOMING && section() != Section.FEEDER) {
             return out;
         }
@@ -451,7 +452,7 @@ public class SectionBlockEntity extends GridEndpointBlockEntity implements GridM
                 if (side == facing() || !level.isLoaded(next)) {
                     continue;
                 }
-                if (level.getBlockEntity(next) instanceof CableTerminationBlockEntity termination && termination.mountPos().equals(pos)) {
+                if (level.getBlockEntity(next) instanceof Hosted termination && termination.mountPos().equals(pos)) {
                     int group = section() == Section.INCOMING ? 0 : tier().ordinal() <= 1 && cell[1] >= 1 ? 2 : 1;
                     out.put(termination, group);
                 }

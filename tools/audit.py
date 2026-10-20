@@ -42,7 +42,7 @@ from PIL import Image
 NS = "arcforgetransmission"
 GENERATORS = ["tools/transmission_tower_texture_gen.py", "tools/tower_attach_groups_gen.py", "tools/grid_block_model_gen.py",
               "tools/wire_texture_gen.py", "tools/material_texture_gen.py", "tools/transmission_sound_gen.py",
-              "tools/transmission_particle_gen.py"]
+              "tools/transmission_particle_gen.py", "tools/factory_block_model_gen.py"]
 SHEET_SIZES = {"block/transmission_tower/towers.png": (256, 512)}
 # Isolated pixels that are deliberate details, by texture: the rivet shadows of Arcforge's machine casing.
 INTENTIONAL = {"block/wall_bushing.png": {(3, 3), (12, 3), (3, 12), (12, 12)}}

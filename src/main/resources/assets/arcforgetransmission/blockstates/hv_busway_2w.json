@@ -1,0 +1,2610 @@
+{
+  "multipart": [
+    {
+      "when": {
+        "north": "false",
+        "south": "false",
+        "up": "false",
+        "down": "false",
+        "damaged": "false"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/straight_x"
+      }
+    },
+    {
+      "when": {
+        "north": "false",
+        "south": "false",
+        "up": "false",
+        "down": "false",
+        "damaged": "true"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/straight_x_damaged"
+      }
+    },
+    {
+      "when": {
+        "north": "false",
+        "east": "true",
+        "south": "false",
+        "up": "false",
+        "down": "false",
+        "damaged": "false"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/joint_x_east"
+      }
+    },
+    {
+      "when": {
+        "north": "false",
+        "east": "true",
+        "south": "false",
+        "up": "false",
+        "down": "false",
+        "damaged": "true"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/joint_x_east_damaged"
+      }
+    },
+    {
+      "when": {
+        "north": "false",
+        "east": "false",
+        "south": "false",
+        "up": "false",
+        "down": "false",
+        "damaged": "false"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/cap_x_east"
+      }
+    },
+    {
+      "when": {
+        "north": "false",
+        "east": "false",
+        "south": "false",
+        "up": "false",
+        "down": "false",
+        "damaged": "true"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/cap_x_east_damaged"
+      }
+    },
+    {
+      "when": {
+        "north": "false",
+        "south": "false",
+        "west": "true",
+        "up": "false",
+        "down": "false",
+        "damaged": "false"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/joint_x_west"
+      }
+    },
+    {
+      "when": {
+        "north": "false",
+        "south": "false",
+        "west": "true",
+        "up": "false",
+        "down": "false",
+        "damaged": "true"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/joint_x_west_damaged"
+      }
+    },
+    {
+      "when": {
+        "north": "false",
+        "south": "false",
+        "west": "false",
+        "up": "false",
+        "down": "false",
+        "damaged": "false"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/cap_x_west"
+      }
+    },
+    {
+      "when": {
+        "north": "false",
+        "south": "false",
+        "west": "false",
+        "up": "false",
+        "down": "false",
+        "damaged": "true"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/cap_x_west_damaged"
+      }
+    },
+    {
+      "when": {
+        "north": "false",
+        "south": "false",
+        "up": "false",
+        "down": "false",
+        "feature": "true",
+        "damaged": "false"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/feature_x"
+      }
+    },
+    {
+      "when": {
+        "north": "false",
+        "south": "false",
+        "up": "false",
+        "down": "false",
+        "feature": "true",
+        "damaged": "true"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/feature_x_damaged"
+      }
+    },
+    {
+      "when": {
+        "north": "false",
+        "south": "false",
+        "up": "false",
+        "down": "false",
+        "support": "floor",
+        "damaged": "false"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/support_x_floor"
+      }
+    },
+    {
+      "when": {
+        "north": "false",
+        "south": "false",
+        "up": "false",
+        "down": "false",
+        "support": "floor",
+        "damaged": "true"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/support_x_floor_damaged"
+      }
+    },
+    {
+      "when": {
+        "north": "false",
+        "south": "false",
+        "up": "false",
+        "down": "false",
+        "support": "ceiling",
+        "damaged": "false"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/support_x_ceiling"
+      }
+    },
+    {
+      "when": {
+        "north": "false",
+        "south": "false",
+        "up": "false",
+        "down": "false",
+        "support": "ceiling",
+        "damaged": "true"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/support_x_ceiling_damaged"
+      }
+    },
+    {
+      "when": {
+        "AND": [
+          {
+            "OR": [
+              {
+                "east": "false",
+                "south": "true",
+                "west": "false",
+                "up": "false",
+                "down": "false"
+              },
+              {
+                "north": "true",
+                "east": "false",
+                "west": "false",
+                "up": "false",
+                "down": "false"
+              }
+            ]
+          },
+          {
+            "damaged": "false"
+          }
+        ]
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/straight_z"
+      }
+    },
+    {
+      "when": {
+        "AND": [
+          {
+            "OR": [
+              {
+                "east": "false",
+                "south": "true",
+                "west": "false",
+                "up": "false",
+                "down": "false"
+              },
+              {
+                "north": "true",
+                "east": "false",
+                "west": "false",
+                "up": "false",
+                "down": "false"
+              }
+            ]
+          },
+          {
+            "damaged": "true"
+          }
+        ]
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/straight_z_damaged"
+      }
+    },
+    {
+      "when": {
+        "east": "false",
+        "south": "true",
+        "west": "false",
+        "up": "false",
+        "down": "false",
+        "damaged": "false"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/joint_z_south"
+      }
+    },
+    {
+      "when": {
+        "east": "false",
+        "south": "true",
+        "west": "false",
+        "up": "false",
+        "down": "false",
+        "damaged": "true"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/joint_z_south_damaged"
+      }
+    },
+    {
+      "when": {
+        "north": "true",
+        "east": "false",
+        "south": "false",
+        "west": "false",
+        "up": "false",
+        "down": "false",
+        "damaged": "false"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/cap_z_south"
+      }
+    },
+    {
+      "when": {
+        "north": "true",
+        "east": "false",
+        "south": "false",
+        "west": "false",
+        "up": "false",
+        "down": "false",
+        "damaged": "true"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/cap_z_south_damaged"
+      }
+    },
+    {
+      "when": {
+        "north": "true",
+        "east": "false",
+        "west": "false",
+        "up": "false",
+        "down": "false",
+        "damaged": "false"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/joint_z_north"
+      }
+    },
+    {
+      "when": {
+        "north": "true",
+        "east": "false",
+        "west": "false",
+        "up": "false",
+        "down": "false",
+        "damaged": "true"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/joint_z_north_damaged"
+      }
+    },
+    {
+      "when": {
+        "north": "false",
+        "east": "false",
+        "south": "true",
+        "west": "false",
+        "up": "false",
+        "down": "false",
+        "damaged": "false"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/cap_z_north"
+      }
+    },
+    {
+      "when": {
+        "north": "false",
+        "east": "false",
+        "south": "true",
+        "west": "false",
+        "up": "false",
+        "down": "false",
+        "damaged": "true"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/cap_z_north_damaged"
+      }
+    },
+    {
+      "when": {
+        "AND": [
+          {
+            "OR": [
+              {
+                "east": "false",
+                "south": "true",
+                "west": "false",
+                "up": "false",
+                "down": "false",
+                "feature": "true"
+              },
+              {
+                "north": "true",
+                "east": "false",
+                "west": "false",
+                "up": "false",
+                "down": "false",
+                "feature": "true"
+              }
+            ]
+          },
+          {
+            "damaged": "false"
+          }
+        ]
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/feature_z"
+      }
+    },
+    {
+      "when": {
+        "AND": [
+          {
+            "OR": [
+              {
+                "east": "false",
+                "south": "true",
+                "west": "false",
+                "up": "false",
+                "down": "false",
+                "feature": "true"
+              },
+              {
+                "north": "true",
+                "east": "false",
+                "west": "false",
+                "up": "false",
+                "down": "false",
+                "feature": "true"
+              }
+            ]
+          },
+          {
+            "damaged": "true"
+          }
+        ]
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/feature_z_damaged"
+      }
+    },
+    {
+      "when": {
+        "AND": [
+          {
+            "OR": [
+              {
+                "east": "false",
+                "south": "true",
+                "west": "false",
+                "up": "false",
+                "down": "false",
+                "support": "floor"
+              },
+              {
+                "north": "true",
+                "east": "false",
+                "west": "false",
+                "up": "false",
+                "down": "false",
+                "support": "floor"
+              }
+            ]
+          },
+          {
+            "damaged": "false"
+          }
+        ]
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/support_z_floor"
+      }
+    },
+    {
+      "when": {
+        "AND": [
+          {
+            "OR": [
+              {
+                "east": "false",
+                "south": "true",
+                "west": "false",
+                "up": "false",
+                "down": "false",
+                "support": "floor"
+              },
+              {
+                "north": "true",
+                "east": "false",
+                "west": "false",
+                "up": "false",
+                "down": "false",
+                "support": "floor"
+              }
+            ]
+          },
+          {
+            "damaged": "true"
+          }
+        ]
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/support_z_floor_damaged"
+      }
+    },
+    {
+      "when": {
+        "AND": [
+          {
+            "OR": [
+              {
+                "east": "false",
+                "south": "true",
+                "west": "false",
+                "up": "false",
+                "down": "false",
+                "support": "ceiling"
+              },
+              {
+                "north": "true",
+                "east": "false",
+                "west": "false",
+                "up": "false",
+                "down": "false",
+                "support": "ceiling"
+              }
+            ]
+          },
+          {
+            "damaged": "false"
+          }
+        ]
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/support_z_ceiling"
+      }
+    },
+    {
+      "when": {
+        "AND": [
+          {
+            "OR": [
+              {
+                "east": "false",
+                "south": "true",
+                "west": "false",
+                "up": "false",
+                "down": "false",
+                "support": "ceiling"
+              },
+              {
+                "north": "true",
+                "east": "false",
+                "west": "false",
+                "up": "false",
+                "down": "false",
+                "support": "ceiling"
+              }
+            ]
+          },
+          {
+            "damaged": "true"
+          }
+        ]
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/support_z_ceiling_damaged"
+      }
+    },
+    {
+      "when": {
+        "AND": [
+          {
+            "OR": [
+              {
+                "north": "false",
+                "east": "false",
+                "south": "false",
+                "west": "false",
+                "down": "true",
+                "vaxis": "x"
+              },
+              {
+                "north": "false",
+                "east": "false",
+                "south": "false",
+                "west": "false",
+                "up": "true",
+                "vaxis": "x"
+              }
+            ]
+          },
+          {
+            "damaged": "false"
+          }
+        ]
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/straight_yx"
+      }
+    },
+    {
+      "when": {
+        "AND": [
+          {
+            "OR": [
+              {
+                "north": "false",
+                "east": "false",
+                "south": "false",
+                "west": "false",
+                "down": "true",
+                "vaxis": "x"
+              },
+              {
+                "north": "false",
+                "east": "false",
+                "south": "false",
+                "west": "false",
+                "up": "true",
+                "vaxis": "x"
+              }
+            ]
+          },
+          {
+            "damaged": "true"
+          }
+        ]
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/straight_yx_damaged"
+      }
+    },
+    {
+      "when": {
+        "north": "false",
+        "east": "false",
+        "south": "false",
+        "west": "false",
+        "up": "true",
+        "vaxis": "x",
+        "damaged": "false"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/joint_yx_up"
+      }
+    },
+    {
+      "when": {
+        "north": "false",
+        "east": "false",
+        "south": "false",
+        "west": "false",
+        "up": "true",
+        "vaxis": "x",
+        "damaged": "true"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/joint_yx_up_damaged"
+      }
+    },
+    {
+      "when": {
+        "north": "false",
+        "east": "false",
+        "south": "false",
+        "west": "false",
+        "up": "false",
+        "down": "true",
+        "vaxis": "x",
+        "damaged": "false"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/cap_yx_up"
+      }
+    },
+    {
+      "when": {
+        "north": "false",
+        "east": "false",
+        "south": "false",
+        "west": "false",
+        "up": "false",
+        "down": "true",
+        "vaxis": "x",
+        "damaged": "true"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/cap_yx_up_damaged"
+      }
+    },
+    {
+      "when": {
+        "north": "false",
+        "east": "false",
+        "south": "false",
+        "west": "false",
+        "down": "true",
+        "vaxis": "x",
+        "damaged": "false"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/joint_yx_down"
+      }
+    },
+    {
+      "when": {
+        "north": "false",
+        "east": "false",
+        "south": "false",
+        "west": "false",
+        "down": "true",
+        "vaxis": "x",
+        "damaged": "true"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/joint_yx_down_damaged"
+      }
+    },
+    {
+      "when": {
+        "north": "false",
+        "east": "false",
+        "south": "false",
+        "west": "false",
+        "up": "true",
+        "down": "false",
+        "vaxis": "x",
+        "damaged": "false"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/cap_yx_down"
+      }
+    },
+    {
+      "when": {
+        "north": "false",
+        "east": "false",
+        "south": "false",
+        "west": "false",
+        "up": "true",
+        "down": "false",
+        "vaxis": "x",
+        "damaged": "true"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/cap_yx_down_damaged"
+      }
+    },
+    {
+      "when": {
+        "AND": [
+          {
+            "OR": [
+              {
+                "north": "false",
+                "east": "false",
+                "south": "false",
+                "west": "false",
+                "down": "true",
+                "vaxis": "x",
+                "feature": "true"
+              },
+              {
+                "north": "false",
+                "east": "false",
+                "south": "false",
+                "west": "false",
+                "up": "true",
+                "vaxis": "x",
+                "feature": "true"
+              }
+            ]
+          },
+          {
+            "damaged": "false"
+          }
+        ]
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/feature_yx"
+      }
+    },
+    {
+      "when": {
+        "AND": [
+          {
+            "OR": [
+              {
+                "north": "false",
+                "east": "false",
+                "south": "false",
+                "west": "false",
+                "down": "true",
+                "vaxis": "x",
+                "feature": "true"
+              },
+              {
+                "north": "false",
+                "east": "false",
+                "south": "false",
+                "west": "false",
+                "up": "true",
+                "vaxis": "x",
+                "feature": "true"
+              }
+            ]
+          },
+          {
+            "damaged": "true"
+          }
+        ]
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/feature_yx_damaged"
+      }
+    },
+    {
+      "when": {
+        "AND": [
+          {
+            "OR": [
+              {
+                "north": "false",
+                "east": "false",
+                "south": "false",
+                "west": "false",
+                "down": "true",
+                "vaxis": "z"
+              },
+              {
+                "north": "false",
+                "east": "false",
+                "south": "false",
+                "west": "false",
+                "up": "true",
+                "vaxis": "z"
+              }
+            ]
+          },
+          {
+            "damaged": "false"
+          }
+        ]
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/straight_yz"
+      }
+    },
+    {
+      "when": {
+        "AND": [
+          {
+            "OR": [
+              {
+                "north": "false",
+                "east": "false",
+                "south": "false",
+                "west": "false",
+                "down": "true",
+                "vaxis": "z"
+              },
+              {
+                "north": "false",
+                "east": "false",
+                "south": "false",
+                "west": "false",
+                "up": "true",
+                "vaxis": "z"
+              }
+            ]
+          },
+          {
+            "damaged": "true"
+          }
+        ]
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/straight_yz_damaged"
+      }
+    },
+    {
+      "when": {
+        "north": "false",
+        "east": "false",
+        "south": "false",
+        "west": "false",
+        "up": "true",
+        "vaxis": "z",
+        "damaged": "false"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/joint_yz_up"
+      }
+    },
+    {
+      "when": {
+        "north": "false",
+        "east": "false",
+        "south": "false",
+        "west": "false",
+        "up": "true",
+        "vaxis": "z",
+        "damaged": "true"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/joint_yz_up_damaged"
+      }
+    },
+    {
+      "when": {
+        "north": "false",
+        "east": "false",
+        "south": "false",
+        "west": "false",
+        "up": "false",
+        "down": "true",
+        "vaxis": "z",
+        "damaged": "false"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/cap_yz_up"
+      }
+    },
+    {
+      "when": {
+        "north": "false",
+        "east": "false",
+        "south": "false",
+        "west": "false",
+        "up": "false",
+        "down": "true",
+        "vaxis": "z",
+        "damaged": "true"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/cap_yz_up_damaged"
+      }
+    },
+    {
+      "when": {
+        "north": "false",
+        "east": "false",
+        "south": "false",
+        "west": "false",
+        "down": "true",
+        "vaxis": "z",
+        "damaged": "false"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/joint_yz_down"
+      }
+    },
+    {
+      "when": {
+        "north": "false",
+        "east": "false",
+        "south": "false",
+        "west": "false",
+        "down": "true",
+        "vaxis": "z",
+        "damaged": "true"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/joint_yz_down_damaged"
+      }
+    },
+    {
+      "when": {
+        "north": "false",
+        "east": "false",
+        "south": "false",
+        "west": "false",
+        "up": "true",
+        "down": "false",
+        "vaxis": "z",
+        "damaged": "false"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/cap_yz_down"
+      }
+    },
+    {
+      "when": {
+        "north": "false",
+        "east": "false",
+        "south": "false",
+        "west": "false",
+        "up": "true",
+        "down": "false",
+        "vaxis": "z",
+        "damaged": "true"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/cap_yz_down_damaged"
+      }
+    },
+    {
+      "when": {
+        "AND": [
+          {
+            "OR": [
+              {
+                "north": "false",
+                "east": "false",
+                "south": "false",
+                "west": "false",
+                "down": "true",
+                "vaxis": "z",
+                "feature": "true"
+              },
+              {
+                "north": "false",
+                "east": "false",
+                "south": "false",
+                "west": "false",
+                "up": "true",
+                "vaxis": "z",
+                "feature": "true"
+              }
+            ]
+          },
+          {
+            "damaged": "false"
+          }
+        ]
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/feature_yz"
+      }
+    },
+    {
+      "when": {
+        "AND": [
+          {
+            "OR": [
+              {
+                "north": "false",
+                "east": "false",
+                "south": "false",
+                "west": "false",
+                "down": "true",
+                "vaxis": "z",
+                "feature": "true"
+              },
+              {
+                "north": "false",
+                "east": "false",
+                "south": "false",
+                "west": "false",
+                "up": "true",
+                "vaxis": "z",
+                "feature": "true"
+              }
+            ]
+          },
+          {
+            "damaged": "true"
+          }
+        ]
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/feature_yz_damaged"
+      }
+    },
+    {
+      "when": {
+        "AND": [
+          {
+            "OR": [
+              {
+                "west": "true",
+                "down": "true",
+                "vaxis": "x"
+              },
+              {
+                "west": "true",
+                "up": "true",
+                "vaxis": "x"
+              },
+              {
+                "west": "true",
+                "up": "true",
+                "down": "true"
+              },
+              {
+                "south": "true",
+                "down": "true",
+                "vaxis": "z"
+              },
+              {
+                "south": "true",
+                "up": "true",
+                "vaxis": "z"
+              },
+              {
+                "south": "true",
+                "up": "true",
+                "down": "true"
+              },
+              {
+                "east": "true",
+                "down": "true",
+                "vaxis": "x"
+              },
+              {
+                "east": "true",
+                "up": "true",
+                "vaxis": "x"
+              },
+              {
+                "east": "true",
+                "up": "true",
+                "down": "true"
+              },
+              {
+                "east": "true",
+                "west": "true",
+                "down": "true"
+              },
+              {
+                "east": "true",
+                "west": "true",
+                "up": "true"
+              },
+              {
+                "east": "true",
+                "south": "true",
+                "west": "true"
+              },
+              {
+                "north": "true",
+                "down": "true",
+                "vaxis": "z"
+              },
+              {
+                "north": "true",
+                "up": "true",
+                "vaxis": "z"
+              },
+              {
+                "north": "true",
+                "up": "true",
+                "down": "true"
+              },
+              {
+                "north": "true",
+                "south": "true",
+                "down": "true"
+              },
+              {
+                "north": "true",
+                "south": "true",
+                "up": "true"
+              },
+              {
+                "north": "true",
+                "south": "true",
+                "west": "true"
+              },
+              {
+                "north": "true",
+                "east": "true",
+                "west": "true"
+              },
+              {
+                "north": "true",
+                "east": "true",
+                "south": "true"
+              }
+            ]
+          },
+          {
+            "damaged": "false"
+          }
+        ]
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/tank"
+      }
+    },
+    {
+      "when": {
+        "AND": [
+          {
+            "OR": [
+              {
+                "west": "true",
+                "down": "true",
+                "vaxis": "x"
+              },
+              {
+                "west": "true",
+                "up": "true",
+                "vaxis": "x"
+              },
+              {
+                "west": "true",
+                "up": "true",
+                "down": "true"
+              },
+              {
+                "south": "true",
+                "down": "true",
+                "vaxis": "z"
+              },
+              {
+                "south": "true",
+                "up": "true",
+                "vaxis": "z"
+              },
+              {
+                "south": "true",
+                "up": "true",
+                "down": "true"
+              },
+              {
+                "east": "true",
+                "down": "true",
+                "vaxis": "x"
+              },
+              {
+                "east": "true",
+                "up": "true",
+                "vaxis": "x"
+              },
+              {
+                "east": "true",
+                "up": "true",
+                "down": "true"
+              },
+              {
+                "east": "true",
+                "west": "true",
+                "down": "true"
+              },
+              {
+                "east": "true",
+                "west": "true",
+                "up": "true"
+              },
+              {
+                "east": "true",
+                "south": "true",
+                "west": "true"
+              },
+              {
+                "north": "true",
+                "down": "true",
+                "vaxis": "z"
+              },
+              {
+                "north": "true",
+                "up": "true",
+                "vaxis": "z"
+              },
+              {
+                "north": "true",
+                "up": "true",
+                "down": "true"
+              },
+              {
+                "north": "true",
+                "south": "true",
+                "down": "true"
+              },
+              {
+                "north": "true",
+                "south": "true",
+                "up": "true"
+              },
+              {
+                "north": "true",
+                "south": "true",
+                "west": "true"
+              },
+              {
+                "north": "true",
+                "east": "true",
+                "west": "true"
+              },
+              {
+                "north": "true",
+                "east": "true",
+                "south": "true"
+              }
+            ]
+          },
+          {
+            "damaged": "true"
+          }
+        ]
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/tank_damaged"
+      }
+    },
+    {
+      "when": {
+        "AND": [
+          {
+            "OR": [
+              {
+                "north": "true",
+                "down": "true",
+                "vaxis": "z"
+              },
+              {
+                "north": "true",
+                "up": "true",
+                "vaxis": "z"
+              },
+              {
+                "north": "true",
+                "up": "true",
+                "down": "true"
+              },
+              {
+                "north": "true",
+                "west": "true",
+                "down": "true"
+              },
+              {
+                "north": "true",
+                "west": "true",
+                "up": "true"
+              },
+              {
+                "north": "true",
+                "south": "true",
+                "down": "true"
+              },
+              {
+                "north": "true",
+                "south": "true",
+                "up": "true"
+              },
+              {
+                "north": "true",
+                "south": "true",
+                "west": "true"
+              },
+              {
+                "north": "true",
+                "east": "true",
+                "down": "true"
+              },
+              {
+                "north": "true",
+                "east": "true",
+                "up": "true"
+              },
+              {
+                "north": "true",
+                "east": "true",
+                "west": "true"
+              },
+              {
+                "north": "true",
+                "east": "true",
+                "south": "true"
+              }
+            ]
+          },
+          {
+            "damaged": "false"
+          }
+        ]
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/tank_arm_north"
+      }
+    },
+    {
+      "when": {
+        "AND": [
+          {
+            "OR": [
+              {
+                "north": "true",
+                "down": "true",
+                "vaxis": "z"
+              },
+              {
+                "north": "true",
+                "up": "true",
+                "vaxis": "z"
+              },
+              {
+                "north": "true",
+                "up": "true",
+                "down": "true"
+              },
+              {
+                "north": "true",
+                "west": "true",
+                "down": "true"
+              },
+              {
+                "north": "true",
+                "west": "true",
+                "up": "true"
+              },
+              {
+                "north": "true",
+                "south": "true",
+                "down": "true"
+              },
+              {
+                "north": "true",
+                "south": "true",
+                "up": "true"
+              },
+              {
+                "north": "true",
+                "south": "true",
+                "west": "true"
+              },
+              {
+                "north": "true",
+                "east": "true",
+                "down": "true"
+              },
+              {
+                "north": "true",
+                "east": "true",
+                "up": "true"
+              },
+              {
+                "north": "true",
+                "east": "true",
+                "west": "true"
+              },
+              {
+                "north": "true",
+                "east": "true",
+                "south": "true"
+              }
+            ]
+          },
+          {
+            "damaged": "true"
+          }
+        ]
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/tank_arm_north_damaged"
+      }
+    },
+    {
+      "when": {
+        "AND": [
+          {
+            "OR": [
+              {
+                "east": "true",
+                "down": "true",
+                "vaxis": "x"
+              },
+              {
+                "east": "true",
+                "up": "true",
+                "vaxis": "x"
+              },
+              {
+                "east": "true",
+                "up": "true",
+                "down": "true"
+              },
+              {
+                "east": "true",
+                "west": "true",
+                "down": "true"
+              },
+              {
+                "east": "true",
+                "west": "true",
+                "up": "true"
+              },
+              {
+                "east": "true",
+                "south": "true",
+                "down": "true"
+              },
+              {
+                "east": "true",
+                "south": "true",
+                "up": "true"
+              },
+              {
+                "east": "true",
+                "south": "true",
+                "west": "true"
+              },
+              {
+                "north": "true",
+                "east": "true",
+                "down": "true"
+              },
+              {
+                "north": "true",
+                "east": "true",
+                "up": "true"
+              },
+              {
+                "north": "true",
+                "east": "true",
+                "west": "true"
+              },
+              {
+                "north": "true",
+                "east": "true",
+                "south": "true"
+              }
+            ]
+          },
+          {
+            "damaged": "false"
+          }
+        ]
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/tank_arm_east"
+      }
+    },
+    {
+      "when": {
+        "AND": [
+          {
+            "OR": [
+              {
+                "east": "true",
+                "down": "true",
+                "vaxis": "x"
+              },
+              {
+                "east": "true",
+                "up": "true",
+                "vaxis": "x"
+              },
+              {
+                "east": "true",
+                "up": "true",
+                "down": "true"
+              },
+              {
+                "east": "true",
+                "west": "true",
+                "down": "true"
+              },
+              {
+                "east": "true",
+                "west": "true",
+                "up": "true"
+              },
+              {
+                "east": "true",
+                "south": "true",
+                "down": "true"
+              },
+              {
+                "east": "true",
+                "south": "true",
+                "up": "true"
+              },
+              {
+                "east": "true",
+                "south": "true",
+                "west": "true"
+              },
+              {
+                "north": "true",
+                "east": "true",
+                "down": "true"
+              },
+              {
+                "north": "true",
+                "east": "true",
+                "up": "true"
+              },
+              {
+                "north": "true",
+                "east": "true",
+                "west": "true"
+              },
+              {
+                "north": "true",
+                "east": "true",
+                "south": "true"
+              }
+            ]
+          },
+          {
+            "damaged": "true"
+          }
+        ]
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/tank_arm_east_damaged"
+      }
+    },
+    {
+      "when": {
+        "AND": [
+          {
+            "OR": [
+              {
+                "south": "true",
+                "down": "true",
+                "vaxis": "z"
+              },
+              {
+                "south": "true",
+                "up": "true",
+                "vaxis": "z"
+              },
+              {
+                "south": "true",
+                "up": "true",
+                "down": "true"
+              },
+              {
+                "south": "true",
+                "west": "true",
+                "down": "true"
+              },
+              {
+                "south": "true",
+                "west": "true",
+                "up": "true"
+              },
+              {
+                "east": "true",
+                "south": "true",
+                "down": "true"
+              },
+              {
+                "east": "true",
+                "south": "true",
+                "up": "true"
+              },
+              {
+                "east": "true",
+                "south": "true",
+                "west": "true"
+              },
+              {
+                "north": "true",
+                "south": "true",
+                "down": "true"
+              },
+              {
+                "north": "true",
+                "south": "true",
+                "up": "true"
+              },
+              {
+                "north": "true",
+                "south": "true",
+                "west": "true"
+              },
+              {
+                "north": "true",
+                "east": "true",
+                "south": "true"
+              }
+            ]
+          },
+          {
+            "damaged": "false"
+          }
+        ]
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/tank_arm_south"
+      }
+    },
+    {
+      "when": {
+        "AND": [
+          {
+            "OR": [
+              {
+                "south": "true",
+                "down": "true",
+                "vaxis": "z"
+              },
+              {
+                "south": "true",
+                "up": "true",
+                "vaxis": "z"
+              },
+              {
+                "south": "true",
+                "up": "true",
+                "down": "true"
+              },
+              {
+                "south": "true",
+                "west": "true",
+                "down": "true"
+              },
+              {
+                "south": "true",
+                "west": "true",
+                "up": "true"
+              },
+              {
+                "east": "true",
+                "south": "true",
+                "down": "true"
+              },
+              {
+                "east": "true",
+                "south": "true",
+                "up": "true"
+              },
+              {
+                "east": "true",
+                "south": "true",
+                "west": "true"
+              },
+              {
+                "north": "true",
+                "south": "true",
+                "down": "true"
+              },
+              {
+                "north": "true",
+                "south": "true",
+                "up": "true"
+              },
+              {
+                "north": "true",
+                "south": "true",
+                "west": "true"
+              },
+              {
+                "north": "true",
+                "east": "true",
+                "south": "true"
+              }
+            ]
+          },
+          {
+            "damaged": "true"
+          }
+        ]
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/tank_arm_south_damaged"
+      }
+    },
+    {
+      "when": {
+        "AND": [
+          {
+            "OR": [
+              {
+                "west": "true",
+                "down": "true",
+                "vaxis": "x"
+              },
+              {
+                "west": "true",
+                "up": "true",
+                "vaxis": "x"
+              },
+              {
+                "west": "true",
+                "up": "true",
+                "down": "true"
+              },
+              {
+                "south": "true",
+                "west": "true",
+                "down": "true"
+              },
+              {
+                "south": "true",
+                "west": "true",
+                "up": "true"
+              },
+              {
+                "east": "true",
+                "west": "true",
+                "down": "true"
+              },
+              {
+                "east": "true",
+                "west": "true",
+                "up": "true"
+              },
+              {
+                "east": "true",
+                "south": "true",
+                "west": "true"
+              },
+              {
+                "north": "true",
+                "west": "true",
+                "down": "true"
+              },
+              {
+                "north": "true",
+                "west": "true",
+                "up": "true"
+              },
+              {
+                "north": "true",
+                "south": "true",
+                "west": "true"
+              },
+              {
+                "north": "true",
+                "east": "true",
+                "west": "true"
+              }
+            ]
+          },
+          {
+            "damaged": "false"
+          }
+        ]
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/tank_arm_west"
+      }
+    },
+    {
+      "when": {
+        "AND": [
+          {
+            "OR": [
+              {
+                "west": "true",
+                "down": "true",
+                "vaxis": "x"
+              },
+              {
+                "west": "true",
+                "up": "true",
+                "vaxis": "x"
+              },
+              {
+                "west": "true",
+                "up": "true",
+                "down": "true"
+              },
+              {
+                "south": "true",
+                "west": "true",
+                "down": "true"
+              },
+              {
+                "south": "true",
+                "west": "true",
+                "up": "true"
+              },
+              {
+                "east": "true",
+                "west": "true",
+                "down": "true"
+              },
+              {
+                "east": "true",
+                "west": "true",
+                "up": "true"
+              },
+              {
+                "east": "true",
+                "south": "true",
+                "west": "true"
+              },
+              {
+                "north": "true",
+                "west": "true",
+                "down": "true"
+              },
+              {
+                "north": "true",
+                "west": "true",
+                "up": "true"
+              },
+              {
+                "north": "true",
+                "south": "true",
+                "west": "true"
+              },
+              {
+                "north": "true",
+                "east": "true",
+                "west": "true"
+              }
+            ]
+          },
+          {
+            "damaged": "true"
+          }
+        ]
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/tank_arm_west_damaged"
+      }
+    },
+    {
+      "when": {
+        "AND": [
+          {
+            "OR": [
+              {
+                "west": "true",
+                "up": "true",
+                "vaxis": "x"
+              },
+              {
+                "south": "true",
+                "up": "true",
+                "down": "true",
+                "vaxis": "x"
+              },
+              {
+                "east": "true",
+                "up": "true",
+                "vaxis": "x"
+              },
+              {
+                "north": "true",
+                "up": "true",
+                "down": "true",
+                "vaxis": "x"
+              },
+              {
+                "north": "true",
+                "south": "true",
+                "up": "true",
+                "vaxis": "x"
+              }
+            ]
+          },
+          {
+            "damaged": "false"
+          }
+        ]
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/tank_arm_up_x"
+      }
+    },
+    {
+      "when": {
+        "AND": [
+          {
+            "OR": [
+              {
+                "west": "true",
+                "up": "true",
+                "vaxis": "x"
+              },
+              {
+                "south": "true",
+                "up": "true",
+                "down": "true",
+                "vaxis": "x"
+              },
+              {
+                "east": "true",
+                "up": "true",
+                "vaxis": "x"
+              },
+              {
+                "north": "true",
+                "up": "true",
+                "down": "true",
+                "vaxis": "x"
+              },
+              {
+                "north": "true",
+                "south": "true",
+                "up": "true",
+                "vaxis": "x"
+              }
+            ]
+          },
+          {
+            "damaged": "true"
+          }
+        ]
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/tank_arm_up_x_damaged"
+      }
+    },
+    {
+      "when": {
+        "AND": [
+          {
+            "OR": [
+              {
+                "west": "true",
+                "up": "true",
+                "down": "true",
+                "vaxis": "z"
+              },
+              {
+                "south": "true",
+                "up": "true",
+                "vaxis": "z"
+              },
+              {
+                "east": "true",
+                "up": "true",
+                "down": "true",
+                "vaxis": "z"
+              },
+              {
+                "east": "true",
+                "west": "true",
+                "up": "true",
+                "vaxis": "z"
+              },
+              {
+                "north": "true",
+                "up": "true",
+                "vaxis": "z"
+              }
+            ]
+          },
+          {
+            "damaged": "false"
+          }
+        ]
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/tank_arm_up_z"
+      }
+    },
+    {
+      "when": {
+        "AND": [
+          {
+            "OR": [
+              {
+                "west": "true",
+                "up": "true",
+                "down": "true",
+                "vaxis": "z"
+              },
+              {
+                "south": "true",
+                "up": "true",
+                "vaxis": "z"
+              },
+              {
+                "east": "true",
+                "up": "true",
+                "down": "true",
+                "vaxis": "z"
+              },
+              {
+                "east": "true",
+                "west": "true",
+                "up": "true",
+                "vaxis": "z"
+              },
+              {
+                "north": "true",
+                "up": "true",
+                "vaxis": "z"
+              }
+            ]
+          },
+          {
+            "damaged": "true"
+          }
+        ]
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/tank_arm_up_z_damaged"
+      }
+    },
+    {
+      "when": {
+        "AND": [
+          {
+            "OR": [
+              {
+                "west": "true",
+                "down": "true",
+                "vaxis": "x"
+              },
+              {
+                "south": "true",
+                "up": "true",
+                "down": "true",
+                "vaxis": "x"
+              },
+              {
+                "east": "true",
+                "down": "true",
+                "vaxis": "x"
+              },
+              {
+                "north": "true",
+                "up": "true",
+                "down": "true",
+                "vaxis": "x"
+              },
+              {
+                "north": "true",
+                "south": "true",
+                "down": "true",
+                "vaxis": "x"
+              }
+            ]
+          },
+          {
+            "damaged": "false"
+          }
+        ]
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/tank_arm_down_x"
+      }
+    },
+    {
+      "when": {
+        "AND": [
+          {
+            "OR": [
+              {
+                "west": "true",
+                "down": "true",
+                "vaxis": "x"
+              },
+              {
+                "south": "true",
+                "up": "true",
+                "down": "true",
+                "vaxis": "x"
+              },
+              {
+                "east": "true",
+                "down": "true",
+                "vaxis": "x"
+              },
+              {
+                "north": "true",
+                "up": "true",
+                "down": "true",
+                "vaxis": "x"
+              },
+              {
+                "north": "true",
+                "south": "true",
+                "down": "true",
+                "vaxis": "x"
+              }
+            ]
+          },
+          {
+            "damaged": "true"
+          }
+        ]
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/tank_arm_down_x_damaged"
+      }
+    },
+    {
+      "when": {
+        "AND": [
+          {
+            "OR": [
+              {
+                "west": "true",
+                "up": "true",
+                "down": "true",
+                "vaxis": "z"
+              },
+              {
+                "south": "true",
+                "down": "true",
+                "vaxis": "z"
+              },
+              {
+                "east": "true",
+                "up": "true",
+                "down": "true",
+                "vaxis": "z"
+              },
+              {
+                "east": "true",
+                "west": "true",
+                "down": "true",
+                "vaxis": "z"
+              },
+              {
+                "north": "true",
+                "down": "true",
+                "vaxis": "z"
+              }
+            ]
+          },
+          {
+            "damaged": "false"
+          }
+        ]
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/tank_arm_down_z"
+      }
+    },
+    {
+      "when": {
+        "AND": [
+          {
+            "OR": [
+              {
+                "west": "true",
+                "up": "true",
+                "down": "true",
+                "vaxis": "z"
+              },
+              {
+                "south": "true",
+                "down": "true",
+                "vaxis": "z"
+              },
+              {
+                "east": "true",
+                "up": "true",
+                "down": "true",
+                "vaxis": "z"
+              },
+              {
+                "east": "true",
+                "west": "true",
+                "down": "true",
+                "vaxis": "z"
+              },
+              {
+                "north": "true",
+                "down": "true",
+                "vaxis": "z"
+              }
+            ]
+          },
+          {
+            "damaged": "true"
+          }
+        ]
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/tank_arm_down_z_damaged"
+      }
+    },
+    {
+      "when": {
+        "north": "true",
+        "east": "true",
+        "south": "false",
+        "west": "false",
+        "up": "false",
+        "down": "false",
+        "damaged": "false"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/elbow_east_north"
+      }
+    },
+    {
+      "when": {
+        "north": "true",
+        "east": "true",
+        "south": "false",
+        "west": "false",
+        "up": "false",
+        "down": "false",
+        "damaged": "true"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/elbow_east_north_damaged"
+      }
+    },
+    {
+      "when": {
+        "north": "false",
+        "east": "true",
+        "south": "true",
+        "west": "false",
+        "up": "false",
+        "down": "false",
+        "damaged": "false"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/elbow_east_south"
+      }
+    },
+    {
+      "when": {
+        "north": "false",
+        "east": "true",
+        "south": "true",
+        "west": "false",
+        "up": "false",
+        "down": "false",
+        "damaged": "true"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/elbow_east_south_damaged"
+      }
+    },
+    {
+      "when": {
+        "north": "true",
+        "east": "false",
+        "south": "false",
+        "west": "true",
+        "up": "false",
+        "down": "false",
+        "damaged": "false"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/elbow_north_west"
+      }
+    },
+    {
+      "when": {
+        "north": "true",
+        "east": "false",
+        "south": "false",
+        "west": "true",
+        "up": "false",
+        "down": "false",
+        "damaged": "true"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/elbow_north_west_damaged"
+      }
+    },
+    {
+      "when": {
+        "north": "false",
+        "east": "false",
+        "south": "true",
+        "west": "true",
+        "up": "false",
+        "down": "false",
+        "damaged": "false"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/elbow_south_west"
+      }
+    },
+    {
+      "when": {
+        "north": "false",
+        "east": "false",
+        "south": "true",
+        "west": "true",
+        "up": "false",
+        "down": "false",
+        "damaged": "true"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/elbow_south_west_damaged"
+      }
+    },
+    {
+      "when": {
+        "north": "true",
+        "east": "false",
+        "south": "false",
+        "west": "false",
+        "up": "true",
+        "down": "false",
+        "vaxis": "x",
+        "damaged": "false"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/elbow_north_up"
+      }
+    },
+    {
+      "when": {
+        "north": "true",
+        "east": "false",
+        "south": "false",
+        "west": "false",
+        "up": "true",
+        "down": "false",
+        "vaxis": "x",
+        "damaged": "true"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/elbow_north_up_damaged"
+      }
+    },
+    {
+      "when": {
+        "north": "true",
+        "east": "false",
+        "south": "false",
+        "west": "false",
+        "up": "false",
+        "down": "true",
+        "vaxis": "x",
+        "damaged": "false"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/elbow_north_down"
+      }
+    },
+    {
+      "when": {
+        "north": "true",
+        "east": "false",
+        "south": "false",
+        "west": "false",
+        "up": "false",
+        "down": "true",
+        "vaxis": "x",
+        "damaged": "true"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/elbow_north_down_damaged"
+      }
+    },
+    {
+      "when": {
+        "north": "false",
+        "east": "true",
+        "south": "false",
+        "west": "false",
+        "up": "true",
+        "down": "false",
+        "vaxis": "z",
+        "damaged": "false"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/elbow_east_up"
+      }
+    },
+    {
+      "when": {
+        "north": "false",
+        "east": "true",
+        "south": "false",
+        "west": "false",
+        "up": "true",
+        "down": "false",
+        "vaxis": "z",
+        "damaged": "true"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/elbow_east_up_damaged"
+      }
+    },
+    {
+      "when": {
+        "north": "false",
+        "east": "true",
+        "south": "false",
+        "west": "false",
+        "up": "false",
+        "down": "true",
+        "vaxis": "z",
+        "damaged": "false"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/elbow_east_down"
+      }
+    },
+    {
+      "when": {
+        "north": "false",
+        "east": "true",
+        "south": "false",
+        "west": "false",
+        "up": "false",
+        "down": "true",
+        "vaxis": "z",
+        "damaged": "true"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/elbow_east_down_damaged"
+      }
+    },
+    {
+      "when": {
+        "north": "false",
+        "east": "false",
+        "south": "true",
+        "west": "false",
+        "up": "true",
+        "down": "false",
+        "vaxis": "x",
+        "damaged": "false"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/elbow_south_up"
+      }
+    },
+    {
+      "when": {
+        "north": "false",
+        "east": "false",
+        "south": "true",
+        "west": "false",
+        "up": "true",
+        "down": "false",
+        "vaxis": "x",
+        "damaged": "true"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/elbow_south_up_damaged"
+      }
+    },
+    {
+      "when": {
+        "north": "false",
+        "east": "false",
+        "south": "true",
+        "west": "false",
+        "up": "false",
+        "down": "true",
+        "vaxis": "x",
+        "damaged": "false"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/elbow_south_down"
+      }
+    },
+    {
+      "when": {
+        "north": "false",
+        "east": "false",
+        "south": "true",
+        "west": "false",
+        "up": "false",
+        "down": "true",
+        "vaxis": "x",
+        "damaged": "true"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/elbow_south_down_damaged"
+      }
+    },
+    {
+      "when": {
+        "north": "false",
+        "east": "false",
+        "south": "false",
+        "west": "true",
+        "up": "true",
+        "down": "false",
+        "vaxis": "z",
+        "damaged": "false"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/elbow_west_up"
+      }
+    },
+    {
+      "when": {
+        "north": "false",
+        "east": "false",
+        "south": "false",
+        "west": "true",
+        "up": "true",
+        "down": "false",
+        "vaxis": "z",
+        "damaged": "true"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/elbow_west_up_damaged"
+      }
+    },
+    {
+      "when": {
+        "north": "false",
+        "east": "false",
+        "south": "false",
+        "west": "true",
+        "up": "false",
+        "down": "true",
+        "vaxis": "z",
+        "damaged": "false"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/elbow_west_down"
+      }
+    },
+    {
+      "when": {
+        "north": "false",
+        "east": "false",
+        "south": "false",
+        "west": "true",
+        "up": "false",
+        "down": "true",
+        "vaxis": "z",
+        "damaged": "true"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/hv_busway_2w/elbow_west_down_damaged"
+      }
+    }
+  ]
+}

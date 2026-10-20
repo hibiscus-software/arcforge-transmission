@@ -1,0 +1,245 @@
+{
+  "credit": "tools/factory_block_model_gen.py",
+  "parent": "block/block",
+  "ambientocclusion": false,
+  "textures": {
+    "sheet": "arcforgetransmission:block/cable_tray/heavy_duty_cable_tray",
+    "particle": "arcforgetransmission:block/cable_tray/heavy_duty_cable_tray"
+  },
+  "elements": [
+    {
+      "name": "mitre_web",
+      "from": [
+        9.3733,
+        4.95,
+        12.125
+      ],
+      "to": [
+        15.3767,
+        10.05,
+        12.625
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            7.25,
+            0.0,
+            8.7508,
+            1.275
+          ],
+          "texture": "#sheet"
+        },
+        "south": {
+          "uv": [
+            7.25,
+            0.0,
+            8.7508,
+            1.275
+          ],
+          "texture": "#sheet"
+        },
+        "east": {
+          "uv": [
+            10.25,
+            0.0,
+            10.375,
+            1.275
+          ],
+          "texture": "#sheet"
+        },
+        "west": {
+          "uv": [
+            10.25,
+            0.0,
+            10.375,
+            1.275
+          ],
+          "texture": "#sheet"
+        },
+        "up": {
+          "uv": [
+            9.5,
+            6.25,
+            11.0008,
+            6.375
+          ],
+          "texture": "#sheet"
+        },
+        "down": {
+          "uv": [
+            9.5,
+            6.25,
+            11.0008,
+            6.375
+          ],
+          "texture": "#sheet"
+        }
+      },
+      "rotation": {
+        "origin": [
+          12.375,
+          7.5,
+          12.375
+        ],
+        "axis": "y",
+        "angle": 45
+      }
+    },
+    {
+      "name": "mitre_lip",
+      "from": [
+        9.9733,
+        4.95,
+        12.625
+      ],
+      "to": [
+        14.7767,
+        5.5,
+        13.625
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            8.5,
+            6.5,
+            9.7008,
+            6.6375
+          ],
+          "texture": "#sheet"
+        },
+        "south": {
+          "uv": [
+            8.5,
+            6.5,
+            9.7008,
+            6.6375
+          ],
+          "texture": "#sheet"
+        },
+        "east": {
+          "uv": [
+            6.75,
+            6.75,
+            7.0,
+            6.8875
+          ],
+          "texture": "#sheet"
+        },
+        "west": {
+          "uv": [
+            6.75,
+            6.75,
+            7.0,
+            6.8875
+          ],
+          "texture": "#sheet"
+        },
+        "up": {
+          "uv": [
+            9.75,
+            6.5,
+            10.9508,
+            6.75
+          ],
+          "texture": "#sheet"
+        },
+        "down": {
+          "uv": [
+            9.75,
+            6.5,
+            10.9508,
+            6.75
+          ],
+          "texture": "#sheet"
+        }
+      },
+      "rotation": {
+        "origin": [
+          12.375,
+          7.5,
+          12.375
+        ],
+        "axis": "y",
+        "angle": 45
+      }
+    },
+    {
+      "name": "mitre_lip",
+      "from": [
+        9.9733,
+        9.5,
+        12.625
+      ],
+      "to": [
+        14.7767,
+        10.05,
+        13.625
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            8.5,
+            6.5,
+            9.7008,
+            6.6375
+          ],
+          "texture": "#sheet"
+        },
+        "south": {
+          "uv": [
+            8.5,
+            6.5,
+            9.7008,
+            6.6375
+          ],
+          "texture": "#sheet"
+        },
+        "east": {
+          "uv": [
+            6.75,
+            6.75,
+            7.0,
+            6.8875
+          ],
+          "texture": "#sheet"
+        },
+        "west": {
+          "uv": [
+            6.75,
+            6.75,
+            7.0,
+            6.8875
+          ],
+          "texture": "#sheet"
+        },
+        "up": {
+          "uv": [
+            9.75,
+            6.5,
+            10.9508,
+            6.75
+          ],
+          "texture": "#sheet"
+        },
+        "down": {
+          "uv": [
+            9.75,
+            6.5,
+            10.9508,
+            6.75
+          ],
+          "texture": "#sheet"
+        }
+      },
+      "rotation": {
+        "origin": [
+          12.375,
+          7.5,
+          12.375
+        ],
+        "axis": "y",
+        "angle": 45
+      }
+    }
+  ]
+}

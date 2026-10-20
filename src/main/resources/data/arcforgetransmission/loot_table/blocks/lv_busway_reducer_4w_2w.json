@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:block",
+  "pools": [
+    {
+      "condition": {
+        "type": "minecraft:survives_explosion"
+      },
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "arcforgetransmission:lv_busway_reducer_4w_2w"
+        }
+      ],
+      "rolls": 1
+    }
+  ],
+  "random_sequence": "arcforgetransmission:blocks/lv_busway_reducer_4w_2w"
+}

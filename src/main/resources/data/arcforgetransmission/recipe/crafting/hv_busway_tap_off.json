@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "P": "#c:plates/steel",
+    "B": "arcforgetransmission:hv_circuit_breaker",
+    "C": "#c:ingots/aluminum"
+  },
+  "pattern": [
+    "PCP",
+    "PBP",
+    "PCP"
+  ],
+  "result": {
+    "count": 2,
+    "id": "arcforgetransmission:hv_busway_tap_off"
+  }
+}

@@ -1,0 +1,214 @@
+{
+  "multipart": [
+    {
+      "when": {
+        "facing": "north"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/ehv_busway_tap_off/tap_off_north"
+      }
+    },
+    {
+      "when": {
+        "facing": "north",
+        "closed": "true"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/ehv_busway_tap_off/flag_north_closed"
+      }
+    },
+    {
+      "when": {
+        "facing": "north",
+        "closed": "false"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/ehv_busway_tap_off/flag_north_open"
+      }
+    },
+    {
+      "when": {
+        "facing": "north",
+        "tripped": "true"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/ehv_busway_tap_off/tripped_north"
+      }
+    },
+    {
+      "when": {
+        "facing": "east"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/ehv_busway_tap_off/tap_off_east"
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
+        "closed": "true"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/ehv_busway_tap_off/flag_east_closed"
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
+        "closed": "false"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/ehv_busway_tap_off/flag_east_open"
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
+        "tripped": "true"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/ehv_busway_tap_off/tripped_east"
+      }
+    },
+    {
+      "when": {
+        "facing": "south"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/ehv_busway_tap_off/tap_off_south"
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
+        "closed": "true"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/ehv_busway_tap_off/flag_south_closed"
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
+        "closed": "false"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/ehv_busway_tap_off/flag_south_open"
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
+        "tripped": "true"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/ehv_busway_tap_off/tripped_south"
+      }
+    },
+    {
+      "when": {
+        "facing": "west"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/ehv_busway_tap_off/tap_off_west"
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
+        "closed": "true"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/ehv_busway_tap_off/flag_west_closed"
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
+        "closed": "false"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/ehv_busway_tap_off/flag_west_open"
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
+        "tripped": "true"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/ehv_busway_tap_off/tripped_west"
+      }
+    },
+    {
+      "when": {
+        "facing": "up"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/ehv_busway_tap_off/tap_off_up"
+      }
+    },
+    {
+      "when": {
+        "facing": "up",
+        "closed": "true"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/ehv_busway_tap_off/flag_up_closed"
+      }
+    },
+    {
+      "when": {
+        "facing": "up",
+        "closed": "false"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/ehv_busway_tap_off/flag_up_open"
+      }
+    },
+    {
+      "when": {
+        "facing": "up",
+        "tripped": "true"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/ehv_busway_tap_off/tripped_up"
+      }
+    },
+    {
+      "when": {
+        "facing": "down"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/ehv_busway_tap_off/tap_off_down"
+      }
+    },
+    {
+      "when": {
+        "facing": "down",
+        "closed": "true"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/ehv_busway_tap_off/flag_down_closed"
+      }
+    },
+    {
+      "when": {
+        "facing": "down",
+        "closed": "false"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/ehv_busway_tap_off/flag_down_open"
+      }
+    },
+    {
+      "when": {
+        "facing": "down",
+        "tripped": "true"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/busway/ehv_busway_tap_off/tripped_down"
+      }
+    }
+  ]
+}

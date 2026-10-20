@@ -35,7 +35,7 @@ import net.zagdrath.arcforgetransmission.tower.model.FactoryMesh;
 // of this addon's that takes terminations (a lineup section, a busway tap-off: TerminationHost), that block joins its
 // conductors through instead. Its labels are fixed: the Wrench on Rotate swaps B and C, and on Port an LV termination's
 // switch between three-phase and split-phase while no cable is on it.
-public class CableTerminationBlockEntity extends MountedPortBlockEntity implements WholeCircuit {
+public class CableTerminationBlockEntity extends MountedPortBlockEntity implements WholeCircuit, Hosted {
     private static final Phase[] THREE = { Phase.A, Phase.B, Phase.C }, SPLIT = { Phase.L1, Phase.N, Phase.L2 };
 
     public CableTerminationBlockEntity(BlockPos pos, BlockState state) {
@@ -84,6 +84,7 @@ public class CableTerminationBlockEntity extends MountedPortBlockEntity implemen
     }
 
     // Its conductors' nodes, in A B C order.
+    @Override
     public List<Long> nodes(GridData.Dimension dimension) {
         List<Long> nodes = new ArrayList<>(3);
         for (int i = 0; i < 3; i++) {

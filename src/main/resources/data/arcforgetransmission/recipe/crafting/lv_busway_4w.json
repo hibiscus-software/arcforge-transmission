@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "P": "#c:plates/steel",
+    "C": "#c:ingots/copper",
+    "A": "#c:ingots/copper"
+  },
+  "pattern": [
+    "PCP",
+    "CAC",
+    "PCP"
+  ],
+  "result": {
+    "count": 8,
+    "id": "arcforgetransmission:lv_busway_4w"
+  }
+}

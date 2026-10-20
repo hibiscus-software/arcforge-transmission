@@ -1,0 +1,1936 @@
+{
+  "multipart": [
+    {
+      "when": {
+        "OR": [
+          {
+            "north": "false",
+            "south": "false",
+            "up": "false",
+            "down": "false"
+          },
+          {
+            "north": "false",
+            "south": "false",
+            "west": "true",
+            "up": "true",
+            "down": "true"
+          },
+          {
+            "north": "false",
+            "east": "true",
+            "south": "false",
+            "up": "true",
+            "down": "true"
+          },
+          {
+            "north": "false",
+            "east": "true",
+            "west": "true"
+          }
+        ]
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/cable_tray/cable_tray/rail_north"
+      }
+    },
+    {
+      "when": {
+        "north": "false",
+        "east": "false",
+        "south": "true",
+        "west": "true"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/cable_tray/cable_tray/rail_north_b"
+      }
+    },
+    {
+      "when": {
+        "north": "false",
+        "east": "true",
+        "south": "true",
+        "west": "false"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/cable_tray/cable_tray/rail_north_a"
+      }
+    },
+    {
+      "when": {
+        "OR": [
+          {
+            "east": "false",
+            "south": "true",
+            "west": "false",
+            "up": "false",
+            "down": "false"
+          },
+          {
+            "east": "false",
+            "south": "true",
+            "west": "false",
+            "up": "true",
+            "down": "true"
+          },
+          {
+            "north": "true",
+            "east": "false",
+            "west": "false",
+            "up": "false",
+            "down": "false"
+          },
+          {
+            "north": "true",
+            "east": "false",
+            "west": "false",
+            "up": "true",
+            "down": "true"
+          },
+          {
+            "north": "true",
+            "east": "false",
+            "south": "true"
+          }
+        ]
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/cable_tray/cable_tray/rail_east"
+      }
+    },
+    {
+      "when": {
+        "north": "true",
+        "east": "false",
+        "south": "false",
+        "west": "true"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/cable_tray/cable_tray/rail_east_b"
+      }
+    },
+    {
+      "when": {
+        "north": "false",
+        "east": "false",
+        "south": "true",
+        "west": "true"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/cable_tray/cable_tray/rail_east_a"
+      }
+    },
+    {
+      "when": {
+        "OR": [
+          {
+            "north": "false",
+            "south": "false",
+            "up": "false",
+            "down": "false"
+          },
+          {
+            "north": "false",
+            "south": "false",
+            "west": "true",
+            "up": "true",
+            "down": "true"
+          },
+          {
+            "north": "false",
+            "east": "true",
+            "south": "false",
+            "up": "true",
+            "down": "true"
+          },
+          {
+            "east": "true",
+            "south": "false",
+            "west": "true"
+          }
+        ]
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/cable_tray/cable_tray/rail_south"
+      }
+    },
+    {
+      "when": {
+        "north": "true",
+        "east": "false",
+        "south": "false",
+        "west": "true"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/cable_tray/cable_tray/rail_south_b"
+      }
+    },
+    {
+      "when": {
+        "north": "true",
+        "east": "true",
+        "south": "false",
+        "west": "false"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/cable_tray/cable_tray/rail_south_a"
+      }
+    },
+    {
+      "when": {
+        "OR": [
+          {
+            "east": "false",
+            "south": "true",
+            "west": "false",
+            "up": "false",
+            "down": "false"
+          },
+          {
+            "east": "false",
+            "south": "true",
+            "west": "false",
+            "up": "true",
+            "down": "true"
+          },
+          {
+            "north": "true",
+            "east": "false",
+            "west": "false",
+            "up": "false",
+            "down": "false"
+          },
+          {
+            "north": "true",
+            "east": "false",
+            "west": "false",
+            "up": "true",
+            "down": "true"
+          },
+          {
+            "north": "true",
+            "south": "true",
+            "west": "false"
+          }
+        ]
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/cable_tray/cable_tray/rail_west"
+      }
+    },
+    {
+      "when": {
+        "north": "true",
+        "east": "true",
+        "south": "false",
+        "west": "false"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/cable_tray/cable_tray/rail_west_b"
+      }
+    },
+    {
+      "when": {
+        "north": "false",
+        "east": "true",
+        "south": "true",
+        "west": "false"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/cable_tray/cable_tray/rail_west_a"
+      }
+    },
+    {
+      "when": {
+        "north": "false",
+        "east": "false",
+        "south": "true",
+        "west": "true"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/cable_tray/cable_tray/mitre_ne"
+      }
+    },
+    {
+      "when": {
+        "north": "true",
+        "east": "true"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/cable_tray/cable_tray/inner_ne"
+      }
+    },
+    {
+      "when": {
+        "north": "true",
+        "east": "true",
+        "south": "false",
+        "west": "false"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/cable_tray/cable_tray/rungs_elbow_ne"
+      }
+    },
+    {
+      "when": {
+        "north": "false",
+        "east": "true",
+        "south": "true",
+        "west": "false"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/cable_tray/cable_tray/mitre_nw"
+      }
+    },
+    {
+      "when": {
+        "north": "true",
+        "west": "true"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/cable_tray/cable_tray/inner_nw"
+      }
+    },
+    {
+      "when": {
+        "north": "true",
+        "east": "false",
+        "south": "false",
+        "west": "true"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/cable_tray/cable_tray/rungs_elbow_nw"
+      }
+    },
+    {
+      "when": {
+        "north": "true",
+        "east": "false",
+        "south": "false",
+        "west": "true"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/cable_tray/cable_tray/mitre_se"
+      }
+    },
+    {
+      "when": {
+        "east": "true",
+        "south": "true"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/cable_tray/cable_tray/inner_se"
+      }
+    },
+    {
+      "when": {
+        "north": "false",
+        "east": "true",
+        "south": "true",
+        "west": "false"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/cable_tray/cable_tray/rungs_elbow_se"
+      }
+    },
+    {
+      "when": {
+        "north": "true",
+        "east": "true",
+        "south": "false",
+        "west": "false"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/cable_tray/cable_tray/mitre_sw"
+      }
+    },
+    {
+      "when": {
+        "south": "true",
+        "west": "true"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/cable_tray/cable_tray/inner_sw"
+      }
+    },
+    {
+      "when": {
+        "north": "false",
+        "east": "false",
+        "south": "true",
+        "west": "true"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/cable_tray/cable_tray/rungs_elbow_sw"
+      }
+    },
+    {
+      "when": {
+        "OR": [
+          {
+            "north": "false",
+            "south": "false",
+            "up": "false",
+            "down": "false"
+          },
+          {
+            "north": "false",
+            "south": "false",
+            "west": "true",
+            "up": "true",
+            "down": "true"
+          },
+          {
+            "north": "false",
+            "east": "true",
+            "south": "false",
+            "up": "true",
+            "down": "true"
+          },
+          {
+            "east": "true",
+            "west": "true"
+          }
+        ]
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/cable_tray/cable_tray/rungs_x"
+      }
+    },
+    {
+      "when": {
+        "OR": [
+          {
+            "east": "false",
+            "south": "true",
+            "west": "false",
+            "up": "false",
+            "down": "false"
+          },
+          {
+            "east": "false",
+            "south": "true",
+            "west": "false",
+            "up": "true",
+            "down": "true"
+          },
+          {
+            "north": "true",
+            "east": "false",
+            "west": "false",
+            "up": "false",
+            "down": "false"
+          },
+          {
+            "north": "true",
+            "east": "false",
+            "west": "false",
+            "up": "true",
+            "down": "true"
+          },
+          {
+            "north": "true",
+            "south": "true",
+            "west": "false"
+          },
+          {
+            "north": "true",
+            "east": "false",
+            "south": "true"
+          }
+        ]
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/cable_tray/cable_tray/rungs_z"
+      }
+    },
+    {
+      "when": {
+        "OR": [
+          {
+            "north": "false",
+            "east": "false",
+            "south": "false",
+            "west": "false",
+            "down": "true",
+            "mount": "none"
+          },
+          {
+            "north": "false",
+            "east": "false",
+            "south": "false",
+            "west": "false",
+            "down": "true",
+            "mount": "ceiling"
+          },
+          {
+            "north": "false",
+            "east": "false",
+            "south": "false",
+            "west": "false",
+            "down": "true",
+            "mount": "floor"
+          },
+          {
+            "north": "false",
+            "east": "false",
+            "south": "false",
+            "west": "false",
+            "down": "true",
+            "mount": "north"
+          },
+          {
+            "north": "false",
+            "east": "false",
+            "south": "false",
+            "west": "false",
+            "up": "true",
+            "mount": "none"
+          },
+          {
+            "north": "false",
+            "east": "false",
+            "south": "false",
+            "west": "false",
+            "up": "true",
+            "mount": "ceiling"
+          },
+          {
+            "north": "false",
+            "east": "false",
+            "south": "false",
+            "west": "false",
+            "up": "true",
+            "mount": "floor"
+          },
+          {
+            "north": "false",
+            "east": "false",
+            "south": "false",
+            "west": "false",
+            "up": "true",
+            "mount": "north"
+          }
+        ]
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/cable_tray/cable_tray/riser_north"
+      }
+    },
+    {
+      "when": {
+        "OR": [
+          {
+            "north": "false",
+            "east": "false",
+            "south": "false",
+            "west": "false",
+            "down": "true",
+            "mount": "north"
+          },
+          {
+            "north": "false",
+            "east": "false",
+            "south": "false",
+            "west": "false",
+            "up": "true",
+            "mount": "north"
+          }
+        ]
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/cable_tray/cable_tray/standoffs_north"
+      }
+    },
+    {
+      "when": {
+        "OR": [
+          {
+            "west": "true",
+            "up": "true",
+            "down": "true",
+            "mount": "none"
+          },
+          {
+            "west": "true",
+            "up": "true",
+            "down": "true",
+            "mount": "ceiling"
+          },
+          {
+            "west": "true",
+            "up": "true",
+            "down": "true",
+            "mount": "floor"
+          },
+          {
+            "west": "true",
+            "up": "true",
+            "down": "true",
+            "mount": "north"
+          },
+          {
+            "south": "true",
+            "up": "true",
+            "down": "true",
+            "mount": "none"
+          },
+          {
+            "south": "true",
+            "up": "true",
+            "down": "true",
+            "mount": "ceiling"
+          },
+          {
+            "south": "true",
+            "up": "true",
+            "down": "true",
+            "mount": "floor"
+          },
+          {
+            "south": "true",
+            "up": "true",
+            "down": "true",
+            "mount": "north"
+          },
+          {
+            "south": "true",
+            "west": "true",
+            "up": "true",
+            "mount": "none"
+          },
+          {
+            "south": "true",
+            "west": "true",
+            "up": "true",
+            "mount": "ceiling"
+          },
+          {
+            "south": "true",
+            "west": "true",
+            "up": "true",
+            "mount": "floor"
+          },
+          {
+            "south": "true",
+            "west": "true",
+            "up": "true",
+            "mount": "north"
+          },
+          {
+            "east": "true",
+            "up": "true",
+            "down": "true",
+            "mount": "none"
+          },
+          {
+            "east": "true",
+            "up": "true",
+            "down": "true",
+            "mount": "ceiling"
+          },
+          {
+            "east": "true",
+            "up": "true",
+            "down": "true",
+            "mount": "floor"
+          },
+          {
+            "east": "true",
+            "up": "true",
+            "down": "true",
+            "mount": "north"
+          },
+          {
+            "east": "true",
+            "west": "true",
+            "up": "true",
+            "mount": "none"
+          },
+          {
+            "east": "true",
+            "west": "true",
+            "up": "true",
+            "mount": "ceiling"
+          },
+          {
+            "east": "true",
+            "west": "true",
+            "up": "true",
+            "mount": "floor"
+          },
+          {
+            "east": "true",
+            "west": "true",
+            "up": "true",
+            "mount": "north"
+          },
+          {
+            "east": "true",
+            "south": "true",
+            "up": "true",
+            "mount": "none"
+          },
+          {
+            "east": "true",
+            "south": "true",
+            "up": "true",
+            "mount": "ceiling"
+          },
+          {
+            "east": "true",
+            "south": "true",
+            "up": "true",
+            "mount": "floor"
+          },
+          {
+            "east": "true",
+            "south": "true",
+            "up": "true",
+            "mount": "north"
+          },
+          {
+            "north": "true",
+            "up": "true",
+            "down": "true",
+            "mount": "none"
+          },
+          {
+            "north": "true",
+            "up": "true",
+            "down": "true",
+            "mount": "ceiling"
+          },
+          {
+            "north": "true",
+            "up": "true",
+            "down": "true",
+            "mount": "floor"
+          },
+          {
+            "north": "true",
+            "up": "true",
+            "down": "true",
+            "mount": "north"
+          },
+          {
+            "north": "true",
+            "west": "true",
+            "up": "true",
+            "mount": "none"
+          },
+          {
+            "north": "true",
+            "west": "true",
+            "up": "true",
+            "mount": "ceiling"
+          },
+          {
+            "north": "true",
+            "west": "true",
+            "up": "true",
+            "mount": "floor"
+          },
+          {
+            "north": "true",
+            "west": "true",
+            "up": "true",
+            "mount": "north"
+          },
+          {
+            "north": "true",
+            "south": "true",
+            "up": "true",
+            "mount": "none"
+          },
+          {
+            "north": "true",
+            "south": "true",
+            "up": "true",
+            "mount": "ceiling"
+          },
+          {
+            "north": "true",
+            "south": "true",
+            "up": "true",
+            "mount": "floor"
+          },
+          {
+            "north": "true",
+            "south": "true",
+            "up": "true",
+            "mount": "north"
+          },
+          {
+            "north": "true",
+            "east": "true",
+            "up": "true",
+            "mount": "none"
+          },
+          {
+            "north": "true",
+            "east": "true",
+            "up": "true",
+            "mount": "ceiling"
+          },
+          {
+            "north": "true",
+            "east": "true",
+            "up": "true",
+            "mount": "floor"
+          },
+          {
+            "north": "true",
+            "east": "true",
+            "up": "true",
+            "mount": "north"
+          }
+        ]
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/cable_tray/cable_tray/riser_north_up"
+      }
+    },
+    {
+      "when": {
+        "OR": [
+          {
+            "west": "true",
+            "up": "true",
+            "down": "true",
+            "mount": "none"
+          },
+          {
+            "west": "true",
+            "up": "true",
+            "down": "true",
+            "mount": "ceiling"
+          },
+          {
+            "west": "true",
+            "up": "true",
+            "down": "true",
+            "mount": "floor"
+          },
+          {
+            "west": "true",
+            "up": "true",
+            "down": "true",
+            "mount": "north"
+          },
+          {
+            "south": "true",
+            "up": "true",
+            "down": "true",
+            "mount": "none"
+          },
+          {
+            "south": "true",
+            "up": "true",
+            "down": "true",
+            "mount": "ceiling"
+          },
+          {
+            "south": "true",
+            "up": "true",
+            "down": "true",
+            "mount": "floor"
+          },
+          {
+            "south": "true",
+            "up": "true",
+            "down": "true",
+            "mount": "north"
+          },
+          {
+            "south": "true",
+            "west": "true",
+            "down": "true",
+            "mount": "none"
+          },
+          {
+            "south": "true",
+            "west": "true",
+            "down": "true",
+            "mount": "ceiling"
+          },
+          {
+            "south": "true",
+            "west": "true",
+            "down": "true",
+            "mount": "floor"
+          },
+          {
+            "south": "true",
+            "west": "true",
+            "down": "true",
+            "mount": "north"
+          },
+          {
+            "east": "true",
+            "up": "true",
+            "down": "true",
+            "mount": "none"
+          },
+          {
+            "east": "true",
+            "up": "true",
+            "down": "true",
+            "mount": "ceiling"
+          },
+          {
+            "east": "true",
+            "up": "true",
+            "down": "true",
+            "mount": "floor"
+          },
+          {
+            "east": "true",
+            "up": "true",
+            "down": "true",
+            "mount": "north"
+          },
+          {
+            "east": "true",
+            "west": "true",
+            "down": "true",
+            "mount": "none"
+          },
+          {
+            "east": "true",
+            "west": "true",
+            "down": "true",
+            "mount": "ceiling"
+          },
+          {
+            "east": "true",
+            "west": "true",
+            "down": "true",
+            "mount": "floor"
+          },
+          {
+            "east": "true",
+            "west": "true",
+            "down": "true",
+            "mount": "north"
+          },
+          {
+            "east": "true",
+            "south": "true",
+            "down": "true",
+            "mount": "none"
+          },
+          {
+            "east": "true",
+            "south": "true",
+            "down": "true",
+            "mount": "ceiling"
+          },
+          {
+            "east": "true",
+            "south": "true",
+            "down": "true",
+            "mount": "floor"
+          },
+          {
+            "east": "true",
+            "south": "true",
+            "down": "true",
+            "mount": "north"
+          },
+          {
+            "north": "true",
+            "up": "true",
+            "down": "true",
+            "mount": "none"
+          },
+          {
+            "north": "true",
+            "up": "true",
+            "down": "true",
+            "mount": "ceiling"
+          },
+          {
+            "north": "true",
+            "up": "true",
+            "down": "true",
+            "mount": "floor"
+          },
+          {
+            "north": "true",
+            "up": "true",
+            "down": "true",
+            "mount": "north"
+          },
+          {
+            "north": "true",
+            "west": "true",
+            "down": "true",
+            "mount": "none"
+          },
+          {
+            "north": "true",
+            "west": "true",
+            "down": "true",
+            "mount": "ceiling"
+          },
+          {
+            "north": "true",
+            "west": "true",
+            "down": "true",
+            "mount": "floor"
+          },
+          {
+            "north": "true",
+            "west": "true",
+            "down": "true",
+            "mount": "north"
+          },
+          {
+            "north": "true",
+            "south": "true",
+            "down": "true",
+            "mount": "none"
+          },
+          {
+            "north": "true",
+            "south": "true",
+            "down": "true",
+            "mount": "ceiling"
+          },
+          {
+            "north": "true",
+            "south": "true",
+            "down": "true",
+            "mount": "floor"
+          },
+          {
+            "north": "true",
+            "south": "true",
+            "down": "true",
+            "mount": "north"
+          },
+          {
+            "north": "true",
+            "east": "true",
+            "down": "true",
+            "mount": "none"
+          },
+          {
+            "north": "true",
+            "east": "true",
+            "down": "true",
+            "mount": "ceiling"
+          },
+          {
+            "north": "true",
+            "east": "true",
+            "down": "true",
+            "mount": "floor"
+          },
+          {
+            "north": "true",
+            "east": "true",
+            "down": "true",
+            "mount": "north"
+          }
+        ]
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/cable_tray/cable_tray/riser_north_down"
+      }
+    },
+    {
+      "when": {
+        "OR": [
+          {
+            "north": "false",
+            "east": "false",
+            "south": "false",
+            "west": "false",
+            "down": "true",
+            "mount": "east"
+          },
+          {
+            "north": "false",
+            "east": "false",
+            "south": "false",
+            "west": "false",
+            "up": "true",
+            "mount": "east"
+          }
+        ]
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/cable_tray/cable_tray/riser_east"
+      }
+    },
+    {
+      "when": {
+        "OR": [
+          {
+            "north": "false",
+            "east": "false",
+            "south": "false",
+            "west": "false",
+            "down": "true",
+            "mount": "east"
+          },
+          {
+            "north": "false",
+            "east": "false",
+            "south": "false",
+            "west": "false",
+            "up": "true",
+            "mount": "east"
+          }
+        ]
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/cable_tray/cable_tray/standoffs_east"
+      }
+    },
+    {
+      "when": {
+        "OR": [
+          {
+            "west": "true",
+            "up": "true",
+            "down": "true",
+            "mount": "east"
+          },
+          {
+            "south": "true",
+            "up": "true",
+            "down": "true",
+            "mount": "east"
+          },
+          {
+            "south": "true",
+            "west": "true",
+            "up": "true",
+            "mount": "east"
+          },
+          {
+            "east": "true",
+            "up": "true",
+            "down": "true",
+            "mount": "east"
+          },
+          {
+            "east": "true",
+            "west": "true",
+            "up": "true",
+            "mount": "east"
+          },
+          {
+            "east": "true",
+            "south": "true",
+            "up": "true",
+            "mount": "east"
+          },
+          {
+            "north": "true",
+            "up": "true",
+            "down": "true",
+            "mount": "east"
+          },
+          {
+            "north": "true",
+            "west": "true",
+            "up": "true",
+            "mount": "east"
+          },
+          {
+            "north": "true",
+            "south": "true",
+            "up": "true",
+            "mount": "east"
+          },
+          {
+            "north": "true",
+            "east": "true",
+            "up": "true",
+            "mount": "east"
+          }
+        ]
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/cable_tray/cable_tray/riser_east_up"
+      }
+    },
+    {
+      "when": {
+        "OR": [
+          {
+            "west": "true",
+            "up": "true",
+            "down": "true",
+            "mount": "east"
+          },
+          {
+            "south": "true",
+            "up": "true",
+            "down": "true",
+            "mount": "east"
+          },
+          {
+            "south": "true",
+            "west": "true",
+            "down": "true",
+            "mount": "east"
+          },
+          {
+            "east": "true",
+            "up": "true",
+            "down": "true",
+            "mount": "east"
+          },
+          {
+            "east": "true",
+            "west": "true",
+            "down": "true",
+            "mount": "east"
+          },
+          {
+            "east": "true",
+            "south": "true",
+            "down": "true",
+            "mount": "east"
+          },
+          {
+            "north": "true",
+            "up": "true",
+            "down": "true",
+            "mount": "east"
+          },
+          {
+            "north": "true",
+            "west": "true",
+            "down": "true",
+            "mount": "east"
+          },
+          {
+            "north": "true",
+            "south": "true",
+            "down": "true",
+            "mount": "east"
+          },
+          {
+            "north": "true",
+            "east": "true",
+            "down": "true",
+            "mount": "east"
+          }
+        ]
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/cable_tray/cable_tray/riser_east_down"
+      }
+    },
+    {
+      "when": {
+        "OR": [
+          {
+            "north": "false",
+            "east": "false",
+            "south": "false",
+            "west": "false",
+            "down": "true",
+            "mount": "south"
+          },
+          {
+            "north": "false",
+            "east": "false",
+            "south": "false",
+            "west": "false",
+            "up": "true",
+            "mount": "south"
+          }
+        ]
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/cable_tray/cable_tray/riser_south"
+      }
+    },
+    {
+      "when": {
+        "OR": [
+          {
+            "north": "false",
+            "east": "false",
+            "south": "false",
+            "west": "false",
+            "down": "true",
+            "mount": "south"
+          },
+          {
+            "north": "false",
+            "east": "false",
+            "south": "false",
+            "west": "false",
+            "up": "true",
+            "mount": "south"
+          }
+        ]
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/cable_tray/cable_tray/standoffs_south"
+      }
+    },
+    {
+      "when": {
+        "OR": [
+          {
+            "west": "true",
+            "up": "true",
+            "down": "true",
+            "mount": "south"
+          },
+          {
+            "south": "true",
+            "up": "true",
+            "down": "true",
+            "mount": "south"
+          },
+          {
+            "south": "true",
+            "west": "true",
+            "up": "true",
+            "mount": "south"
+          },
+          {
+            "east": "true",
+            "up": "true",
+            "down": "true",
+            "mount": "south"
+          },
+          {
+            "east": "true",
+            "west": "true",
+            "up": "true",
+            "mount": "south"
+          },
+          {
+            "east": "true",
+            "south": "true",
+            "up": "true",
+            "mount": "south"
+          },
+          {
+            "north": "true",
+            "up": "true",
+            "down": "true",
+            "mount": "south"
+          },
+          {
+            "north": "true",
+            "west": "true",
+            "up": "true",
+            "mount": "south"
+          },
+          {
+            "north": "true",
+            "south": "true",
+            "up": "true",
+            "mount": "south"
+          },
+          {
+            "north": "true",
+            "east": "true",
+            "up": "true",
+            "mount": "south"
+          }
+        ]
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/cable_tray/cable_tray/riser_south_up"
+      }
+    },
+    {
+      "when": {
+        "OR": [
+          {
+            "west": "true",
+            "up": "true",
+            "down": "true",
+            "mount": "south"
+          },
+          {
+            "south": "true",
+            "up": "true",
+            "down": "true",
+            "mount": "south"
+          },
+          {
+            "south": "true",
+            "west": "true",
+            "down": "true",
+            "mount": "south"
+          },
+          {
+            "east": "true",
+            "up": "true",
+            "down": "true",
+            "mount": "south"
+          },
+          {
+            "east": "true",
+            "west": "true",
+            "down": "true",
+            "mount": "south"
+          },
+          {
+            "east": "true",
+            "south": "true",
+            "down": "true",
+            "mount": "south"
+          },
+          {
+            "north": "true",
+            "up": "true",
+            "down": "true",
+            "mount": "south"
+          },
+          {
+            "north": "true",
+            "west": "true",
+            "down": "true",
+            "mount": "south"
+          },
+          {
+            "north": "true",
+            "south": "true",
+            "down": "true",
+            "mount": "south"
+          },
+          {
+            "north": "true",
+            "east": "true",
+            "down": "true",
+            "mount": "south"
+          }
+        ]
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/cable_tray/cable_tray/riser_south_down"
+      }
+    },
+    {
+      "when": {
+        "OR": [
+          {
+            "north": "false",
+            "east": "false",
+            "south": "false",
+            "west": "false",
+            "down": "true",
+            "mount": "west"
+          },
+          {
+            "north": "false",
+            "east": "false",
+            "south": "false",
+            "west": "false",
+            "up": "true",
+            "mount": "west"
+          }
+        ]
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/cable_tray/cable_tray/riser_west"
+      }
+    },
+    {
+      "when": {
+        "OR": [
+          {
+            "north": "false",
+            "east": "false",
+            "south": "false",
+            "west": "false",
+            "down": "true",
+            "mount": "west"
+          },
+          {
+            "north": "false",
+            "east": "false",
+            "south": "false",
+            "west": "false",
+            "up": "true",
+            "mount": "west"
+          }
+        ]
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/cable_tray/cable_tray/standoffs_west"
+      }
+    },
+    {
+      "when": {
+        "OR": [
+          {
+            "west": "true",
+            "up": "true",
+            "down": "true",
+            "mount": "west"
+          },
+          {
+            "south": "true",
+            "up": "true",
+            "down": "true",
+            "mount": "west"
+          },
+          {
+            "south": "true",
+            "west": "true",
+            "up": "true",
+            "mount": "west"
+          },
+          {
+            "east": "true",
+            "up": "true",
+            "down": "true",
+            "mount": "west"
+          },
+          {
+            "east": "true",
+            "west": "true",
+            "up": "true",
+            "mount": "west"
+          },
+          {
+            "east": "true",
+            "south": "true",
+            "up": "true",
+            "mount": "west"
+          },
+          {
+            "north": "true",
+            "up": "true",
+            "down": "true",
+            "mount": "west"
+          },
+          {
+            "north": "true",
+            "west": "true",
+            "up": "true",
+            "mount": "west"
+          },
+          {
+            "north": "true",
+            "south": "true",
+            "up": "true",
+            "mount": "west"
+          },
+          {
+            "north": "true",
+            "east": "true",
+            "up": "true",
+            "mount": "west"
+          }
+        ]
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/cable_tray/cable_tray/riser_west_up"
+      }
+    },
+    {
+      "when": {
+        "OR": [
+          {
+            "west": "true",
+            "up": "true",
+            "down": "true",
+            "mount": "west"
+          },
+          {
+            "south": "true",
+            "up": "true",
+            "down": "true",
+            "mount": "west"
+          },
+          {
+            "south": "true",
+            "west": "true",
+            "down": "true",
+            "mount": "west"
+          },
+          {
+            "east": "true",
+            "up": "true",
+            "down": "true",
+            "mount": "west"
+          },
+          {
+            "east": "true",
+            "west": "true",
+            "down": "true",
+            "mount": "west"
+          },
+          {
+            "east": "true",
+            "south": "true",
+            "down": "true",
+            "mount": "west"
+          },
+          {
+            "north": "true",
+            "up": "true",
+            "down": "true",
+            "mount": "west"
+          },
+          {
+            "north": "true",
+            "west": "true",
+            "down": "true",
+            "mount": "west"
+          },
+          {
+            "north": "true",
+            "south": "true",
+            "down": "true",
+            "mount": "west"
+          },
+          {
+            "north": "true",
+            "east": "true",
+            "down": "true",
+            "mount": "west"
+          }
+        ]
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/cable_tray/cable_tray/riser_west_down"
+      }
+    },
+    {
+      "when": {
+        "north": "true",
+        "east": "false",
+        "south": "false",
+        "west": "false",
+        "up": "true",
+        "down": "false"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/cable_tray/cable_tray/elbow_north_up"
+      }
+    },
+    {
+      "when": {
+        "north": "true",
+        "east": "false",
+        "south": "false",
+        "west": "false",
+        "up": "false",
+        "down": "true"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/cable_tray/cable_tray/elbow_north_down"
+      }
+    },
+    {
+      "when": {
+        "north": "false",
+        "east": "true",
+        "south": "false",
+        "west": "false",
+        "up": "true",
+        "down": "false"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/cable_tray/cable_tray/elbow_east_up"
+      }
+    },
+    {
+      "when": {
+        "north": "false",
+        "east": "true",
+        "south": "false",
+        "west": "false",
+        "up": "false",
+        "down": "true"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/cable_tray/cable_tray/elbow_east_down"
+      }
+    },
+    {
+      "when": {
+        "north": "false",
+        "east": "false",
+        "south": "true",
+        "west": "false",
+        "up": "true",
+        "down": "false"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/cable_tray/cable_tray/elbow_south_up"
+      }
+    },
+    {
+      "when": {
+        "north": "false",
+        "east": "false",
+        "south": "true",
+        "west": "false",
+        "up": "false",
+        "down": "true"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/cable_tray/cable_tray/elbow_south_down"
+      }
+    },
+    {
+      "when": {
+        "north": "false",
+        "east": "false",
+        "south": "false",
+        "west": "true",
+        "up": "true",
+        "down": "false"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/cable_tray/cable_tray/elbow_west_up"
+      }
+    },
+    {
+      "when": {
+        "north": "false",
+        "east": "false",
+        "south": "false",
+        "west": "true",
+        "up": "false",
+        "down": "true"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/cable_tray/cable_tray/elbow_west_down"
+      }
+    },
+    {
+      "when": {
+        "OR": [
+          {
+            "north": "false",
+            "south": "false",
+            "up": "false",
+            "down": "false",
+            "mount": "ceiling"
+          },
+          {
+            "north": "false",
+            "west": "true",
+            "up": "false",
+            "down": "false",
+            "mount": "ceiling"
+          },
+          {
+            "north": "false",
+            "east": "true",
+            "up": "false",
+            "down": "false",
+            "mount": "ceiling"
+          },
+          {
+            "south": "false",
+            "west": "true",
+            "up": "false",
+            "down": "false",
+            "mount": "ceiling"
+          },
+          {
+            "east": "true",
+            "south": "false",
+            "up": "false",
+            "down": "false",
+            "mount": "ceiling"
+          },
+          {
+            "east": "true",
+            "west": "true",
+            "up": "false",
+            "down": "false",
+            "mount": "ceiling"
+          }
+        ]
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/cable_tray/cable_tray/ceiling_x"
+      }
+    },
+    {
+      "when": {
+        "OR": [
+          {
+            "north": "false",
+            "south": "false",
+            "up": "false",
+            "down": "false",
+            "mount": "floor"
+          },
+          {
+            "north": "false",
+            "west": "true",
+            "up": "false",
+            "down": "false",
+            "mount": "floor"
+          },
+          {
+            "north": "false",
+            "east": "true",
+            "up": "false",
+            "down": "false",
+            "mount": "floor"
+          },
+          {
+            "south": "false",
+            "west": "true",
+            "up": "false",
+            "down": "false",
+            "mount": "floor"
+          },
+          {
+            "east": "true",
+            "south": "false",
+            "up": "false",
+            "down": "false",
+            "mount": "floor"
+          },
+          {
+            "east": "true",
+            "west": "true",
+            "up": "false",
+            "down": "false",
+            "mount": "floor"
+          }
+        ]
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/cable_tray/cable_tray/floor_x"
+      }
+    },
+    {
+      "when": {
+        "OR": [
+          {
+            "east": "false",
+            "south": "true",
+            "west": "false",
+            "up": "false",
+            "down": "false",
+            "mount": "ceiling"
+          },
+          {
+            "north": "true",
+            "east": "false",
+            "west": "false",
+            "up": "false",
+            "down": "false",
+            "mount": "ceiling"
+          },
+          {
+            "north": "true",
+            "east": "false",
+            "south": "true",
+            "up": "false",
+            "down": "false",
+            "mount": "ceiling"
+          },
+          {
+            "north": "true",
+            "south": "true",
+            "west": "false",
+            "up": "false",
+            "down": "false",
+            "mount": "ceiling"
+          }
+        ]
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/cable_tray/cable_tray/ceiling_z"
+      }
+    },
+    {
+      "when": {
+        "OR": [
+          {
+            "east": "false",
+            "south": "true",
+            "west": "false",
+            "up": "false",
+            "down": "false",
+            "mount": "floor"
+          },
+          {
+            "north": "true",
+            "east": "false",
+            "west": "false",
+            "up": "false",
+            "down": "false",
+            "mount": "floor"
+          },
+          {
+            "north": "true",
+            "east": "false",
+            "south": "true",
+            "up": "false",
+            "down": "false",
+            "mount": "floor"
+          },
+          {
+            "north": "true",
+            "south": "true",
+            "west": "false",
+            "up": "false",
+            "down": "false",
+            "mount": "floor"
+          }
+        ]
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/cable_tray/cable_tray/floor_z"
+      }
+    },
+    {
+      "when": {
+        "up": "false",
+        "down": "false",
+        "mount": "north"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/cable_tray/cable_tray/wall_north"
+      }
+    },
+    {
+      "when": {
+        "up": "false",
+        "down": "false",
+        "mount": "east"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/cable_tray/cable_tray/wall_east"
+      }
+    },
+    {
+      "when": {
+        "up": "false",
+        "down": "false",
+        "mount": "south"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/cable_tray/cable_tray/wall_south"
+      }
+    },
+    {
+      "when": {
+        "up": "false",
+        "down": "false",
+        "mount": "west"
+      },
+      "apply": {
+        "model": "arcforgetransmission:block/cable_tray/cable_tray/wall_west"
+      }
+    }
+  ]
+}
