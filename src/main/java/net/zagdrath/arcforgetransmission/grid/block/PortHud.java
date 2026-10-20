@@ -37,8 +37,8 @@ public interface PortHud {
         return null;
     }
 
-    // A plant as its HUD is sent: its name (a translation key), the tier it connects at, its nameplate and its FE/t now,
-    // and whether it's refused (the wrong tier: WRONG_TIER_GENERATOR).
+    // A plant as its HUD is sent: its name (a translation key), the tier it connects at, its nameplate and the FE/t it
+    // gives now, and whether it's refused (the wrong tier: WRONG_TIER_GENERATOR).
     record Generator(String name, VoltageTier tier, int nameplate, int output, boolean wrong) {
         public static @Nullable Generator of(Generators.@Nullable Plant plant, boolean wrong) {
             return plant == null ? null : new Generator(Generators.key(plant.name()), plant.tier(), plant.nameplate(), plant.output(), wrong);

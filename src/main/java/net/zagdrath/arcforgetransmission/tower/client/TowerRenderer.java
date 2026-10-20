@@ -106,12 +106,14 @@ public class TowerRenderer implements StructureRenderer<TowerBlockEntity, TowerR
             }
         }
         if (tier.drawsJumpers()) {
-            // Its jumpers: from each link's line-side insulator (the strain's clamp) to its yard side, turned with the tower.
+            // Its jumpers: from each link's first insulator (a strain's clamp) to its second, turned with the tower.
             wires = new java.util.ArrayList<>(wires);
             var insulators = tower.insulators();
-            for (int[] pair : tower.linkPairs()) {
+            List<int[]> pairs = tower.linkPairs();
+            for (int i = 0; i < pairs.size(); i++) {
+                int[] pair = pairs.get(i);
                 wires.add(new net.zagdrath.arcforgetransmission.grid.world.WireView(-1, insulators.get(pair[0]).at(), insulators.get(pair[1]).at(),
-                        insulators.get(pair[0]).tier(), net.zagdrath.arcforgetransmission.grid.world.WireView.JUMPER));
+                        insulators.get(pair[0]).tier(), net.zagdrath.arcforgetransmission.grid.world.WireView.jumper(tier.jumperStep(i))));
             }
         }
         state.wires = WireRenderer.prepare(wires, tower.getBlockPos(), level);

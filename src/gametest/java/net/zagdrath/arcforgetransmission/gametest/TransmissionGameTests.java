@@ -89,7 +89,8 @@ import net.zagdrath.arcforgetransmission.tower.TowerTier;
 //    its fence is broken;
 //  - a fault sends its flashover's arc, and the recloser it trips its own (ArcEvent, the packet the players near get);
 //  - a Steam Turbine Array (mapped EHV) against an HV unit transformer: WRONG_TIER_GENERATOR, and nothing passes; an
-//    unmapped FE block still feeds an LV unit transformer.
+//    unmapped FE block still feeds an LV unit transformer;
+//  - two bus sections two blocks apart along the line share no block, and join all three phases.
 // Each test stands on a stone floor in an empty structure, with room round it.
 @EventBusSubscriber(modid = ArcforgeTransmission.MODID)
 public final class TransmissionGameTests {
@@ -113,6 +114,7 @@ public final class TransmissionGameTests {
         TESTS.put("barbed_wire_stands_only_on_a_station_fence", TransmissionGameTests::barbedWireStandsOnlyOnAFence);
         TESTS.put("faults_and_trips_send_arcs", TransmissionGameTests::faultsAndTripsSendArcs);
         TESTS.put("a_plant_feeds_only_its_own_tier", TransmissionGameTests::aPlantFeedsOnlyItsOwnTier);
+        TESTS.put("bus_sections_two_apart_join", TransmissionGameTests::busSectionsTwoApartJoin);
     }
 
     private TransmissionGameTests() {}
@@ -1016,6 +1018,29 @@ public final class TransmissionGameTests {
                     helper.assertTrue(hv[0].lastFlow() == 0 && stored(helper, hvLoad) == 0, "The turbine fed the HV line: " + hv[0].lastFlow() + " FE/t, "
                             + stored(helper, hvLoad) + " FE at the load");
                     helper.assertTrue(lvSource.status() == FlowSolver.PortStatus.OK, "The LV unit on the energy cell says " + lvSource.status());
+                })
+                .thenSucceed();
+    }
+
+    // Two HV bus sections in a row, two blocks apart along their pipes: their blocks don't overlap (the second can be
+    // placed), and each phase of one joins the same phase of the other.
+    private static void busSectionsTwoApartJoin(GameTestHelper helper) {
+        floor(helper, 12);
+        ServerLevel level = helper.getLevel();
+        TowerBlockEntity a = build(helper, TowerTier.HV_BUS, 5, 6, 0);
+        BlockPos next = a.getBlockPos().relative(TowerPlacement.facingOf(0), 2).subtract(helper.absolutePos(BlockPos.ZERO));
+        var cellsA = TowerPlacement.positions(TowerTier.HV_BUS, 0, TowerPlacement.centre(TowerTier.HV_BUS, 0, a.getBlockPos()));
+        var cellsB = TowerPlacement.positions(TowerTier.HV_BUS, 0, TowerPlacement.centre(TowerTier.HV_BUS, 0, helper.absolutePos(next)));
+        helper.assertTrue(cellsA.stream().noneMatch(cellsB::contains), "Two sections two apart share a block");
+        TowerBlockEntity b = build(helper, TowerTier.HV_BUS, next.getX(), next.getZ(), 0);
+        helper.startSequence()
+                .thenWaitUntil(() -> {
+                    GridData.Dimension grid = GridData.of(level);
+                    for (int k = 0; k < 3; k++) {
+                        Long na = grid.nodeAt(new GridData.Anchor(a.getBlockPos(), k)), nb = grid.nodeAt(new GridData.Anchor(b.getBlockPos(), k));
+                        helper.assertTrue(na != null && nb != null && grid.graph().edgesOf(na).stream().anyMatch(e -> e.isJumper() && e.other(na) == nb),
+                                "Phase " + k + " didn't join");
+                    }
                 })
                 .thenSucceed();
     }

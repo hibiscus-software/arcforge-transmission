@@ -18,8 +18,22 @@ import net.zagdrath.arcforgetransmission.grid.VoltageTier;
 // and what it is (bare, insulated, a shield wire; a guy, for a tower's guys). Synced with the endpoint's block entity.
 public record WireView(long edge, Vec3 from, Vec3 to, VoltageTier tier, String kind) {
     public static final String GUY = "guy";
-    // A dead-end's jumper, drawn by the tower that carries it (never synced: the grid's jumper is a link of no length).
+    // A dead-end's jumper, drawn by the tower that carries it (never synced: the grid's jumper is a link of no length);
+    // "jumper:<blocks>" hangs that much deeper than its tier's.
     public static final String JUMPER = "jumper";
+
+    public static String jumper(double extraSag) {
+        return extraSag == 0 ? JUMPER : JUMPER + ":" + extraSag;
+    }
+
+    public static boolean isJumper(String kind) {
+        return kind.equals(JUMPER) || kind.startsWith(JUMPER + ":");
+    }
+
+    // A jumper's extra sag (blocks), from its kind.
+    public static double extraSag(String kind) {
+        return kind.startsWith(JUMPER + ":") ? Double.parseDouble(kind.substring(JUMPER.length() + 1)) : 0;
+    }
 
     public boolean insulated() {
         return kind.equals("insulated");

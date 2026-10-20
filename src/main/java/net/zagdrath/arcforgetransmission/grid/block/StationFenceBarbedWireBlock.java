@@ -75,12 +75,12 @@ public class StationFenceBarbedWireBlock extends Block {
     private static final VoxelShape COLLISION = Block.box(1, 0, 1, 15, 16, 15);
     // The outline's pieces facing north (px, as the generator draws them): the outrigger and its hubs, the strands one
     // way for each kind of side, and a lone block's short ends.
-    private static final double[] POST = { 6.5, 0, 1, 9.5, 7, 9.5 }, LONE = { 6, 1, 1, 10, 7, 7 };
-    private static final Map<String, double[]> PIECES = Map.of("left", new double[] { 0, 1, 0.5, 8, 7, 7.5 }, "right",
-            new double[] { 8, 1, 0.5, 16, 7, 7.5 }, "in_run", new double[] { 6.5, 1, 0.5, 9.5, 7, 16 }, "out_run",
-            new double[] { 6.5, 1, 0, 9.5, 7, 7.5 }, "in_left", new double[] { 0.5, 1, 1, 8, 7, 16 }, "in_right",
-            new double[] { 8, 1, 1, 15.5, 7, 16 }, "out_left", new double[] { 0.5, 1, 0, 8, 7, 7.5 }, "out_right",
-            new double[] { 8, 1, 0, 15.5, 7, 7.5 });
+    private static final double[] POST = { 6.5, 0, 0.5, 9.5, 8, 9.5 }, LONE = { 6, 2, 0, 10, 8, 6.5 };
+    private static final Map<String, double[]> PIECES = Map.of("left", new double[] { 0, 2, 0, 8, 8, 6.5 }, "right",
+            new double[] { 8, 2, 0, 16, 8, 6.5 }, "in_run", new double[] { 6.5, 2, 0, 9.5, 8, 16 }, "out_run",
+            new double[] { 6.5, 2, 0, 9.5, 8, 6.5 }, "in_left", new double[] { 0, 2, 0, 8, 8, 16 }, "in_right",
+            new double[] { 8, 2, 0, 16, 8, 16 }, "out_left", new double[] { 0, 2, 0, 8, 8, 6.5 }, "out_right",
+            new double[] { 8, 2, 0, 16, 8, 6.5 });
     private final Map<BlockState, VoxelShape> outlines = new java.util.concurrent.ConcurrentHashMap<>();
 
     public StationFenceBarbedWireBlock(Properties properties) {

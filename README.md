@@ -72,8 +72,9 @@ FE (the turbines) or one the transformer pulls from both work.
 
 Reactors drive turbines through their steam, so a reactor connects through its Steam Turbine Array.
 
-- The transformer takes the least of the plant's nameplate, what it makes right now, and its own rating.
-- Its HUD names the plant, with the FE/t it gives now and its nameplate. Its comparator reads the plant's load.
+- The transformer takes what the plant has, up to its nameplate and the transformer's own rating.
+- Its HUD names the plant, with the FE/t it gives now and its nameplate. Its comparator reads the plant's load (what it
+  gives over its nameplate).
 - A plant on a unit transformer of another tier gives nothing: the HUD says so ("Steam Turbine Array connects at EHV").
 - A Pin Insulator takes FE from a plant only at LV.
 
@@ -109,7 +110,9 @@ A **Sectionalizer** counts a recloser's operations and opens in the dead time. A
 load to its alternate feeder when the preferred one dies, and back when it returns.
 
 **Heavy lines.** **Dead-End Towers** (HV, EHV) end lines or turn corners under tension (place them at 45 degrees);
-**Transposition Towers** rotate the phases. **Cable Risers** (every tier) take an overhead line underground on
+**Transposition Towers** rotate the phases. On every dead-end (poles, towers, gantries) the strain strings run out along
+the line and a slack jumper of the line's own conductor joins each phase through. **Bus** sections placed two blocks
+apart in a row meet end to end and join. **Cable Risers** (every tier) take an overhead line underground on
 **Underground Cable** (now HV and EHV too). A Unit Transformer (or Pin Insulators) set to **Storage** makes a battery
 behind it grid-tied.
 

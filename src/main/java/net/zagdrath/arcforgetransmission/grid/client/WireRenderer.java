@@ -34,7 +34,8 @@ import net.zagdrath.arcforgetransmission.grid.world.WireView;
 // insulator to the other. A wire is a solid square tube the tier's width across (LV 1 x 1 px; an insulated one half a
 // pixel more, in its black rubber), in segments of at most
 // half a block, its four sides lit by their own normals and coloured from the tier's flat sprite (block/wire/<tier>), so
-// nothing on it shimmers at a distance. The EHV superconductor glows full-bright over its dark sheath
+// nothing on it shimmers at a distance. Its ends are capped and run half its width past their attach points, so wires
+// meeting at an insulator close into one joint. The EHV superconductor glows full-bright over its dark sheath
 // (block/wire/ehv_wire_glow). A wire's tube is worked out once (its quads cached by wire and drawing block) and only
 // drawn each frame. A dead-end's jumper (WireView.JUMPER) is drawn the same, in its tier's conductor, but hangs in a slack
 // loop (Catenary.jumperSag) rather than a span's sag.
@@ -136,8 +137,8 @@ public final class WireRenderer {
     private static float[] mesh(float[] from, float[] to, VoltageTier tier, String kind) {
         boolean steel = kind.equals("shield") || kind.equals(WireView.GUY), insulated = kind.equals("insulated");
         double[] a = { from[0], from[1], from[2] }, b = { to[0], to[1], to[2] };
-        boolean jumper = kind.equals(WireView.JUMPER);
-        double sag = jumper ? Catenary.jumperSag(tier) : Catenary.SAG * Catenary.distance(a, b);
+        boolean jumper = WireView.isJumper(kind);
+        double sag = jumper ? Catenary.jumperSag(tier) + WireView.extraSag(kind) : Catenary.SAG * Catenary.distance(a, b);
         // A jumper's tight loop gets finer segments (a quarter block) so it reads as a curve, not a polyline.
         int segments = jumper ? Math.max(8, (int) Math.ceil((Catenary.distance(a, b) + 2 * sag) * 4.0))
                 : Math.max(4, (int) Math.ceil(Catenary.length(a, b) * 2.0));
@@ -147,6 +148,12 @@ public final class WireRenderer {
         for (int i = 0; i <= segments; i++) {
             points[i] = Catenary.point(a, b, (double) i / segments, sag);
         }
+        // Each end runs on half the wire's width past its attach point, the way it was heading, and is capped: wires
+        // meeting at a clamp overlap there into one closed joint, with no notch on the outside of the bend and no open end
+        // to see into.
+        double[] start = unit(points[0], points[1]), end = unit(points[segments - 1], points[segments]);
+        points[0] = new double[] { points[0][0] - start[0] * half, points[0][1] - start[1] * half, points[0][2] - start[2] * half };
+        points[segments] = new double[] { points[segments][0] + end[0] * half, points[segments][1] + end[1] * half, points[segments][2] + end[2] * half };
         // Each point's frame (flat: level and square to the wire; up: square to both), from the wire's direction there,
         // so neighbouring segments share their corners and the tube has no gaps or seams where it bends.
         double[][] flats = new double[segments + 1][], ups = new double[segments + 1][];
@@ -168,8 +175,10 @@ public final class WireRenderer {
             flats[i] = flat;
             ups[i] = up;
         }
-        float[] mesh = new float[segments * 4 * QUAD];
+        float[] mesh = new float[(segments * 4 + 2) * QUAD];
         int at = 0;
+        at = cap(mesh, at, points[0], ups[0], flats[0], scaled(start, -1), half);
+        at = cap(mesh, at, points[segments], ups[segments], flats[segments], end, half);
         for (int i = 0; i < segments; i++) {
             // The four sides: up, flat, down, -flat, each the side's normal and its two edges either side of it.
             for (int side = 0; side < 4; side++) {
@@ -182,6 +191,19 @@ public final class WireRenderer {
             }
         }
         return mesh;
+    }
+
+    // An end's square cap, facing out along n.
+    private static int cap(float[] mesh, int at, double[] p, double[] up, double[] flat, double[] n, double half) {
+        double[] c0 = corner(p, up, flat, half, 1), c1 = corner(p, up, flat, half, -1);
+        double[] down = scaled(up, -1);
+        double[] c2 = corner(p, down, flat, half, -1), c3 = corner(p, down, flat, half, 1);
+        return face(mesh, at, c0, c1, c2, c3, n);
+    }
+
+    private static double[] unit(double[] from, double[] to) {
+        double dx = to[0] - from[0], dy = to[1] - from[1], dz = to[2] - from[2], l = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        return l < 1.0E-9 ? new double[] { 0, 0, 0 } : new double[] { dx / l, dy / l, dz / l };
     }
 
     private static double[] scaled(double[] v, double s) {

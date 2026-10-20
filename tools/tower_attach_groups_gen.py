@@ -185,16 +185,24 @@ def disconnect(tier):
 
 
 STRAIN = 8.2
+DEAD_END_TILT = 8.0
+
+
+def clamp(x, y, z0, direction, length):
+    """A strain string's clamp (TowerMesh.strainEnd / glassStrainEnd): out from z0 the way direction points, DEAD_END_TILT
+    degrees below level."""
+    tilt = math.radians(DEAD_END_TILT)
+    return p(x, y - length * math.sin(tilt), z0 + direction * length * math.cos(tilt))
 
 
 def dead_end_lv():
     """TowerMesh.deadEndLv: strain strings from the north arm's face (z 3) and the south's (z 13) at y 134, x -8, 1 and
     24; the neutral's from its standoff (x 2.2, y 99.3, z 8 -/+ 0.7). Each terminal the clamp's outer face."""
     xs = (-8, 1, 24)
-    return lambda: {"groups": [{"name": "north", "circuit": "three_phase", "terminals": abc([p(x, 134, 3 - STRAIN) for x in xs])},
-                               {"name": "south", "circuit": "three_phase", "terminals": abc([p(x, 134, 13 + STRAIN) for x in xs])},
-                               {"name": "north_neutral", "circuit": "single_phase", "terminals": [{"label": "N", "pos": p(2.2, 99.3, 7.3 - STRAIN)}]},
-                               {"name": "south_neutral", "circuit": "single_phase", "terminals": [{"label": "N", "pos": p(2.2, 99.3, 8.7 + STRAIN)}]}],
+    return lambda: {"groups": [{"name": "north", "circuit": "three_phase", "terminals": abc([clamp(x, 134, 3, -1, STRAIN) for x in xs])},
+                               {"name": "south", "circuit": "three_phase", "terminals": abc([clamp(x, 134, 13, 1, STRAIN) for x in xs])},
+                               {"name": "north_neutral", "circuit": "single_phase", "terminals": [{"label": "N", "pos": clamp(2.2, 99.3, 7.3, -1, STRAIN)}]},
+                               {"name": "south_neutral", "circuit": "single_phase", "terminals": [{"label": "N", "pos": clamp(2.2, 99.3, 8.7, 1, STRAIN)}]}],
                     "reserved": []}
 
 
@@ -203,8 +211,8 @@ def dead_end_mv():
     upper arm (x -8, y 198), B and C on the lower (x -16 and 32, y 168); the shield peak (G)."""
     north, south = 8 - 3.62 - 3.6 + 0.4, 8 + 3.62 + 3.6 - 0.4 + 0.4
     phases = ((-8, 198), (-16, 168), (32, 168))
-    return lambda: {"groups": [{"name": "north", "circuit": "three_phase", "terminals": abc([p(x, y, north - STRAIN) for x, y in phases])},
-                               {"name": "south", "circuit": "three_phase", "terminals": abc([p(x, y, south + STRAIN) for x, y in phases])},
+    return lambda: {"groups": [{"name": "north", "circuit": "three_phase", "terminals": abc([clamp(x, y, north, -1, STRAIN) for x, y in phases])},
+                               {"name": "south", "circuit": "three_phase", "terminals": abc([clamp(x, y, south, 1, STRAIN) for x, y in phases])},
                                shield([p(8, 222 + 16, 8)])],
                     "reserved": []}
 
@@ -224,16 +232,16 @@ def glass_strain_length(discs):
 
 
 def bus(tier):
-    """TowerMesh.bus: a pipe a phase at x 8 + i * spacing; its tap clamp's top at the stand, the 1 px cap, the post, the
-    pipe's diameter and 0.8."""
+    """TowerMesh.bus: a pipe a phase at x 8 + i * spacing, its post on the line between its two blocks (z 16, BUS_POST_Z);
+    its tap clamp's top at the stand, the 1 px cap, the post, the pipe's diameter and 0.8."""
     spacing = (0, 0, 16, 24)[tier]
     stand, post, r = (0, 0, 24, 32)[tier], (0, 0, 24, 36)[tier], (0, 0, 1.5, 2.0)[tier]
     y = stand + 1 + post + 2 * r + 0.8
-    return lambda: {"groups": [{"name": "bus", "circuit": "three_phase", "terminals": abc([p(8 + i * spacing, y, 8) for i in (-1, 0, 1)])}],
+    return lambda: {"groups": [{"name": "bus", "circuit": "three_phase", "terminals": abc([p(8 + i * spacing, y, 16) for i in (-1, 0, 1)])}],
                     "reserved": []}
 
 
-GANTRY_TILT = 8.0
+GANTRY_TILT = DEAD_END_TILT
 
 
 def gantry(tier):
@@ -299,13 +307,13 @@ def rotated(points):
 
 def dead_end_hv(transpose):
     """TowerMesh.deadEndHv: strings from the north beam's face (8 - 4.85 + 0.5 - 6) and the south's (8 + 4.85 - 0.5 + 6) at
-    y 285.5, x -42, 8 and 58, six discs; the shield peaks."""
+    y 285.5, x -42, 8 and 58, six discs; the shield peaks on its poles (x -26 and 42)."""
     y, n, so, length = 282 + 3.5, 8 - 4.85 + 0.5 - 6, 8 + 4.85 - 0.5 + 6, glass_strain_length(6)
-    north = [p(x, y, n - length) for x in (-42, 8, 58)]
-    south = [p(x, y, so + length) for x in (-42, 8, 58)]
+    north = [clamp(x, y, n, -1, length) for x in (-42, 8, 58)]
+    south = [clamp(x, y, so, 1, length) for x in (-42, 8, 58)]
     return lambda: {"groups": [{"name": "north", "circuit": "three_phase", "terminals": abc(north)},
                                {"name": "south", "circuit": "three_phase", "terminals": abc(rotated(south) if transpose else south)},
-                               shield([p(-24, 316 + 18, 8), p(40, 316 + 18, 8)])],
+                               shield([p(-26, 316 + 18, 8), p(42, 316 + 18, 8)])],
                     "reserved": []}
 
 
@@ -316,8 +324,8 @@ def dead_end_ehv(transpose):
     arms = ((304.0, 64.0), (368.0, 80.0), (432.0, 56.0))
     groups = []
     for name, side in (("west", -1), ("east", 1)):
-        north = [p(c + side * reach - side, level - 2, c - 3.9 - length) for level, reach in arms]
-        south = [p(c + side * reach - side, level - 2, c + 3.9 + length) for level, reach in arms]
+        north = [clamp(c + side * reach - side, level - 2, c - 3.9, -1, length) for level, reach in arms]
+        south = [clamp(c + side * reach - side, level - 2, c + 3.9, 1, length) for level, reach in arms]
         if transpose:
             south = rotated(south)
         groups.append({"name": name + "_north", "circuit": "three_phase",

@@ -4,7 +4,7 @@
 
 ### Added
 - **Station Fence Barbed Wire** (Substation Yard tab): a slim galvanized outrigger on top of a Station Fence, leaning
-  45 degrees outward, with three strands of barbed wire (a barb every 3 px, out of one side and the other). It faces
+  45 degrees outward, with three strands of barbed wire (3, 5 and 7 px up it, in light galvanized tones) (a barb every 3 px, out of one side and the other). It faces
   the way you look as you place it, its outward side away from the yard; the Wrench on Rotate turns it. Its strands
   join the next along the fence and wrap its corners. It stands only on a Station Fence and pops off as an item when the
   fence goes. Its collision fills the block above the fence, so nothing jumps it; touching it does
@@ -27,8 +27,8 @@
 - **Power plants on the grid**: the data map `arcforgetransmission:generator` gives a generator block the tier it
   connects at and its nameplate (FE/t, or `auto` for its own max output). Arcforge's are mapped: Combustion and
   Thermoelectric Plants at LV (200 FE/t), the Diesel Generator at MV, the Gas Turbine Array at HV and the Steam Turbine
-  Array at EHV (their own max output). A mapped plant feeds only a Unit Transformer of its tier, at the least of its
-  nameplate, its output now and the transformer's rating; on another tier the transformer says `WRONG_TIER_GENERATOR`
+  Array at EHV (their own max output). A mapped plant feeds only a Unit Transformer of its tier, what it has up to its
+  nameplate and the transformer's rating; on another tier the transformer says `WRONG_TIER_GENERATOR`
   ("Steam Turbine Array connects at EHV") and passes nothing, and a pin insulator takes nothing from a plant above LV.
   The unit transformer's HUD shows the plant, its FE/t and its nameplate, and its comparator the plant's load. Unmapped
   FE blocks work as before.
@@ -52,8 +52,17 @@
   side, drawn by the tower's renderer with the wires' tube; the copper right-angle jumpers are gone from the model. The
   strain strings run out along the incoming line, 8 degrees below level, their line clamp the line's attach point.
   Electrically nothing changes: the jumper is the same link, with no hitbox, and isn't a span for shocks, lightning, the
-  Clamp Meter or Wire Cutters. The jumper and the tilted strain string are shared code (`TowerTier.drawsJumpers`,
-  `Catenary.jumperSag`, `TowerMesh.glassStrainEnd`) for the dead-end and transposition towers to take up.
+  Clamp Meter or Wire Cutters. The yard-side strings hang from a galvanized bracket off the girder.
+- **Every dead-end and transposition** gets the same: the LV and MV Dead-End Poles and the HV and EHV Dead-End and
+  Transposition Towers have their strain strings tilted 8 degrees down the line and their copper right angles replaced
+  by slack jumpers of the line's own conductor. A transposition's crossing jumpers hang at staggered depths so none
+  passes through the tower or another (`JumperClearanceTest` checks every drawn jumper), and the HV H-frame's poles
+  stand 2 px further apart to clear them.
+- **Wire ends** are capped and run half a wire's width past their attach points, so wires meeting at an insulator close
+  into one joint (no open end, no notch on the outside of the bend).
+- **Bus** sections join end to end two blocks apart: the post stands on the line between a section's two blocks and the
+  pipe fills them, so the next section no longer overlaps a block and can be placed where it joins (facing either way).
+  Sections placed before clear the block they no longer use when they load.
 - Opening a breaker or switch by hand keeps its old spark and bang; tripping, blowing or opening under load arcs
   instead.
 - `./gradlew renderPreviews -Pdesigns=NAME#3` renders a model from the front, the side and 45 degrees, with its

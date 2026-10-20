@@ -497,7 +497,6 @@ public final class TowerMesh extends MeshBuilder {
         // The crossarms: lower (reach 64 px from the tower's middle), middle (80, the longest) and top (56), each side.
         float[][] arms = { { 304, 64 }, { 368, 80 }, { 432, 56 } };
         for (int side = -1; side <= 1; side += 2) {
-            float[][] tips = new float[3][];
             for (int k = 0; k < 3; k++) {
                 float[] level = arms[k];
                 float tipX = arm(side, level[0], level[1]);
@@ -505,16 +504,9 @@ public final class TowerMesh extends MeshBuilder {
                     suspension(tipX, level[0] - 4.0F, c, 13);
                 } else {
                     float y = level[0] - 2.0F;
-                    float n = glassStrain(tipX, y, c - DEAD_END_EHV_FACE, -1, DEAD_END_EHV_DISCS, DEAD_END_EHV_RIM);
-                    float so = glassStrain(tipX, y, c + DEAD_END_EHV_FACE, 1, DEAD_END_EHV_DISCS, DEAD_END_EHV_RIM);
-                    tips[k] = new float[] { tipX, y, n, so };
+                    glassStrain(tipX, y, c - DEAD_END_EHV_FACE, -1, DEAD_END_EHV_DISCS, DEAD_END_EHV_RIM, DEAD_END_TILT);
+                    glassStrain(tipX, y, c + DEAD_END_EHV_FACE, 1, DEAD_END_EHV_DISCS, DEAD_END_EHV_RIM, DEAD_END_TILT);
                 }
-            }
-            for (int k = 0; mode > 0 && k < 3; k++) {
-                float[] from = tips[k], to = tips[mode == 2 ? (k + 1) % 3 : k];
-                float drop = Math.min(from[1], to[1]) - 14;
-                jumper(new float[] { from[0], from[1] - 1.6F, from[2] }, new float[] { from[0], drop, from[2] }, new float[] { to[0], drop, to[3] },
-                        new float[] { to[0], to[1] - 1.6F, to[3] });
             }
         }
         // The shield wire peak: four members from the body's top corners to a post.
@@ -914,7 +906,17 @@ public final class TowerMesh extends MeshBuilder {
     // at z0 + dir * STRAIN.
     public static final float STRAIN = 8.2F;
 
+    // Where an LV / MV strain string's clamp ends, tilted `tilt` degrees below level (glassStrainEnd's, for STRAIN).
+    public static float[] strainEnd(float x, float y, float z0, float dir, float tilt) {
+        double a = Math.toRadians(tilt);
+        return new float[] { x, (float) (y - STRAIN * Math.sin(a)), (float) (z0 + dir * STRAIN * Math.cos(a)) };
+    }
+
     private float strain(float x, float y, float z0, float dir, boolean mv) {
+        return strain(x, y, z0, dir, mv, DEAD_END_TILT);
+    }
+
+    private float strain(float x, float y, float z0, float dir, boolean mv, float tilt) {
         float core = mv ? 1.3F : 1.0F, shed = mv ? 2.6F : 2.2F;
         int solidFrom = solid.size(), boxesFrom = boxes.size();
         turned(0, 0, new float[][] { { 0, 0.6F }, { 1.0F, 0.6F } }, 6, Ramp.GALV, false, false);
@@ -930,9 +932,13 @@ public final class TowerMesh extends MeshBuilder {
         turned(0, 0, profile.toArray(new float[0][]), 8, Ramp.PORCELAIN, true, true);
         turned(0, 0, new float[][] { { 7.0F, 1.2F }, { STRAIN, 1.2F } }, 8, Ramp.GALV, true, true);
         alongZ(solidFrom, x, y, z0, dir);
+        if (tilt != 0) {
+            tiltDown(solidFrom, y, z0, dir, tilt);
+        }
         boxes.subList(boxesFrom, boxes.size()).clear();
-        float c1 = z0 + dir * STRAIN;
-        float[] box = { x - shed, y - shed, Math.min(z0, c1), x + shed, y + shed, Math.max(z0, c1) };
+        float[] end = strainEnd(x, y, z0, dir, tilt);
+        float c1 = end[2];
+        float[] box = { x - shed, end[1] - shed, Math.min(z0, c1), x + shed, y + shed, Math.max(z0, c1) };
         boxes.add(box);
         insulators.add(box);
         return c1;
@@ -968,13 +974,10 @@ public final class TowerMesh extends MeshBuilder {
         }
     }
 
-    // The jumper loop under a dead-end's crossarm, from one strain's clamp to the other's: down, across and up, in
-    // copper.
-    private void jumperLoop(float x, float y, float zNorth, float zSouth, float drop) {
-        swatchBox(x - 0.3F, y - drop, zNorth - 0.3F, x + 0.3F, y - 1.0F, zNorth + 0.3F, COPPER0 + 1);
-        swatchBox(x - 0.3F, y - drop - 0.6F, zNorth - 0.3F, x + 0.3F, y - drop, zSouth + 0.3F, COPPER0 + 1);
-        swatchBox(x - 0.3F, y - drop, zSouth - 0.3F, x + 0.3F, y - 1.0F, zSouth + 0.3F, COPPER0 + 1);
-    }
+    // Every dead-end's strain strings (poles, towers, gantries) run out along the line this many degrees below level, as a
+    // strain string pulled toward the lower span hangs; their jumpers are real conductors drawn by the tower's renderer
+    // (TowerTier.drawsJumpers), slack loops in the line's own wire.
+    public static final float DEAD_END_TILT = 8.0F;
 
     // LV Dead-End Pole: the LV pole with a crossarm on both faces and a strain string out each way at each phase (A B C
     // where the LV pole's pins are, so lines line up) with its jumper loop, and the neutral's standoff strained both ways:
@@ -988,13 +991,13 @@ public final class TowerMesh extends MeshBuilder {
         timber(-12, armY, DEAD_END_LV_SOUTH - 3, 28, armY + 4, DEAD_END_LV_SOUTH);
         swatchBox(7.5F, armY + 1.5F, DEAD_END_LV_NORTH - 0.6F, 8.5F, armY + 2.5F, DEAD_END_LV_SOUTH + 0.6F, GALV0 + 7);
         for (float x : new float[] { -8, 1, 24 }) {
-            float n = strain(x, armY + 2, DEAD_END_LV_NORTH, -1, false), so = strain(x, armY + 2, DEAD_END_LV_SOUTH, 1, false);
-            jumperLoop(x, armY + 2, n + 0.5F, so - 0.5F, 7);
+            strain(x, armY + 2, DEAD_END_LV_NORTH, -1, false);
+            strain(x, armY + 2, DEAD_END_LV_SOUTH, 1, false);
         }
         float ny = NEUTRAL_Y, nx = NEUTRAL_X;
         swatchBox(nx - 1.2F, ny - 1.4F, cz - 0.7F, cx - 1.0F, ny, cz + 0.7F, GALV0 + 6);
-        float n = strain(nx, ny - 0.7F, cz - 0.7F, -1, false), so = strain(nx, ny - 0.7F, cz + 0.7F, 1, false);
-        jumperLoop(nx, ny - 0.7F, n + 0.5F, so - 0.5F, 5);
+        strain(nx, ny - 0.7F, cz - 0.7F, -1, false);
+        strain(nx, ny - 0.7F, cz + 0.7F, 1, false);
         tag(cx, 40, cz + 2.41F, true);
     }
 
@@ -1022,8 +1025,8 @@ public final class TowerMesh extends MeshBuilder {
         }
         float[][] phases = { { -8, DEAD_END_MV_UPPER }, { -16, DEAD_END_MV_LOWER }, { 32, DEAD_END_MV_LOWER } };
         for (float[] ph : phases) {
-            float n = strain(ph[0], ph[1] + 2, north, -1, true), so = strain(ph[0], ph[1] + 2, south, 1, true);
-            jumperLoop(ph[0], ph[1] + 2, n + 0.5F, so - 0.5F, 8);
+            strain(ph[0], ph[1] + 2, north, -1, true);
+            strain(ph[0], ph[1] + 2, south, 1, true);
         }
         shieldPeak(cx, top, cz, 16);
     }
@@ -1350,41 +1353,42 @@ public final class TowerMesh extends MeshBuilder {
     }
 
     // Bus (HV, EHV): a section of rigid pipe bus two blocks long along the line, one pipe a phase on a station post
-    // insulator of its tier's porcelain on a galvanized pedestal, a tap clamp on each pipe's middle (its terminal).
-    // Sections placed end to end in a row join their phases.
+    // insulator of its tier's porcelain on a galvanized pedestal, a tap clamp on each pipe's middle (its terminal). The
+    // post stands on the line between its two blocks (z BUS_POST_Z) and the pipe fills them exactly, so sections placed
+    // two blocks apart in a row meet end to end, share no block, and join their phases.
     public static final float[] BUS_SPACING = { 0, 0, 16, 24 }, BUS_STAND = { 0, 0, 24, 32 }, BUS_POST = { 0, 0, 24, 36 }, BUS_PIPE = { 0, 0, 1.5F, 2.0F };
-    public static final float BUS_Z0 = -8, BUS_Z1 = 24;
+    public static final float BUS_Z0 = 0, BUS_Z1 = 32, BUS_POST_Z = 16;
 
     public static float busTap(int tier) {
         return BUS_STAND[tier] + 1 + BUS_POST[tier] + 2 * BUS_PIPE[tier] + 0.8F;
     }
 
     private void bus(int tier) {
-        float c = 8, sp = BUS_SPACING[tier], stand = BUS_STAND[tier], post = BUS_POST[tier], r = BUS_PIPE[tier];
+        float c = 8, cz = BUS_POST_Z, sp = BUS_SPACING[tier], stand = BUS_STAND[tier], post = BUS_POST[tier], r = BUS_PIPE[tier];
         for (int i = -1; i <= 1; i++) {
             float x = c + i * sp;
-            concrete(x - 4, 0, c - 4, x + 4, 2, c + 4);
-            member(new float[] { x, 2, c }, new float[] { x, stand, c }, 3, 3, new float[] { 1, 0, 0 }, Mat.GALV, true);
-            plateBox(x - 2.5F, stand, c - 2.5F, x + 2.5F, stand + 1, c + 2.5F, Mat.GALV);
-            postInsulator(x, stand + 1, c, post, Ramp.GLASS);
+            concrete(x - 4, 0, cz - 4, x + 4, 2, cz + 4);
+            member(new float[] { x, 2, cz }, new float[] { x, stand, cz }, 3, 3, new float[] { 1, 0, 0 }, Mat.GALV, true);
+            plateBox(x - 2.5F, stand, cz - 2.5F, x + 2.5F, stand + 1, cz + 2.5F, Mat.GALV);
+            postInsulator(x, stand + 1, cz, post, Ramp.GLASS);
             float y = stand + 1 + post + r;
             pipe(x, y, BUS_Z0, BUS_Z1, r);
             float[] run = { x - r, y - r, BUS_Z0, x + r, y + r, BUS_Z1 };
             insulators.add(run);
-            swatchBox(x - 1.0F, y + r - 0.4F, c - 1.2F, x + 1.0F, y + r + 0.8F, c + 1.2F, GALV0 + 6);
-            frame.add(new float[] { x - 4, 0, c - 4, x + 4, stand + 1, c + 4 });
+            swatchBox(x - 1.0F, y + r - 0.4F, cz - 1.2F, x + 1.0F, y + r + 0.8F, cz + 1.2F, GALV0 + 6);
+            frame.add(new float[] { x - 4, 0, cz - 4, x + 4, stand + 1, cz + 4 });
         }
     }
 
     // Dead-End Gantry (HV, EHV): where lines come into the yard. Two galvanized A-frame legs (each two members spread
     // along the line) carry a box girder; each phase dead-ends on its north face on a glass strain string running out
     // along the incoming line, tilted GANTRY_TILT below level, its line clamp the line's terminal; a suspension string on
-    // the girder's south side is the yard's. The jumper between them is a real conductor, drawn by the tower's renderer as
+    // the girder's south side, hung from a bracket out from it, is the yard's. The jumper between them is a real conductor, drawn by the tower's renderer as
     // a slack loop in the tier's own wire (TowerTier.drawsJumpers), not part of this model. Shield peaks on the legs.
     public static final float[] GANTRY_SPACING = { 0, 0, 20, 28 }, GANTRY_BEAM = { 0, 0, 64, 96 }, GANTRY_LEG = { 0, 0, 32, 48 };
     public static final int[] GANTRY_DISCS = { 0, 0, 6, 8 }, GANTRY_DROP = { 0, 0, 4, 6 };
     public static final float[] GANTRY_RIM = { 0, 0, 3.0F, 4.0F };
-    public static final float GANTRY_HALF = 2.5F, GANTRY_TILT = 8.0F;
+    public static final float GANTRY_HALF = 2.5F, GANTRY_TILT = DEAD_END_TILT;
 
     private void gantry(int tier) {
         float c = 8, sp = GANTRY_SPACING[tier], beamY = GANTRY_BEAM[tier], leg = GANTRY_LEG[tier];
@@ -1404,7 +1408,11 @@ public final class TowerMesh extends MeshBuilder {
         for (int i = -1; i <= 1; i++) {
             float x = c + i * sp;
             glassStrain(x, y, c - GANTRY_HALF, -1, (int) discs, GANTRY_RIM[tier], GANTRY_TILT);
-            suspension(x, beamY, c + GANTRY_HALF + 3.2F, GANTRY_DROP[tier]);
+            // The yard side's string hangs from a galvanized bracket out from the girder's south face.
+            float sz = c + GANTRY_HALF + 3.2F;
+            plateBox(x - 1.2F, beamY, c + GANTRY_HALF, x + 1.2F, beamY + 1.6F, sz + 1.2F, Mat.GALV);
+            frame.add(new float[] { x - 1.2F, beamY, c + GANTRY_HALF, x + 1.2F, beamY + 1.6F, sz + 1.2F });
+            suspension(x, beamY, sz, GANTRY_DROP[tier]);
         }
     }
 
@@ -1589,7 +1597,7 @@ public final class TowerMesh extends MeshBuilder {
     }
 
     private void deadEndHv(boolean transpose) {
-        float cz = 8, top = 316, lx = -24, rx = 40, r = 4.85F, beamY = DEAD_END_HV_BEAM;
+        float cz = 8, top = 316, lx = -26, rx = 42, r = 4.85F, beamY = DEAD_END_HV_BEAM;
         pole(lx, cz, 0, top, 10, 3.0F, true, 40);
         pole(rx, cz, 0, top, 10, 3.0F, true, 150);
         float north = deadEndHvNorth(), south = deadEndHvSouth();
@@ -1600,16 +1608,9 @@ public final class TowerMesh extends MeshBuilder {
             vBrace(px, beamY - 24, cz + r + 0.4F, beamY, south - 3.0F, 14.0F, 1.8F, 1.0F, true, true);
         }
         float y = beamY + 3.5F;
-        float[] ends = new float[6];
         for (int k = 0; k < 3; k++) {
-            ends[k] = glassStrain(DEAD_END_HV_X[k], y, north, -1, DEAD_END_HV_DISCS, DEAD_END_HV_RIM);
-            ends[3 + k] = glassStrain(DEAD_END_HV_X[k], y, south, 1, DEAD_END_HV_DISCS, DEAD_END_HV_RIM);
-        }
-        for (int k = 0; k < 3; k++) {
-            int to = transpose ? (k + 1) % 3 : k;
-            float xn = DEAD_END_HV_X[k], xs = DEAD_END_HV_X[to], drop = beamY - 10 - 5 * k;
-            jumper(new float[] { xn, y - 1.4F, ends[k] }, new float[] { xn, drop, ends[k] }, new float[] { xs, drop, ends[3 + to] },
-                    new float[] { xs, y - 1.4F, ends[3 + to] });
+            glassStrain(DEAD_END_HV_X[k], y, north, -1, DEAD_END_HV_DISCS, DEAD_END_HV_RIM, DEAD_END_TILT);
+            glassStrain(DEAD_END_HV_X[k], y, south, 1, DEAD_END_HV_DISCS, DEAD_END_HV_RIM, DEAD_END_TILT);
         }
         // The X-brace between the poles, in their plane.
         float y0 = 140, y1 = 250;

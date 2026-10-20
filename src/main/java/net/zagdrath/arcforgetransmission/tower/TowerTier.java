@@ -176,9 +176,27 @@ public enum TowerTier {
     }
 
     // Whether its renderer draws its links' jumpers as hanging conductors (WireView.JUMPER), from each link pair's first
-    // insulator to its second, rather than the model carrying them: the gantries.
+    // insulator to its second, rather than the model carrying them: every dead-end (the poles, towers and gantries) and
+    // the transposition towers.
     public boolean drawsJumpers() {
-        return design == TowerMesh.Design.GANTRY_HV || design == TowerMesh.Design.GANTRY_EHV;
+        return switch (design) {
+            case GANTRY_HV, GANTRY_EHV, DEAD_END_LV, DEAD_END_MV, DEAD_END_HV, DEAD_END_EHV, TRANSPOSITION_HV, TRANSPOSITION_EHV -> true;
+            default -> false;
+        };
+    }
+
+    // How much deeper (blocks) than the tier's jumper the jumper of a phase position hangs, on a transposition tower,
+    // where they cross from one place to the next (JumperClearanceTest checks none passes through the tower or another).
+    // HV: the jumper by the east pole loops under its knee brace, and each of the crossing jumpers hangs at its own depth.
+    // EHV: the jumpers up a level (middle to top) and down two (top to lower) loop under the middle crossarm, which
+    // reaches out past both ends.
+    private static final double[] HV_TRANSPOSITION_STEPS = { 0.2, 1.2, 0.7 }, EHV_TRANSPOSITION_STEPS = { 0, 2.6, 1.2 };
+    public double jumperStep(int position) {
+        return switch (design) {
+            case TRANSPOSITION_HV -> HV_TRANSPOSITION_STEPS[position % 3];
+            case TRANSPOSITION_EHV -> EHV_TRANSPOSITION_STEPS[position % 3];
+            default -> 0;
+        };
     }
 
     public TowerMesh.Design design() {

@@ -41,7 +41,8 @@ import net.zagdrath.arcforgetransmission.grid.VoltageTier;
 // Power plants as grid generators: the data map arcforgetransmission:generator (on blocks) gives a plant the tier it
 // connects at and its nameplate rating (FE/t), or "auto" to read the plant's own max output (a Steam Turbine Array's
 // grows with its sections). A mapped plant feeds the grid only through a Unit Transformer of its own tier (its generator
-// step-up), at no more than the smallest of its nameplate, what it makes now and the transformer's rating; a pin
+// step-up), at no more than its nameplate and the transformer's rating (and what it has to give: a plant with a full
+// buffer makes nothing, so what it makes this tick is no cap on what it can give); a pin
 // insulator takes FE from a mapped plant only at LV. A block without an entry is as it always was. Arcforge's plants are
 // mapped out of the box (data/arcforgetransmission/data_maps/block/generator.json); a datapack can map any mod's.
 public final class Generators {
@@ -68,12 +69,7 @@ public final class Generators {
 
     // A mapped plant at a block: its name, tier, nameplate (FE/t), what it makes now (FE/t), and its block entity (the
     // multiblock's master; null if it has none), which tells two blocks of one plant apart.
-    public record Plant(Component name, VoltageTier tier, int nameplate, int output, @Nullable BlockEntity entity) {
-        // The most it may give a unit transformer this tick: its nameplate and what it makes, whichever is less.
-        public int offer() {
-            return Math.max(0, Math.min(nameplate, output));
-        }
-    }
+    public record Plant(Component name, VoltageTier tier, int nameplate, int output, @Nullable BlockEntity entity) {}
 
     private Generators() {}
 

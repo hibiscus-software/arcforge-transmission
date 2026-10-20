@@ -117,10 +117,12 @@ public final class ModelPreview {
                 case HV -> 0xFF4B4F55;
                 case EHV -> 0xFF296B7E;
             };
-            double half = voltage.wireWidthPx() / 32.0, sag = Catenary.jumperSag(voltage);
+            double half = voltage.wireWidthPx() / 32.0;
+            int position = 0;
             for (int g = 0; g + 1 < groups.size(); g += 2) {
                 List<AttachGroups.Terminal> from = groups.get(g).terminals(), to = groups.get(g + 1).terminals();
                 for (int k = 0; k < Math.min(from.size(), to.size()); k++) {
+                    double sag = Catenary.jumperSag(voltage) + tier.jumperStep(position++);
                     double[] a = scaled(from.get(k).pos(), 1 / 16.0), b = scaled(to.get(k).pos(), 1 / 16.0);
                     int n = 48;
                     double[][] points = new double[n + 1][];

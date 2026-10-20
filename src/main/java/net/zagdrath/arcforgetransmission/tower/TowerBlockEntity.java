@@ -458,28 +458,58 @@ public class TowerBlockEntity extends GridEndpointBlockEntity implements GridMan
         }
     }
 
-    // A bus section joins its phases to the next section ahead and behind (two blocks along the line, the same tier,
-    // facing either way along it; facing the other way its phases are mirrored).
+    // A bus section joins each phase to the section ahead or behind whose pipe meets it end to end (the same tier, in a
+    // row along the line, facing either way: up to three blocks off, a section turned round standing a block over).
     private void joinBus(ServerLevel level) {
         int eighths = eighths();
         if (eighths % 2 != 0) {
             return;
         }
         Direction along = TowerPlacement.facingOf(eighths / 2);
-        for (int sign = -1; sign <= 1; sign += 2) {
-            BlockPos other = worldPosition.relative(along, 2 * sign);
-            if (!level.isLoaded(other) || !(level.getBlockEntity(other) instanceof TowerBlockEntity bus) || bus.tier() != tier() || bus.isRemoved()) {
+        List<double[][]> mine = busEnds();
+        for (int d = -3; d <= 3; d++) {
+            BlockPos other = worldPosition.relative(along, d);
+            if (d == 0 || !level.isLoaded(other) || !(level.getBlockEntity(other) instanceof TowerBlockEntity bus) || bus.tier() != tier() || bus.isRemoved()
+                    || bus.eighths() % 2 != 0) {
                 continue;
             }
-            int theirs = bus.eighths();
-            boolean same = theirs == eighths, opposite = theirs == (eighths + 4) % 8;
-            if (!same && !opposite) {
-                continue;
-            }
+            List<double[][]> theirs = bus.busEnds();
             for (int k = 0; k < 3; k++) {
-                GridManager.join(level, new GridData.Anchor(worldPosition, k), new GridData.Anchor(other, same ? k : 2 - k), true);
+                for (int m = 0; m < 3; m++) {
+                    if (meet(mine.get(k), theirs.get(m))) {
+                        GridManager.join(level, new GridData.Anchor(worldPosition, k), new GridData.Anchor(other, m), true);
+                    }
+                }
             }
         }
+    }
+
+    // Each phase's pipe ends, in the world (blocks).
+    private List<double[][]> busEnds() {
+        int tier = tier().voltage().ordinal();
+        BlockPos centre = TowerPlacement.centre(tier(), eighths(), worldPosition);
+        List<double[][]> out = new ArrayList<>();
+        for (int i = -1; i <= 1; i++) {
+            float x = 8 + i * TowerMesh.BUS_SPACING[tier];
+            double[][] ends = new double[2][];
+            for (int e = 0; e < 2; e++) {
+                double[] t = TowerMesh.turnedPoint8(x, 0, e == 0 ? TowerMesh.BUS_Z0 : TowerMesh.BUS_Z1, eighths());
+                ends[e] = new double[] { centre.getX() + t[0], centre.getY() + t[1], centre.getZ() + t[2] };
+            }
+            out.add(ends);
+        }
+        return out;
+    }
+
+    private static boolean meet(double[][] a, double[][] b) {
+        for (double[] p : a) {
+            for (double[] q : b) {
+                if (Math.abs(p[0] - q[0]) < 0.01 && Math.abs(p[1] - q[1]) < 0.01 && Math.abs(p[2] - q[2]) < 0.01) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     // A breaker or switch opens: its links come off, with a spark and a bang.
@@ -1292,7 +1322,7 @@ public class TowerBlockEntity extends GridEndpointBlockEntity implements GridMan
         }
     }
 
-    // A plant's FE as a unit transformer takes it: no more a call than it may give (Plant.offer).
+    // A plant's FE as a unit transformer takes it: no more a call than its nameplate.
     private record Capped(EnergyHandler handler, int most) implements EnergyHandler {
         @Override
         public long getAmountAsLong() {
@@ -1350,7 +1380,7 @@ public class TowerBlockEntity extends GridEndpointBlockEntity implements GridMan
                 wrongPlant = found;
             } else {
                 plant = found;
-                out.add(new Capped(handler, found.offer()));
+                out.add(new Capped(handler, found.nameplate()));
             }
         }
         return out;
@@ -1431,7 +1461,10 @@ public class TowerBlockEntity extends GridEndpointBlockEntity implements GridMan
             TowerBlockEntity.this.status = refused ? FlowSolver.PortStatus.WRONG_TIER_GENERATOR
                     : !anything && mode != PinInsulatorMode.OFF && status != FlowSolver.PortStatus.UNWIRED ? FlowSolver.PortStatus.NO_FE_BLOCK : status;
             lastFlow = drawn > 0 ? drawn : delivered;
-            generator = mode == PinInsulatorMode.INPUT ? plant != null ? PortHud.Generator.of(plant, false) : PortHud.Generator.of(wrongPlant, true) : null;
+            // The plant feeding it, with what it gave this tick.
+            PortHud.Generator fed = PortHud.Generator.of(plant, false);
+            generator = mode != PinInsulatorMode.INPUT ? null : fed != null ? new PortHud.Generator(fed.name(), fed.tier(), fed.nameplate(),
+                    (int) Math.round(drawn), false) : PortHud.Generator.of(wrongPlant, true);
             plant = null;
             wrongPlant = null;
         }
@@ -1443,6 +1476,32 @@ public class TowerBlockEntity extends GridEndpointBlockEntity implements GridMan
         super.onLoad();
         if (level instanceof ServerLevel server && tier().linked()) {
             relink(server);
+        }
+        if (level instanceof ServerLevel server && tier().kind() == TowerTier.Kind.BUS) {
+            server.getServer().execute(() -> clearStaleParts(server));
+        }
+    }
+
+    // A bus section placed before its post moved onto the line between its two blocks reserved a block beside them it no
+    // longer uses: that part goes (without taking the section with it), so the block is free and the next section fits.
+    private void clearStaleParts(ServerLevel level) {
+        if (isRemoved()) {
+            return;
+        }
+        java.util.Set<BlockPos> mine = new java.util.HashSet<>(TowerPlacement.positions(tier(), eighths(), TowerPlacement.centre(tier(), eighths(), worldPosition)));
+        removing = true;
+        try {
+            for (BlockPos pos : mine) {
+                for (Direction d : Direction.values()) {
+                    BlockPos next = pos.relative(d);
+                    if (!mine.contains(next) && level.isLoaded(next) && level.getBlockEntity(next) instanceof TowerPartBlockEntity part
+                            && part.mainPos().equals(worldPosition)) {
+                        level.setBlock(next, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
+                    }
+                }
+            }
+        } finally {
+            removing = false;
         }
     }
 

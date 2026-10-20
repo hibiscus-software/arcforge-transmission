@@ -399,31 +399,31 @@ def load_vanilla_display():
 # (BARBED_BARBS, along the block), out of one side and the other in turn. Along its run (east and west of a north-facing block) a
 # strand runs straight to the block's edge; where the fence turns, it wraps the corner: round the yard side (a corner
 # fence whose neighbour lies inward) with a 45 degree chamfer, round the outer side with a square jog.
-BARBED_STRANDS = [2.0, 4.0, 6.0]
+BARBED_STRANDS = [3.0, 5.0, 7.0]
 BARBED_BARBS = [2, 5, 11, 14]
-BARBED_ARM = 9.0
+BARBED_ARM = 10.5
 # Pieces that may meet another (a run and a corner of the same strand at a T in the fence) are lifted this much, so no
 # two faces ever lie in one plane.
 BARBED_LIFT = 0.02
 
 
 def barbed_wire_texture():
-    """The barbed wire's sheet: row 0 a strand's lit faces (two plies twisting, a highlight every 4 px), row 1 its
-    underside; rows 3 and 4 the barbs; columns 0 to 2 below row 6 the outrigger arm (lit, shade, dark faces); the collar
-    on the post a 3 x 3 cap at (10, 10)."""
+    """The barbed wire's sheet, all galvanized light tones (it reads as bright wire from below too): row 0 a strand's lit
+    faces (two plies twisting, 2 px each), row 1 its underside (the same a step down); rows 3 and 4 the barbs; columns 0
+    to 2 below row 6 the outrigger arm (lit, mid, mid); the collar on the post a 3 x 3 cap at (10, 10)."""
     img = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
     px = img.load()
-    twist = [STEEL["rivet"], STEEL["lit"], STEEL["mid"], STEEL["lit"]]
-    under = [STEEL["lit"], STEEL["mid"], STEEL["dark"], STEEL["mid"]]
+    twist = [STEEL["rivet"], STEEL["rivet"], STEEL["lit"], STEEL["lit"]]
+    under = [STEEL["lit"], STEEL["lit"], STEEL["mid"], STEEL["mid"]]
     for x in range(16):
         px[x, 0] = twist[x % 4]
         px[x, 1] = under[x % 4]
         px[x, 3] = STEEL["lit"]
-        px[x, 4] = STEEL["mid"]
+        px[x, 4] = STEEL["lit"]
     for y in range(6, 16):
         px[0, y] = STEEL["lit"]
         px[1, y] = STEEL["mid"]
-        px[2, y] = STEEL["dark"]
+        px[2, y] = STEEL["mid"]
     for y in range(10, 13):
         for x in range(10, 13):
             px[x, y] = STEEL["lit"] if x == 10 or y == 10 else STEEL["mid"] if x < 12 and y < 12 else STEEL["dark"]
