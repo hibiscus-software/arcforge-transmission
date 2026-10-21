@@ -56,6 +56,12 @@ public final class ItemInfoTooltips {
                     .withStyle(ChatFormatting.DARK_GRAY));
             return;
         }
+        // The creative search builds its index from tooltips on a worker thread, where the font can't be used (wrapping
+        // may bake glyphs onto the GPU): the description unwrapped is all the search needs.
+        if (!Minecraft.getInstance().isSameThread()) {
+            tooltip.add(at, Component.translatable(key).withStyle(ChatFormatting.GRAY));
+            return;
+        }
         List<FormattedText> lines = Minecraft.getInstance().font.getSplitter().splitLines(Component.translatable(key), WRAP_WIDTH, Style.EMPTY);
         for (int i = 0; i < lines.size(); i++) {
             tooltip.add(at + i, Component.literal(lines.get(i).getString()).withStyle(ChatFormatting.GRAY));

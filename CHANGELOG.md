@@ -67,6 +67,9 @@
   rules for a block's port, however its conductors are mounted.
 
 ### Fixed
+- Typing in the creative inventory's search threw "Rendersystem called from wrong thread" while Shift was held: the
+  item descriptions wrapped their lines with the font on the search's worker thread. Off the render thread they're
+  added unwrapped.
 - Switchgear lineups planned themselves only while some wire existed in the dimension: with none, every lineup said
   "not yet planned" (and made no bus). The grid now runs its blocks' after-tick work with nothing to solve.
 - Wires strung to a Cable Termination weren't drawn.
